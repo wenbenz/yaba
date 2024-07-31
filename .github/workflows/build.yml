@@ -27,7 +27,7 @@ jobs:
     - name: Test
       run: go test -v -race -covermode=atomic -coverprofile=coverage.out ./...
 
-    - name: Codecov report
+    - name: Upload Codecov report
       uses: codecov/codecov-action@v4.0.1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
