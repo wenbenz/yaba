@@ -3,12 +3,12 @@ package database_test
 import (
 	"context"
 	"testing"
-	"yaba/internal/budget"
-	"yaba/internal/database"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/require"
+	"yaba/internal/budget"
+	"yaba/internal/database"
 )
 
 func TestBasicBudgetOperations(t *testing.T) {
