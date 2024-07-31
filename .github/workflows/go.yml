@@ -1,7 +1,7 @@
-# This workflow will build a golang project
+e# This workflow will build a golang project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
-name: Go
+name: Server
 
 on:
   push:
@@ -21,8 +21,11 @@ jobs:
       with:
         go-version: '1.21'
 
+    - name: cd server
+      run: cd server
+
     - name: Build
-      run: pwd && ls && go build -v ./server/...
+      run: go build -v ./...
 
     - name: Test
-      run: go test -v ./server/...
+      run: go test -v ./...
