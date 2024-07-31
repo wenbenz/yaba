@@ -1,4 +1,7 @@
 # Yet Another Budgeting App (YABA)
+
+![Codecov](https://img.shields.io/codecov/c/github/wenbenz/yaba)
+
 Tracking spending is a pain. Most budgeting tools require manual input of each
 transaction, and budget labels don't always line up with credit card labels.
 Financial information is also deeply personal, and with data concerns these
