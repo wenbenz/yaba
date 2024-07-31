@@ -6,3 +6,5 @@ linters:
     - depguard
     - varnamelen
     - gci
+    - gofumpt
+    - goimports
