@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
-	"yaba/budget"
+	"yaba/internal/budget"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/google/uuid"

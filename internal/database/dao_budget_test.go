@@ -3,8 +3,8 @@ package database_test
 import (
 	"context"
 	"testing"
-	"yaba/budget"
-	"yaba/database"
+	"yaba/internal/budget"
+	"yaba/internal/database"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
