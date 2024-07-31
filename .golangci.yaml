@@ -1,0 +1,10 @@
+linters:
+  enable-all: true
+  disable:
+    - execinquery
+    - gomnd
+    - depguard
+    - varnamelen
+    - gci
+    - gofumpt
+    - goimports
