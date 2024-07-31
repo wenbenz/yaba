@@ -3,11 +3,11 @@ package database
 import (
 	"context"
 	"fmt"
-	"yaba/internal/budget"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"yaba/internal/budget"
 )
 
 const getBudgetsByID = `
