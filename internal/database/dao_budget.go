@@ -72,33 +72,48 @@ func GetBudgets(ctx context.Context, pool *pgxpool.Pool, ids []uuid.UUID) ([]*bu
 		args[i] = id
 	}
 
+	// First, see which budgets actually exist
 	var budgets []*budget.Budget
 	if err := pgxscan.Select(ctx, pool, &budgets, getBudgetsByID, args...); err != nil {
 		return nil, fmt.Errorf("failed to get budgets: %w", err)
 	}
 
+	// Batch budget loading
+	batch := &pgx.Batch{}
 	for _, b := range budgets {
 		// get expenses
-		var expenses []*budget.Expense
-		if err := pgxscan.Select(ctx, pool, &expenses, getExpensesForBudget, b.ID); err != nil {
-			return nil, fmt.Errorf("failed to get expenses for budget %s: %w", b.ID.String(), err)
-		}
+		batch.Queue(getExpensesForBudget, b.ID).Query(func(rows pgx.Rows) error {
+			var expenses []*budget.Expense
+			if err := pgxscan.ScanAll(&expenses, rows); err != nil {
+				return fmt.Errorf("failed to scan expenses: %w", err)
+			}
 
-		b.Expenses = make(map[string]*budget.Expense)
-		for _, e := range expenses {
-			b.Expenses[e.Category] = e
-		}
+			b.Expenses = make(map[string]*budget.Expense)
+			for _, e := range expenses {
+				b.Expenses[e.Category] = e
+			}
+
+			return nil
+		})
 
 		// get incomes
-		var incomes []*budget.Income
-		if err := pgxscan.Select(ctx, pool, &incomes, getIncomesByOwner, b.ID); err != nil {
-			return nil, fmt.Errorf("failed to get incomes for budget %s: %w", b.ID.String(), err)
-		}
+		batch.Queue(getIncomesByOwner, b.ID).Query(func(rows pgx.Rows) error {
+			var incomes []*budget.Income
+			if err := pgxscan.ScanAll(&incomes, rows); err != nil {
+				return fmt.Errorf("failed to scan incomes: %w", err)
+			}
 
-		b.Incomes = make(map[string]*budget.Income)
-		for _, income := range incomes {
-			b.Incomes[income.Source] = income
-		}
+			b.Incomes = make(map[string]*budget.Income)
+			for _, income := range incomes {
+				b.Incomes[income.Source] = income
+			}
+
+			return nil
+		})
+	}
+
+	if err := pool.SendBatch(ctx, batch).Close(); err != nil {
+		return nil, fmt.Errorf("get budgets batch failed: %w", err)
 	}
 
 	return budgets, nil
