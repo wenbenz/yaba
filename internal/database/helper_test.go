@@ -8,6 +8,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -59,4 +60,20 @@ func SetupTestContainer() (*postgres.PostgresContainer, func()) {
 			log.Fatalf("failed to terminate container: %s", err)
 		}
 	}
+}
+
+func SetupTestContainerAndInitPool() (*pgxpool.Pool, func()) {
+	container, cleanupFunc := SetupTestContainer()
+
+	pgxConfig, err := pgxpool.ParseConfig(container.MustConnectionString(context.Background()))
+	if err != nil {
+		panic(err)
+	}
+
+	pool, err := pgxpool.NewWithConfig(context.TODO(), pgxConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	return pool, cleanupFunc
 }

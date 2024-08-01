@@ -4,31 +4,20 @@ import (
 	"context"
 	"testing"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stretchr/testify/require"
 	"yaba/internal/budget"
 	"yaba/internal/database"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBasicBudgetOperations(t *testing.T) {
 	t.Parallel()
 
-	// Container setup
-	container, cleanupFunc := SetupTestContainer()
-	defer cleanupFunc()
-
 	ctx := context.Background()
 
-	pgxConfig, err := pgxpool.ParseConfig(container.MustConnectionString(ctx))
-	if err != nil {
-		panic(err)
-	}
-
-	pool, err := pgxpool.NewWithConfig(context.TODO(), pgxConfig)
-	if err != nil {
-		panic(err)
-	}
+	pool, cleanupFunc := SetupTestContainerAndInitPool()
+	defer cleanupFunc()
 
 	// Create and save a budget
 	b := budget.NewZeroBasedBudget("name")
