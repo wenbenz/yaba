@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"yaba/internal/budget"
+
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"yaba/internal/budget"
 )
 
 const getBudgetsByID = `
@@ -90,7 +92,7 @@ func GetBudgets(ctx context.Context, pool *pgxpool.Pool, ids []uuid.UUID) ([]*bu
 		// get incomes
 		var incomes []*budget.Income
 		if err := pgxscan.Select(ctx, pool, &incomes, getIncomesByOwner, b.ID); err != nil {
-			return nil, fmt.Errorf("failed to get incomes for budget %s\n%w", b.ID.String(), err)
+			return nil, fmt.Errorf("failed to get incomes for budget %s: %w", b.ID.String(), err)
 		}
 
 		b.Incomes = make(map[string]*budget.Income)
@@ -103,34 +105,26 @@ func GetBudgets(ctx context.Context, pool *pgxpool.Pool, ids []uuid.UUID) ([]*bu
 }
 
 func PersistBudget(ctx context.Context, pool *pgxpool.Pool, budget *budget.Budget) error {
+	batch := &pgx.Batch{}
+	batch.Queue(upsertBudget, budget.ID, budget.Name, budget.Strategy)
+	batch.Queue(deleteIncomeByOwner, budget.ID)
+	batch.Queue(deleteExpenseByBudget, budget.ID)
+
+	for _, income := range budget.Incomes {
+		batch.Queue(upsertIncome, income.Owner, income.Source, income.Amount)
+	}
+
+	for _, expense := range budget.Expenses {
+		batch.Queue(upsertExpense, expense.BudgetID, expense.Category, expense.Amount, expense.Fixed, expense.Slack)
+	}
+
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("could not start transaction: %w", err)
 	}
 
-	if _, err = tx.Exec(ctx, upsertBudget, budget.ID, budget.Name, budget.Strategy); err != nil {
-		return fmt.Errorf("could not upsert budget: %w", err)
-	}
-
-	if _, err = tx.Exec(ctx, deleteIncomeByOwner, budget.ID); err != nil {
-		return fmt.Errorf("could not delete budget incomes: %w", err)
-	}
-
-	for _, income := range budget.Incomes {
-		if _, err = tx.Exec(ctx, upsertIncome, income.Owner, income.Source, income.Amount); err != nil {
-			return fmt.Errorf("could not save budget incomes: %w", err)
-		}
-	}
-
-	if _, err = tx.Exec(ctx, deleteExpenseByBudget, budget.ID); err != nil {
-		return fmt.Errorf("could not delete expenses: %w", err)
-	}
-
-	for _, expense := range budget.Expenses {
-		if _, err = tx.Exec(ctx, upsertExpense,
-			expense.BudgetID, expense.Category, expense.Amount, expense.Fixed, expense.Slack); err != nil {
-			return fmt.Errorf("could not upsert expenses: %w", err)
-		}
+	if err = tx.SendBatch(ctx, batch).Close(); err != nil {
+		return fmt.Errorf("batch operation failed while persisting budget: %w", err)
 	}
 
 	if err = tx.Commit(ctx); err != nil {
@@ -141,21 +135,18 @@ func PersistBudget(ctx context.Context, pool *pgxpool.Pool, budget *budget.Budge
 }
 
 func DeleteBudget(ctx context.Context, pool *pgxpool.Pool, budget *budget.Budget) error {
+	batch := &pgx.Batch{}
+	batch.Queue(deleteBudget, budget.ID)
+	batch.Queue(deleteIncomeByOwner, budget.ID)
+	batch.Queue(deleteExpenseByBudget, budget.ID)
+
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("could not start transaction: %w", err)
 	}
 
-	if _, err = tx.Exec(ctx, deleteBudget, budget.ID); err != nil {
-		return fmt.Errorf("could not delete budget: %w", err)
-	}
-
-	if _, err = tx.Exec(ctx, deleteIncomeByOwner, budget.ID); err != nil {
-		return fmt.Errorf("could not delete budget incomes: %w", err)
-	}
-
-	if _, err = tx.Exec(ctx, deleteExpenseByBudget, budget.ID); err != nil {
-		return fmt.Errorf("could not delete budget expenses: %w", err)
+	if err = tx.SendBatch(ctx, batch).Close(); err != nil {
+		return fmt.Errorf("batch operation failed during delete budget: %w", err)
 	}
 
 	if err = tx.Commit(ctx); err != nil {
