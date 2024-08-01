@@ -8,6 +8,7 @@ import (
 
 	"yaba/internal/budget"
 	"yaba/internal/database"
+	"yaba/test/helper"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -16,7 +17,7 @@ import (
 func TestExpenditures(t *testing.T) {
 	t.Parallel()
 
-	pool, cleanupFunc := SetupTestContainerAndInitPool()
+	pool, cleanupFunc := helper.SetupTestContainerAndInitPool()
 	defer cleanupFunc()
 
 	ctx := context.Background()

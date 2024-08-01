@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 	"yaba/internal/budget"
+	"yaba/internal/errors"
 
 	"github.com/google/uuid"
 )
@@ -111,17 +112,17 @@ func validateHeaders(headers []string) error {
 			}
 
 			if !allowed {
-				return fmt.Errorf("unrecognized column '%s' in headers: %w", h, InvalidInputError{Input: headers})
+				return fmt.Errorf("unrecognized column '%s' in headers: %w", h, errors.InvalidInputError{Input: headers})
 			}
 		}
 	}
 
 	if !hasDate {
-		return fmt.Errorf("missing required column 'date': %w", InvalidInputError{Input: headers})
+		return fmt.Errorf("missing required column 'date': %w", errors.InvalidInputError{Input: headers})
 	}
 
 	if !hasAmount {
-		return fmt.Errorf("missing required column 'amount': %w", InvalidInputError{Input: headers})
+		return fmt.Errorf("missing required column 'amount': %w", errors.InvalidInputError{Input: headers})
 	}
 
 	return nil

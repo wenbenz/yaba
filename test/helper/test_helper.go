@@ -1,4 +1,4 @@
-package database_test
+package helper
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres" // migration tool
+	_ "github.com/golang-migrate/migrate/v4/source/file"       // migration tool
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -22,6 +22,7 @@ func SetupTestContainer() (*postgres.PostgresContainer, func()) {
 	dbUser := "user"
 	dbPassword := "password"
 
+	//nolint:mnd
 	postgresContainer, err := postgres.Run(ctx,
 		"docker.io/postgres:16-alpine",
 		postgres.WithDatabase(dbName),

@@ -6,6 +6,7 @@ import (
 
 	"yaba/internal/budget"
 	"yaba/internal/database"
+	"yaba/test/helper"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -16,7 +17,7 @@ func TestBasicBudgetOperations(t *testing.T) {
 
 	ctx := context.Background()
 
-	pool, cleanupFunc := SetupTestContainerAndInitPool()
+	pool, cleanupFunc := helper.SetupTestContainerAndInitPool()
 	defer cleanupFunc()
 
 	// Create and save a budget
