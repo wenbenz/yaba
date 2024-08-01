@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS expenditure (
     id SERIAL PRIMARY KEY,
     owner UUID NOT NULL,
-    amount INT NOT NULL,
+    amount NUMERIC(20,4) NOT NULL,
     date TIMESTAMPTZ NOT NULL,
     name VARCHAR(50),
     method VARCHAR(50),

@@ -12,102 +12,119 @@ import (
 	"github.com/google/uuid"
 )
 
-type csvExpenditureReader struct {
+type CsvExpenditureReader struct {
 	header2index map[string]int
-	owner uuid.UUID
+	owner        uuid.UUID
 }
 
-func (reader *csvExpenditureReader) getString(row []string, key string) string {
+func (reader *CsvExpenditureReader) getString(row []string, key string) string {
 	i, ok := reader.header2index[key]
 	if !ok {
 		return ""
 	}
+
 	return strings.ToLower(strings.TrimSpace(row[i]))
 }
 
-func (reader *csvExpenditureReader) getDate(row []string, key string) (time.Time, error) {
+func (reader *CsvExpenditureReader) getDate(row []string, key string) (time.Time, error) {
 	date, err := time.Parse(time.DateOnly, reader.getString(row, key))
 	if err != nil {
 		return time.Now(), fmt.Errorf("date must have format YYYY-MM-DD: %w", err)
 	}
+
 	return date, nil
 }
 
-func (reader *csvExpenditureReader) getCents(row []string, key string) (int, error) {
+func (reader *CsvExpenditureReader) getFloat64(row []string, key string) (float64, error) {
 	s := reader.getString(row, key)
-	dollarString := s
-	cents := 0
-	var err error
-	// If string is at least 3 characters and the third-last character is a ',' or '.'
-	// then we have a cents component. e.g. 1.23 and 1,23 are both valid.
-	if len(s) > 2 && (s[len(s)-3] == '.' || s[len(s)-3] == ',') {
-		dollarString = s[:len(s) - 3]
-		if cents, err = strconv.Atoi(s[len(s)-2:]); err != nil {
-			return 0, fmt.Errorf("failed to parse cents from '%s': %w", s, err)
-		}
-	}
-	dollarString = strings.ReplaceAll(dollarString, ",", " ")
-	dollarString = strings.ReplaceAll(dollarString, " ", "")
-	
-	dollars, err := strconv.Atoi(dollarString)
+	s = strings.ReplaceAll(s, ",", " ")
+	s = strings.ReplaceAll(s, " ", "")
+	s = strings.ReplaceAll(s, "$", "")
+	dollars, err := strconv.ParseFloat(s, 64)
+
 	if err != nil {
 		return 0, fmt.Errorf("failed to parse dollars from '%s': %w", s, err)
 	}
 
-	return dollars * 100 + cents, nil
+	return dollars, nil
 }
 
-func (reader *csvExpenditureReader) readRow(row[]string) (*budget.Expenditure, error) {
+func (reader *CsvExpenditureReader) ReadRow(row []string) (*budget.Expenditure, error) {
 	date, err := reader.getDate(row, "date")
 	if err != nil {
 		return nil, err
 	}
 
-	amount, err := reader.getCents(row, "amount")
+	amount, err := reader.getFloat64(row, "amount")
 	if err != nil {
 		return nil, err
 	}
 
 	return &budget.Expenditure{
-		Owner: reader.owner,
-		Name: reader.getString(row, "name"),
-		Date: date,
-		Amount: amount,
-		Method: reader.getString(row, "method"),
+		Owner:          reader.owner,
+		Name:           reader.getString(row, "name"),
+		Date:           date,
+		Amount:         amount,
+		Method:         reader.getString(row, "method"),
 		BudgetCategory: reader.getString(row, "budget_category"),
 		RewardCategory: reader.getString(row, "reward_category"),
-		Comment: reader.getString(row, "comment"),
+		Comment:        reader.getString(row, "comment"),
 	}, nil
 }
 
-func newCSVExpenditureReader(owner uuid.UUID, headers []string) (*csvExpenditureReader, error) {
-	reader := csvExpenditureReader{
-		owner: owner,
+func NewCSVExpenditureReader(owner uuid.UUID, headers []string) (*CsvExpenditureReader, error) {
+	reader := CsvExpenditureReader{
+		owner:        owner,
 		header2index: make(map[string]int),
 	}
-	
-	hasDate, hasAmount := false, false
-	for i, h := range headers {
-		if h == "date" {
-			hasDate = true
-		} else if h == "amount" {
-			hasAmount = true
-		} else if h != "name" && h != "method" && h != "budget_category" && h != "reward_category" && h != "comment" {
-			return nil, fmt.Errorf("unrecognized column '%s'", h)
-		}
 
+	if err := validateHeaders(headers); err != nil {
+		return nil, err
+	}
+
+	for i, h := range headers {
 		reader.header2index[h] = i
 	}
 
+	return &reader, nil
+}
+
+func validateHeaders(headers []string) error {
+	allowedHeaders := []string{"date", "amount", "name", "method", "budget_category", "reward_category", "comment"}
+	hasDate, hasAmount := false, false
+
+	for _, h := range headers {
+		switch h {
+		case "date":
+			hasDate = true
+		case "amount":
+			hasAmount = true
+		default:
+			allowed := false
+
+			for _, allowedHeader := range allowedHeaders {
+				if h == allowedHeader {
+					allowed = true
+
+					break
+				}
+			}
+
+			if !allowed {
+				return fmt.Errorf("unrecognized column '%s' in headers: %w", h, InvalidInputError{Input: headers})
+			}
+		}
+	}
+
 	if !hasDate {
-		return nil, fmt.Errorf("missing required column 'date'")
+		return fmt.Errorf("missing required column 'date': %w", InvalidInputError{Input: headers})
 	}
 
 	if !hasAmount {
-		return nil, fmt.Errorf("missing required column 'amount'")
+		return fmt.Errorf("missing required column 'amount': %w", InvalidInputError{Input: headers})
 	}
 
-	return &reader, nil
+	return nil
 }
 
 func ImportExpendituresFromCSVReader(owner uuid.UUID, r *csv.Reader) ([]*budget.Expenditure, error) {
@@ -118,23 +135,24 @@ func ImportExpendituresFromCSVReader(owner uuid.UUID, r *csv.Reader) ([]*budget.
 		return nil, fmt.Errorf("received error reading headers: %w", err)
 	}
 
-	expenditureReader, err := newCSVExpenditureReader(owner, headers)
+	expenditureReader, err := NewCSVExpenditureReader(owner, headers)
 	if err != nil {
 		return nil, err
 	}
 
 	var expenditures []*budget.Expenditure
-	for row, err := r.Read(); err != io.EOF; row, err = r.Read(){
+
+	for row, err := r.Read(); err != io.EOF; row, err = r.Read() {
 		if err != nil {
-			return nil, err
-		}
-		
-		// skip empty
-		if len(row) == 0 {
-			continue;
+			return nil, fmt.Errorf("unexpected error reading csv: %w", err)
 		}
 
-		expenditure, err := expenditureReader.readRow(row)
+		// skip empty
+		if len(row) == 0 {
+			continue
+		}
+
+		expenditure, err := expenditureReader.ReadRow(row)
 		if err != nil {
 			return nil, err
 		}

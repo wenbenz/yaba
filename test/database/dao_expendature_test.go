@@ -27,11 +27,10 @@ func TestExpenditures(t *testing.T) {
 	expenditures := make([]*budget.Expenditure, numExpenditures)
 
 	for i := range numExpenditures {
-		//nolint:exhaustruct
 		expenditures[i] = &budget.Expenditure{
 			Owner:          owner,
 			Name:           fmt.Sprintf("expenditure %d", i),
-			Amount:         (i * 123) % 400,
+			Amount:         float64((i * 123) % 400),
 			Date:           time.Now().Add(time.Duration(i-numExpenditures) * time.Hour),
 			Method:         "cash",
 			BudgetCategory: "spending",
@@ -51,7 +50,7 @@ func TestExpenditures(t *testing.T) {
 		expected := expenditures[i]
 		require.Equal(t, expected.Owner, actual.Owner)
 		require.Equal(t, expected.Name, actual.Name)
-		require.Equal(t, expected.Amount, actual.Amount)
+		require.InDelta(t, expected.Amount, actual.Amount, .001)
 		require.Equal(t, expected.Date.Format(time.RFC3339), actual.Date.Format(time.RFC3339))
 		require.Equal(t, expected.BudgetCategory, actual.BudgetCategory)
 		require.Equal(t, expected.RewardCategory, actual.RewardCategory)

@@ -32,7 +32,6 @@ func main() {
 		}
 	})
 
-	//nolint:exhaustruct
 	server := http.Server{
 		Handler:      mux,
 		Addr:         fmt.Sprintf(":%d", config.Service.Port),

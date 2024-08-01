@@ -23,13 +23,13 @@ type Budget struct {
 type Income struct {
 	Owner  uuid.UUID `db:"owner"`
 	Source string    `db:"source"`
-	Amount uint      `db:"amount"`
+	Amount float64   `db:"amount"`
 }
 
 type Expense struct {
 	BudgetID uuid.UUID `db:"budget_id"`
 	Category string    `db:"category"`
-	Amount   uint      `db:"amount"`
+	Amount   float64   `db:"amount"`
 	Fixed    bool      `db:"is_fixed"`
 	Slack    bool      `db:"is_slack"`
 }
@@ -44,7 +44,7 @@ func NewZeroBasedBudget(name string) *Budget {
 	}
 }
 
-func (b *Budget) SetBudgetIncome(source string, amount uint) {
+func (b *Budget) SetBudgetIncome(source string, amount float64) {
 	s := strings.ToLower(source)
 	b.Incomes[s] = &Income{
 		Owner:  b.ID,
@@ -58,11 +58,11 @@ func (b *Budget) RemoveBudgetIncome(source string) {
 	delete(b.Incomes, s)
 }
 
-func (b *Budget) SetFixedExpense(category string, amount uint) {
+func (b *Budget) SetFixedExpense(category string, amount float64) {
 	b.SetExpense(category, amount, true, false)
 }
 
-func (b *Budget) SetPercentageExpense(category string, amount uint) {
+func (b *Budget) SetPercentageExpense(category string, amount float64) {
 	b.SetExpense(category, amount, false, false)
 }
 
@@ -70,7 +70,7 @@ func (b *Budget) SetSlackExpense(category string) {
 	b.SetExpense(category, 0, false, true)
 }
 
-func (b *Budget) SetExpense(category string, amount uint, fixed, slack bool) {
+func (b *Budget) SetExpense(category string, amount float64, fixed, slack bool) {
 	c := strings.ToLower(category)
 	b.Expenses[c] = &Expense{
 		BudgetID: b.ID,
