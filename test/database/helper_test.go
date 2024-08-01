@@ -43,7 +43,7 @@ func SetupTestContainer() (*postgres.PostgresContainer, func()) {
 		log.Fatalf("failed to retrieve connection string: %s", err)
 	}
 
-	migrator, err := migrate.New("file://migrations", connectionString)
+	migrator, err := migrate.New("file://../../migrations", connectionString)
 	if err != nil {
 		log.Fatalf("failed to initialize migrator: %s", err)
 	}

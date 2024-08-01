@@ -5,6 +5,7 @@ linters:
     - gomnd
     - depguard
     - varnamelen
+    - exhaustruct
     - gci
     - gofumpt
     - goimports

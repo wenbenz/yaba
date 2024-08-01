@@ -39,7 +39,6 @@ func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, owner uuid.UUID, 
 
 func PersistExpenditures(ctx context.Context, pool *pgxpool.Pool, expenditures []*budget.Expenditure,
 ) error {
-	//nolint:exhaustruct
 	batch := &pgx.Batch{}
 	for _, e := range expenditures {
 		batch.Queue(insertExpenditure, e.Owner, e.Name, e.Amount, e.Date,
