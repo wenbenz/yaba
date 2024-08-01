@@ -6,13 +6,14 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"yaba/config"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
 	// Read config
-	config, err := ReadConfig("config.yaml")
+	config, err := config.ReadConfig("config/test.yaml")
 	if err != nil {
 		log.Fatalln("failed to read config %w", err)
 	}
