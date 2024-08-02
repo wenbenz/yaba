@@ -28,10 +28,9 @@ func TestBasicBudgetOperations(t *testing.T) {
 	owner, err := uuid.Parse("b52d2560-9e3b-407c-8593-beac1ea851ff")
 	require.NoError(t, err)
 
-	user, err := uuid.NewRandom()
 	require.NoError(t, err)
 
-	ctx := context.WithValue(context.Background(), platform.CTXUser, user.String())
+	ctx := context.Background()
 
 	// Upload json.
 	require.NoError(t, platform.UploadBudget(ctx, pool, f))
