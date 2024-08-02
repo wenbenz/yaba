@@ -11,7 +11,7 @@ import (
 func TestBudgetTransitivity(t *testing.T) {
 	t.Parallel()
 
-	owner, err := uuid.NewRandom();
+	owner, err := uuid.NewRandom()
 	require.NoError(t, err)
 
 	b := budget.NewZeroBasedBudget(owner, "testBudget")

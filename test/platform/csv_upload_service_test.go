@@ -26,9 +26,9 @@ func TestCSVUploadSuccess(t *testing.T) {
 	user, err := uuid.NewRandom()
 	require.NoError(t, err)
 
-	ctx := context.WithValue(context.Background(), "user", user.String())
+	ctx := context.Background()
 
-	require.NoError(t, platform.UploadSpendingsCSV(ctx, pool, f))
+	require.NoError(t, platform.UploadSpendingsCSV(ctx, pool, user, f))
 
 	date, err := time.Parse(time.DateOnly, "2006-07-08")
 	require.NoError(t, err)
@@ -75,27 +75,15 @@ func TestCSVUploadBadCSV(t *testing.T) {
 	user, err := uuid.NewRandom()
 	require.NoError(t, err)
 
-	ctx := context.WithValue(context.Background(), "user", user.String())
+	ctx := context.Background()
 
-	require.ErrorContains(t, platform.UploadSpendingsCSV(ctx, pool, f), "failed to import: failed to parse dollars from '12.b'")
+	require.ErrorContains(t, platform.UploadSpendingsCSV(ctx, pool, user, f),
+		"failed to import: failed to parse dollars from '12.b'")
 
 	date, err := time.Parse(time.DateOnly, "2006-07-08")
 	require.NoError(t, err)
 
 	expenditures, err := database.ListExpenditures(ctx, pool, user, date, date, 10)
-	require.Len(t, expenditures, 0)
+	require.Empty(t, expenditures)
 	require.NoError(t, err)
-}
-
-func TestCSVUploadNoUser(t *testing.T) {
-	t.Parallel()
-
-	pool, closeContainer := helper.SetupTestContainerAndInitPool()
-	defer closeContainer()
-
-	path := "testdata/spend.csv"
-	f, err := os.Open(path)
-	require.NoError(t, err)
-
-	require.ErrorContains(t, platform.UploadSpendingsCSV(context.Background(), pool, f), "no user in context")
 }

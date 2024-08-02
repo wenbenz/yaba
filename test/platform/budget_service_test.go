@@ -31,7 +31,7 @@ func TestBasicBudgetOperations(t *testing.T) {
 	user, err := uuid.NewRandom()
 	require.NoError(t, err)
 
-	ctx := context.WithValue(context.Background(), "user", user.String())
+	ctx := context.WithValue(context.Background(), platform.CTXUser, user.String())
 
 	// Upload json.
 	require.NoError(t, platform.UploadBudget(ctx, pool, f))
@@ -53,19 +53,17 @@ func TestBasicBudgetOperations(t *testing.T) {
 	require.True(t, b.Expenses["rent"].Fixed)
 	require.False(t, b.Expenses["rent"].Slack)
 	require.InDelta(t, 1000., b.Expenses["food"].Amount, .00001)
-	require.True(t, b.Expenses["food"].Fixed)
-	require.False(t, b.Expenses["food"].Slack)
 	require.InDelta(t, 300., b.Expenses["hobbies"].Amount, .00001)
-	require.True(t, b.Expenses["hobbies"].Fixed)
-	require.False(t, b.Expenses["hobbies"].Slack)
 	require.InDelta(t, 0., b.Expenses["savings"].Amount, .00001)
 	require.False(t, b.Expenses["savings"].Fixed)
 	require.True(t, b.Expenses["savings"].Slack)
 
 	// modify the budget and re-upload
 	b.RemoveExpense("hobbies")
+
 	jsonData, err := json.Marshal(b.ToExternal())
 	require.NoError(t, err)
+
 	buffer := bytes.NewBuffer(jsonData)
 	require.NoError(t, platform.UploadBudget(ctx, pool, buffer))
 

@@ -15,11 +15,11 @@ const (
 
 // External representation of Budget.
 type ExternalBudget struct {
-	ID       uuid.UUID `json:"id,omitempty"`
-	Owner    uuid.UUID `json:"owner"`
-	Name     string    `json:"name"`
-	Strategy string    `json:"strategy"`
-	Incomes  []*Income `json:"incomes"`
+	ID       uuid.UUID  `json:"id,omitempty"`
+	Owner    uuid.UUID  `json:"owner"`
+	Name     string     `json:"name"`
+	Strategy string     `json:"strategy"`
+	Incomes  []*Income  `json:"incomes"`
 	Expenses []*Expense `json:"expenses"`
 }
 
@@ -33,17 +33,17 @@ type Budget struct {
 }
 
 type Income struct {
-	Owner  uuid.UUID `db:"owner" json:"-"`
+	Owner  uuid.UUID `db:"owner"  json:"-"`
 	Source string    `db:"source" json:"source"`
 	Amount float64   `db:"amount" json:"amount"`
 }
 
 type Expense struct {
 	BudgetID uuid.UUID `db:"budget_id" json:"-"`
-	Category string    `db:"category" json:"category"`
-	Amount   float64   `db:"amount" json:"amount"`
-	Fixed    bool      `db:"is_fixed" json:"isFixed"`
-	Slack    bool      `db:"is_slack" json:"isSlack"`
+	Category string    `db:"category"  json:"category"`
+	Amount   float64   `db:"amount"    json:"amount"`
+	Fixed    bool      `db:"is_fixed"  json:"isFixed"`
+	Slack    bool      `db:"is_slack"  json:"isSlack"`
 }
 
 func NewZeroBasedBudget(owner uuid.UUID, name string) *Budget {
@@ -101,39 +101,43 @@ func (b *Budget) RemoveExpense(category string) {
 
 func (b *Budget) ToExternal() *ExternalBudget {
 	var strategy string
+
 	switch b.Strategy {
 	case ZeroBased:
 		strategy = "ZERO_BASED"
-	default:
+	case Unknown:
 		strategy = "UNKNOWN"
 	}
 
-	incomes := make([]*Income, len(b.Incomes))
 	i := 0
+
+	incomes := make([]*Income, len(b.Incomes))
 	for _, in := range b.Incomes {
 		incomes[i] = in
 		i++
 	}
 
-	expenses := make([]*Expense, len(b.Expenses))
 	i = 0
+
+	expenses := make([]*Expense, len(b.Expenses))
 	for _, ex := range b.Expenses {
 		expenses[i] = ex
 		i++
 	}
 
 	return &ExternalBudget{
-		ID: b.ID,
-		Owner: b.Owner,
-		Name: b.Name,
+		ID:       b.ID,
+		Owner:    b.Owner,
+		Name:     b.Name,
 		Strategy: strategy,
-		Incomes: incomes,
+		Incomes:  incomes,
 		Expenses: expenses,
 	}
 }
 
 func (b *ExternalBudget) ToInternal() *Budget {
 	var strategy Strategy
+
 	switch b.Strategy {
 	case "ZERO_BASED":
 		strategy = ZeroBased
@@ -152,11 +156,11 @@ func (b *ExternalBudget) ToInternal() *Budget {
 	}
 
 	return &Budget{
-		ID: b.ID,
-		Owner: b.Owner,
-		Name: b.Name,
+		ID:       b.ID,
+		Owner:    b.Owner,
+		Name:     b.Name,
 		Strategy: strategy,
-		Incomes: incomes,
+		Incomes:  incomes,
 		Expenses: expenses,
 	}
 }
