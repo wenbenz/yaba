@@ -33,6 +33,6 @@ func UploadSpendingsCSV(ctx context.Context, pool *pgxpool.Pool, data io.Reader)
 	if err = database.PersistExpenditures(ctx, pool, expenditures); err != nil {
 		return fmt.Errorf("failed to save: %w", err)
 	}
-	
+
 	return nil
 }
