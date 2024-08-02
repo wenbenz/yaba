@@ -15,33 +15,29 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestBasicBudgetOperations(t *testing.T) {
+func TestBasicBudgetLifecycleOperations(t *testing.T) {
 	t.Parallel()
 
 	pool := helper.GetTestPool()
 
-	path := "testdata/budget.json"
+	path := "testdata/budget_no_owner.json"
 	f, err := os.Open(path)
 	require.NoError(t, err)
 
-	owner, err := uuid.Parse("b52d2560-9e3b-407c-8593-beac1ea851ff")
-	require.NoError(t, err)
-
-	require.NoError(t, err)
-
+	user := uuid.New()
 	ctx := context.Background()
 
 	// Upload json.
-	require.NoError(t, platform.UploadBudget(ctx, pool, f))
+	require.NoError(t, platform.UploadBudget(ctx, pool, user, f))
 
 	// Check that the budget has been correctly saved.
-	fetched, err := database.GetBudgets(ctx, pool, owner)
+	fetched, err := database.GetBudgets(ctx, pool, user)
 	require.NoError(t, err)
 	require.Len(t, fetched, 1)
 
 	b := fetched[0]
 	require.NotNil(t, b.ID)
-	require.Equal(t, owner, b.Owner)
+	require.Equal(t, user, b.Owner)
 	require.Equal(t, "Name", b.Name)
 	require.Equal(t, budget.ZeroBased, b.Strategy)
 	require.Len(t, b.Incomes, 1)
@@ -63,11 +59,46 @@ func TestBasicBudgetOperations(t *testing.T) {
 	require.NoError(t, err)
 
 	buffer := bytes.NewBuffer(jsonData)
-	require.NoError(t, platform.UploadBudget(ctx, pool, buffer))
+	require.NoError(t, platform.UploadBudget(ctx, pool, user, buffer))
 
 	// since ID is included, this should be an update
-	fetched, err = database.GetBudgets(ctx, pool, owner)
+	fetched, err = database.GetBudgets(ctx, pool, user)
 	require.NoError(t, err)
 	require.Len(t, fetched, 1)
 	require.EqualValues(t, b, fetched[0])
+}
+
+func TestUpdateBudgetErrors(t *testing.T) {
+	t.Parallel()
+
+	pool := helper.GetTestPool()
+
+	user := uuid.New()
+	ctx := context.Background()
+
+	tests := []struct {
+		path          string
+		expectedError string
+	}{
+		{
+			path:          "testdata/budget.json",
+			expectedError: "user is not budget owner",
+		},
+		{
+			path:          "testdata/not_json.json",
+			expectedError: "failed to decode budget",
+		},
+		{
+			path:          "testdata/bad_definition.json",
+			expectedError: "failed to decode budget",
+		},
+	}
+
+	for _, test := range tests {
+		f, err := os.Open(test.path)
+		require.NoError(t, err)
+
+		// Upload json.
+		require.ErrorContains(t, platform.UploadBudget(ctx, pool, user, f), test.expectedError)
+	}
 }
