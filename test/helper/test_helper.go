@@ -1,27 +1,38 @@
-package database_test
+package helper
 
 import (
 	"context"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres" // migration tool
+	_ "github.com/golang-migrate/migrate/v4/source/file"       // migration tool
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
+func GetTestPool() *pgxpool.Pool {
+	return getSingletonPool()
+}
+
+//nolint:gochecknoglobals
+var getSingletonPool = sync.OnceValue(func() *pgxpool.Pool {
+	return initPool(setupTestContainer())
+})
+
 // https://golang.testcontainers.org/modules/postgres/#initial-database
-func SetupTestContainer() (*postgres.PostgresContainer, func()) {
+func setupTestContainer() *postgres.PostgresContainer {
 	ctx := context.Background()
 
 	dbName := "users"
 	dbUser := "user"
 	dbPassword := "password"
 
+	//nolint:mnd
 	postgresContainer, err := postgres.Run(ctx,
 		"docker.io/postgres:16-alpine",
 		postgres.WithDatabase(dbName),
@@ -53,27 +64,19 @@ func SetupTestContainer() (*postgres.PostgresContainer, func()) {
 	}
 
 	// cleanup method
-	return postgresContainer, func() {
-		log.Println("terminating test container")
-
-		if err := postgresContainer.Terminate(ctx); err != nil {
-			log.Fatalf("failed to terminate container: %s", err)
-		}
-	}
+	return postgresContainer
 }
 
-func SetupTestContainerAndInitPool() (*pgxpool.Pool, func()) {
-	container, cleanupFunc := SetupTestContainer()
-
+func initPool(container *postgres.PostgresContainer) *pgxpool.Pool {
 	pgxConfig, err := pgxpool.ParseConfig(container.MustConnectionString(context.Background()))
 	if err != nil {
 		panic(err)
 	}
 
-	pool, err := pgxpool.NewWithConfig(context.TODO(), pgxConfig)
+	pool, err := pgxpool.NewWithConfig(context.Background(), pgxConfig)
 	if err != nil {
 		panic(err)
 	}
 
-	return pool, cleanupFunc
+	return pool
 }

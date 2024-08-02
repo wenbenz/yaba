@@ -1,8 +1,12 @@
 CREATE TABLE IF NOT EXISTS budget (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner UUID NOT NULL,
     name VARCHAR(50),
     strategy SMALLINT
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_owner_id ON budget USING BTREE(owner, id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_owner_name ON budget USING BTREE(owner, name);
 
 CREATE TABLE IF NOT EXISTS income (
     owner UUID,

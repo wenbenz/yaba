@@ -6,6 +6,7 @@ import (
 
 	"yaba/internal/budget"
 	"yaba/internal/database"
+	"yaba/test/helper"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -16,11 +17,13 @@ func TestBasicBudgetOperations(t *testing.T) {
 
 	ctx := context.Background()
 
-	pool, cleanupFunc := SetupTestContainerAndInitPool()
-	defer cleanupFunc()
+	pool := helper.GetTestPool()
+
+	owner, err := uuid.NewRandom()
+	require.NoError(t, err)
 
 	// Create and save a budget
-	b := budget.NewZeroBasedBudget("name")
+	b := budget.NewZeroBasedBudget(owner, "name")
 	b.SetBudgetIncome("work", 5000)
 	b.SetBudgetIncome("gig", 1000)
 	b.SetFixedExpense("housing", 1500)
@@ -30,7 +33,7 @@ func TestBasicBudgetOperations(t *testing.T) {
 	require.NoError(t, database.PersistBudget(ctx, pool, b))
 
 	// List budgets should show the created budget
-	budgets, err := database.GetBudgets(ctx, pool, []uuid.UUID{b.ID})
+	budgets, err := database.GetBudgets(ctx, pool, owner)
 	require.NoError(t, err)
 	require.Len(t, budgets, 1)
 	require.EqualValues(t, b, budgets[0])
@@ -45,7 +48,7 @@ func TestBasicBudgetOperations(t *testing.T) {
 	require.NoError(t, database.PersistBudget(ctx, pool, b))
 
 	// Get the updated budget
-	budgets, err = database.GetBudgets(ctx, pool, []uuid.UUID{b.ID})
+	budgets, err = database.GetBudgets(ctx, pool, owner)
 	require.NoError(t, err)
 	require.Len(t, budgets, 1)
 	require.EqualValues(t, b, budgets[0])
@@ -54,7 +57,7 @@ func TestBasicBudgetOperations(t *testing.T) {
 
 	// Delete the budget
 	require.NoError(t, database.DeleteBudget(ctx, pool, b))
-	budgets, err = database.GetBudgets(ctx, pool, []uuid.UUID{b.ID})
+	budgets, err = database.GetBudgets(ctx, pool, owner)
 	require.NoError(t, err)
 	require.Empty(t, budgets)
 }

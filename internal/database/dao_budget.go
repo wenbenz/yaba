@@ -12,17 +12,17 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-const getBudgetsByID = `
+const getBudgetsByOwner = `
 SELECT * FROM budget
-WHERE id IN ($1)
+WHERE owner = $1;
 `
 
 const upsertBudget = `
-INSERT INTO budget (id, name, strategy)
-VALUES ($1, $2, $3)
+INSERT INTO budget (id, owner, name, strategy)
+VALUES ($1, $2, $3, $4)
 ON CONFLICT (id) DO UPDATE
-SET name = $2,
-    strategy = $3;
+SET name = $3,
+    strategy = $4;
 `
 
 const deleteBudget = `
@@ -66,15 +66,10 @@ DELETE FROM expense
 WHERE budget_id = $1
 `
 
-func GetBudgets(ctx context.Context, pool *pgxpool.Pool, ids []uuid.UUID) ([]*budget.Budget, error) {
-	args := make([]any, len(ids))
-	for i, id := range ids {
-		args[i] = id
-	}
-
+func GetBudgets(ctx context.Context, pool *pgxpool.Pool, owner uuid.UUID) ([]*budget.Budget, error) {
 	// First, see which budgets actually exist
 	var budgets []*budget.Budget
-	if err := pgxscan.Select(ctx, pool, &budgets, getBudgetsByID, args...); err != nil {
+	if err := pgxscan.Select(ctx, pool, &budgets, getBudgetsByOwner, owner); err != nil {
 		return nil, fmt.Errorf("failed to get budgets: %w", err)
 	}
 
@@ -121,7 +116,7 @@ func GetBudgets(ctx context.Context, pool *pgxpool.Pool, ids []uuid.UUID) ([]*bu
 
 func PersistBudget(ctx context.Context, pool *pgxpool.Pool, budget *budget.Budget) error {
 	batch := &pgx.Batch{}
-	batch.Queue(upsertBudget, budget.ID, budget.Name, budget.Strategy)
+	batch.Queue(upsertBudget, budget.ID, budget.Owner, budget.Name, budget.Strategy)
 	batch.Queue(deleteIncomeByOwner, budget.ID)
 	batch.Queue(deleteExpenseByBudget, budget.ID)
 
