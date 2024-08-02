@@ -17,8 +17,7 @@ import (
 func TestExpenditures(t *testing.T) {
 	t.Parallel()
 
-	pool, cleanupFunc := helper.SetupTestContainerAndInitPool()
-	defer cleanupFunc()
+	pool := helper.GetTestPool()
 
 	ctx := context.Background()
 

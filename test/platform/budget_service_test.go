@@ -18,8 +18,7 @@ import (
 func TestBasicBudgetOperations(t *testing.T) {
 	t.Parallel()
 
-	pool, closeContainer := helper.SetupTestContainerAndInitPool()
-	defer closeContainer()
+	pool := helper.GetTestPool()
 
 	path := "testdata/budget.json"
 	f, err := os.Open(path)

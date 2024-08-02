@@ -14,8 +14,20 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
+//nolint:gochecknoglobals
+var pool *pgxpool.Pool
+
+func GetTestPool() *pgxpool.Pool {
+	if pool == nil {
+		container := setupTestContainer()
+		pool = initPool(container)
+	}
+
+	return pool
+}
+
 // https://golang.testcontainers.org/modules/postgres/#initial-database
-func SetupTestContainer() (*postgres.PostgresContainer, func()) {
+func setupTestContainer() *postgres.PostgresContainer {
 	ctx := context.Background()
 
 	dbName := "users"
@@ -54,27 +66,19 @@ func SetupTestContainer() (*postgres.PostgresContainer, func()) {
 	}
 
 	// cleanup method
-	return postgresContainer, func() {
-		log.Println("terminating test container")
-
-		if err := postgresContainer.Terminate(ctx); err != nil {
-			log.Fatalf("failed to terminate container: %s", err)
-		}
-	}
+	return postgresContainer
 }
 
-func SetupTestContainerAndInitPool() (*pgxpool.Pool, func()) {
-	container, cleanupFunc := SetupTestContainer()
-
+func initPool(container *postgres.PostgresContainer) *pgxpool.Pool {
 	pgxConfig, err := pgxpool.ParseConfig(container.MustConnectionString(context.Background()))
 	if err != nil {
 		panic(err)
 	}
 
-	pool, err := pgxpool.NewWithConfig(context.TODO(), pgxConfig)
+	pool, err := pgxpool.NewWithConfig(context.Background(), pgxConfig)
 	if err != nil {
 		panic(err)
 	}
 
-	return pool, cleanupFunc
+	return pool
 }

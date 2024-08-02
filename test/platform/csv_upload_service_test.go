@@ -16,8 +16,7 @@ import (
 func TestCSVUploadSuccess(t *testing.T) {
 	t.Parallel()
 
-	pool, closeContainer := helper.SetupTestContainerAndInitPool()
-	defer closeContainer()
+	pool := helper.GetTestPool()
 
 	path := "testdata/spend.csv"
 	f, err := os.Open(path)
@@ -65,8 +64,7 @@ func TestCSVUploadSuccess(t *testing.T) {
 func TestCSVUploadBadCSV(t *testing.T) {
 	t.Parallel()
 
-	pool, closeContainer := helper.SetupTestContainerAndInitPool()
-	defer closeContainer()
+	pool := helper.GetTestPool()
 
 	path := "testdata/invalid.csv"
 	f, err := os.Open(path)

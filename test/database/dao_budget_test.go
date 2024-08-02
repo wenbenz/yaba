@@ -17,8 +17,7 @@ func TestBasicBudgetOperations(t *testing.T) {
 
 	ctx := context.Background()
 
-	pool, cleanupFunc := helper.SetupTestContainerAndInitPool()
-	defer cleanupFunc()
+	pool := helper.GetTestPool()
 
 	owner, err := uuid.NewRandom()
 	require.NoError(t, err)
