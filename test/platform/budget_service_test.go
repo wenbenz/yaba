@@ -85,7 +85,7 @@ func TestUpdateBudgetErrors(t *testing.T) {
 			expectedError: "user is not budget owner",
 		},
 		{
-			path:          "testdata/not_json.json",
+			path:          "testdata/not_json.txt",
 			expectedError: "failed to decode budget",
 		},
 		{

@@ -3,6 +3,7 @@ package helper
 import (
 	"context"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -14,17 +15,14 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-//nolint:gochecknoglobals
-var pool *pgxpool.Pool
-
 func GetTestPool() *pgxpool.Pool {
-	if pool == nil {
-		container := setupTestContainer()
-		pool = initPool(container)
-	}
-
-	return pool
+	return getSingletonPool()
 }
+
+//nolint:gochecknoglobals
+var getSingletonPool = sync.OnceValue(func() *pgxpool.Pool {
+	return initPool(setupTestContainer())
+})
 
 // https://golang.testcontainers.org/modules/postgres/#initial-database
 func setupTestContainer() *postgres.PostgresContainer {
