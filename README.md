@@ -34,7 +34,7 @@ Set up containers. This will bind to ports 8080 (web service) and 5432 (postgres
 docker compose up
 ```
 
-Run migrations
+Run migrations. This project uses [go-migrate](https://github.com/golang-migrate/migrate) to manage migrations.
 ```sh
 export POSTGRES_URL='postgres://admin:password@localhost:5432/yaba?sslmode=disable'
 migrate -database ${POSTGRES_URL} -path migrations up
