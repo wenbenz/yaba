@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"time"
@@ -31,9 +32,9 @@ func main() {
 		port = "8080"
 	}
 
-
-	connectionString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
-		pgUser, pgPassword, pgHost, pgPort, pgDatabase, sslEnabled)
+	pgURL := net.JoinHostPort(pgHost, pgPort)
+	connectionString := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
+		pgUser, pgPassword, pgURL, pgDatabase, sslEnabled)
 
 	// Initialize connection pool
 	_, err := pgxpool.New(context.Background(), connectionString)
@@ -58,7 +59,7 @@ func main() {
 
 	server := http.Server{
 		Handler:      mux,
-		Addr:         fmt.Sprintf(":%s", port),
+		Addr:         ":" + port,
 		ReadTimeout:  1 * time.Second,
 		WriteTimeout: 1 * time.Second,
 	}
@@ -72,7 +73,7 @@ func createGraphqlSchema() (graphql.Schema, error) {
 		"ping": &graphql.Field{
 			Type: graphql.String,
 			Name: "Ping",
-			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			Resolve: func(_ graphql.ResolveParams) (interface{}, error) {
 				return "pong", nil
 			},
 		},
@@ -87,5 +88,10 @@ func createGraphqlSchema() (graphql.Schema, error) {
 		Query: graphql.NewObject(rootQuery),
 	}
 
-	return graphql.NewSchema(schemaConfig)
+	schema, err := graphql.NewSchema(schemaConfig)
+	if err != nil {
+		return graphql.Schema{}, fmt.Errorf("failed to create graphql schema: %w", err)
+	}
+
+	return schema, nil
 }
