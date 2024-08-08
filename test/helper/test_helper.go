@@ -33,7 +33,7 @@ func setupTestContainer() *postgres.PostgresContainer {
 	dbPassword := "password"
 
 	//nolint:mnd
-	postgresContainer, err := postgres.Run(ctx,
+	postgresContainer := must(postgres.Run(ctx,
 		"docker.io/postgres:16-alpine",
 		postgres.WithDatabase(dbName),
 		postgres.WithUsername(dbUser),
@@ -42,24 +42,14 @@ func setupTestContainer() *postgres.PostgresContainer {
 			wait.ForLog("database system is ready to accept connections").
 				WithOccurrence(2).
 				WithStartupTimeout(5*time.Second)),
-	)
-	if err != nil {
-		log.Fatalf("failed to start container: %s", err)
-	}
+	))
 
 	log.Println("started test container")
 
-	connectionString, err := postgresContainer.ConnectionString(ctx, "sslmode=disable", "application_name=test")
-	if err != nil {
-		log.Fatalf("failed to retrieve connection string: %s", err)
-	}
+	connectionString := postgresContainer.MustConnectionString(ctx, "sslmode=disable", "application_name=test")
 
-	migrator, err := migrate.New("file://../../migrations", connectionString)
-	if err != nil {
-		log.Fatalf("failed to initialize migrator: %s", err)
-	}
-
-	if err = migrator.Up(); err != nil {
+	migrator := must(migrate.New("file://../../migrations", connectionString))
+	if err := migrator.Up(); err != nil {
 		log.Fatalf("failed to run migrations migrator: %s", err)
 	}
 
@@ -68,15 +58,18 @@ func setupTestContainer() *postgres.PostgresContainer {
 }
 
 func initPool(container *postgres.PostgresContainer) *pgxpool.Pool {
-	pgxConfig, err := pgxpool.ParseConfig(container.MustConnectionString(context.Background()))
+	pgxConfig := must(pgxpool.ParseConfig(container.MustConnectionString(context.Background())))
+
+	return must(pgxpool.NewWithConfig(context.Background(), pgxConfig))
+}
+
+// This is a convenience func and the generic is to avoid val.(type).
+//
+//nolint:ireturn
+func must[T any](v T, err error) T {
 	if err != nil {
 		panic(err)
 	}
 
-	pool, err := pgxpool.NewWithConfig(context.Background(), pgxConfig)
-	if err != nil {
-		panic(err)
-	}
-
-	return pool
+	return v
 }
