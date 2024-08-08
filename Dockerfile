@@ -8,12 +8,11 @@ RUN go mod download
 
 # Build the app binary
 COPY internal ./internal
-COPY handlers ./handlers
 COPY main.go ./
 RUN CGO_ENABLED=0 GOOS=linux go build -o ./yaba
 
 # Open port
-EXPOSE 8080
+EXPOSE 9222
 
 # Start server
 CMD ["./yaba"]

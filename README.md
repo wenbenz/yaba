@@ -27,9 +27,14 @@ You may consider the following flags for debugging
 docker build --tag yaba --progress plain --no-cache .
 ```
 
-**Change the password in `docker.env`**
+Create a password file.
+```sh
+echo "POSTGRES PASSWORD HERE" > db_password.txt
+```
 
-Set up containers. This will bind to ports 8080 (web service) and 5432 (postgres)
+Set up containers. This will bind to ports 9222 (web service) and 5432 (postgres).
+Note that the first try may fail due to the web service trying to connect to the db before it's ready.
+If this happens, just try again.
 ```sh
 docker compose up
 ```

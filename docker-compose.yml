@@ -2,9 +2,17 @@ services:
   web:
     image: yaba
     ports:
-      - "8080:8080"
+      - "9222:9222"
     env_file:
-      - docker.env
+      - config/postgres.env
+    environment:
+      # All operations will be from a single unauthenticated user.
+      # This configuration is for self-hosted use cases.
+      - SINGLE_USER_MODE=true
+      - SINGLE_USER_UUID=b49585ce-1ba0-4875-a99a-431b4c44c4d0
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
+    secrets:
+      - db_password
     links:
       - db
     depends_on:
@@ -15,4 +23,12 @@ services:
     ports:
       - "5432:5432"
     env_file:
-      - docker.env
+      - config/postgres.env
+    environment:
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
+    secrets:
+      - db_password
+
+secrets:
+   db_password:
+     file: db_password.txt

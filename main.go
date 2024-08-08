@@ -68,14 +68,9 @@ func buildServer(pool *pgxpool.Pool) http.Server {
 		}
 	}
 
-	port, ok := os.LookupEnv("YABA_PORT")
-	if !ok {
-		port = "8080"
-	}
-
 	return http.Server{
 		Handler:      handler,
-		Addr:         ":" + port,
+		Addr:         ":9222",
 		ReadTimeout:  1 * time.Second,
 		WriteTimeout: 1 * time.Second,
 	}
