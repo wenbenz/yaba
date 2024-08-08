@@ -2,7 +2,6 @@ package database
 
 import (
 	"fmt"
-	"net"
 	"os"
 	"yaba/internal/errors"
 )
@@ -21,10 +20,9 @@ func GetPGConnectionString() (string, error) {
 
 	pgDatabase := getEnvTrackMissing("POSTGRES_DB", &missing)
 	pgUser := getEnvTrackMissing("POSTGRES_USER", &missing)
-	pgPassword := getEnvTrackMissing("POSTGRES_PASSWORD", &missing)
-	pgHost := getEnvTrackMissing("POSTGRES_HOST", &missing)
-	pgPort := getEnvTrackMissing("POSTGRES_PORT", &missing)
+	pgPasswordFile := getEnvTrackMissing("POSTGRES_PASSWORD_FILE", &missing)
 	sslEnabled := getEnvTrackMissing("POSTGRES_SSL_MODE", &missing)
+	pgURL := getEnvTrackMissing("POSTGRES_URL", &missing)
 
 	if len(missing) > 0 {
 		return "", errors.InvalidStateError{
@@ -32,7 +30,10 @@ func GetPGConnectionString() (string, error) {
 		}
 	}
 
-	pgURL := net.JoinHostPort(pgHost, pgPort)
+	pgPassword, err := os.ReadFile(pgPasswordFile)
+	if err != nil {
+		return "", fmt.Errorf("failed to read postgres password: %w", err)
+	}
 
 	return fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
 		pgUser, pgPassword, pgURL, pgDatabase, sslEnabled), nil
