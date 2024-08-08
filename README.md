@@ -36,7 +36,7 @@ docker compose up
 
 Run migrations. This project uses [go-migrate](https://github.com/golang-migrate/migrate) to manage migrations.
 ```sh
-export POSTGRES_URL='postgres://admin:password@localhost:5432/yaba?sslmode=disable'
+export POSTGRES_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/yaba?sslmode=disable"
 migrate -database ${POSTGRES_URL} -path migrations up
 ```
 
