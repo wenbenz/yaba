@@ -10,7 +10,6 @@ import (
 	"yaba/internal/database"
 	"yaba/internal/handlers"
 
-	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/handler"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -44,14 +43,20 @@ func main() {
 func buildServer(pool *pgxpool.Pool) http.Server {
 	mux := http.NewServeMux()
 
+	graphqlSchema, err := handlers.CreateGraphqlSchema()
+	if err != nil {
+		log.Fatalln("failed to create graphql schema: ", err)
+	}
+
+	gqlHandler := handler.New(&handler.Config{
+		Schema: graphqlSchema,
+		Pretty: true,
+	})
+
+	mux.Handle("/graphql", gqlHandler)
 	mux.Handle("/upload", handlers.UploadHandler{
 		Pool: pool,
 	})
-
-	mux.Handle("/graphql", handler.New(&handler.Config{
-		Schema: createGraphqlSchema(),
-		Pretty: true,
-	}))
 
 	var handler http.Handler = mux
 
@@ -74,32 +79,4 @@ func buildServer(pool *pgxpool.Pool) http.Server {
 		ReadTimeout:  1 * time.Second,
 		WriteTimeout: 1 * time.Second,
 	}
-}
-
-func createGraphqlSchema() *graphql.Schema {
-	fields := graphql.Fields{
-		"ping": &graphql.Field{
-			Type: graphql.String,
-			Name: "Ping",
-			Resolve: func(_ graphql.ResolveParams) (interface{}, error) {
-				return "pong", nil
-			},
-		},
-	}
-
-	rootQuery := graphql.ObjectConfig{
-		Name:   "RootQuery",
-		Fields: fields,
-	}
-
-	schemaConfig := graphql.SchemaConfig{
-		Query: graphql.NewObject(rootQuery),
-	}
-
-	schema, err := graphql.NewSchema(schemaConfig)
-	if err != nil {
-		log.Fatalln("failed to create graphql schema: ", err)
-	}
-
-	return &schema
 }

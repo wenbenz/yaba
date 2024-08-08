@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"yaba/internal/handlers"
 	"yaba/internal/constants"
+	"yaba/internal/handlers"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
