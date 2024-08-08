@@ -2,14 +2,13 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 	"yaba/handlers"
+	"yaba/internal/database"
 
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/handler"
@@ -18,7 +17,12 @@ import (
 
 func main() {
 	// Initialize connection pool
-	pool, err := pgxpool.New(context.Background(), getPGConnectionString())
+	connectionString, err := database.GetPGConnectionString()
+	if err != nil {
+		log.Fatalln("could not build connection string:", err)
+	}
+
+	pool, err := pgxpool.New(context.Background(), connectionString)
 	if err != nil {
 		log.Fatalln("failed to connect to database:", err)
 	}
@@ -35,25 +39,6 @@ func main() {
 
 	err = server.ListenAndServe()
 	log.Fatalln("Failed to start server", err)
-}
-
-func getPGConnectionString() string {
-	// Read config
-	pgDatabase, ok1 := os.LookupEnv("POSTGRES_DB")
-	pgUser, ok2 := os.LookupEnv("POSTGRES_USER")
-	pgPassword, ok3 := os.LookupEnv("POSTGRES_PASSWORD")
-	pgHost, ok4 := os.LookupEnv("POSTGRES_HOST")
-	pgPort, ok5 := os.LookupEnv("POSTGRES_PORT")
-	sslEnabled, ok6 := os.LookupEnv("POSTGRES_SSL_MODE")
-
-	if !(ok1 && ok2 && ok3 && ok4 && ok5 && ok6) {
-		log.Fatalln("env missing postgres variables")
-	}
-
-	pgURL := net.JoinHostPort(pgHost, pgPort)
-
-	return fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
-		pgUser, pgPassword, pgURL, pgDatabase, sslEnabled)
 }
 
 func buildServer(pool *pgxpool.Pool) http.Server {
