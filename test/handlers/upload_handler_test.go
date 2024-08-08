@@ -14,8 +14,8 @@ import (
 	"os"
 	"strconv"
 	"testing"
-	"yaba/handlers"
 	"yaba/internal/constants"
+	"yaba/internal/handlers"
 	"yaba/test/helper"
 
 	"github.com/google/uuid"

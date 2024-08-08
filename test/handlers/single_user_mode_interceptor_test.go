@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"yaba/handlers"
+	"yaba/internal/handlers"
 	"yaba/internal/constants"
 
 	"github.com/google/uuid"

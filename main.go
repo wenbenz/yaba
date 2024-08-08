@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 	"time"
-	"yaba/handlers"
 	"yaba/internal/database"
+	"yaba/internal/handlers"
 
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/handler"
