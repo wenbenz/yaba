@@ -75,7 +75,30 @@ func TestUploadNotCSV(t *testing.T) {
 	require.Equal(t, http.StatusUnprocessableEntity, w.Code)
 }
 
+func TestUploadWrongKey(t *testing.T) {
+	t.Parallel()
+
+	user := uuid.New()
+
+	w := httptest.NewRecorder()
+
+	pool := helper.GetTestPool()
+	handler := handlers.UploadHandler{Pool: pool}
+
+	request, err := UploadFileRequest("testdata/file.txt", "text/csv", "foobar")
+	require.NoError(t, err)
+
+	request = request.WithContext(context.WithValue(context.Background(), constants.CTXUser, user))
+
+	handler.ServeHTTP(w, request)
+	require.Equal(t, http.StatusUnprocessableEntity, w.Code)
+}
+
 func UploadCSVRequest(filepath string) (*http.Request, error) {
+	return UploadFileRequest(filepath, "text/csv", "myFile")
+}
+
+func UploadFileRequest(filepath, contentType, formKey string) (*http.Request, error) {
 	csvFile, err := os.Open(filepath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %w", filepath, err)
@@ -88,12 +111,12 @@ func UploadCSVRequest(filepath string) (*http.Request, error) {
 
 	hdr := make(textproto.MIMEHeader)
 	cd := mime.FormatMediaType("form-data", map[string]string{
-		"id":       "myFile",
-		"name":     "myFile",
-		"filename": "spend.csv",
+		"id":       formKey,
+		"name":     formKey,
+		"filename": filepath,
 	})
 	hdr.Set("Content-Disposition", cd)
-	hdr.Set("Contnt-Type", "text/csv")
+	hdr.Set("Contnt-Type", contentType)
 	hdr.Set("Content-Length", strconv.FormatInt(stat.Size(), 10))
 
 	var buf bytes.Buffer
