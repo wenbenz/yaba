@@ -1,6 +1,7 @@
 package importer
 
 import (
+	"database/sql"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -61,6 +62,8 @@ func (reader *CsvExpenditureReader) ReadRow(row []string) (*budget.Expenditure, 
 		return nil, err
 	}
 
+	rewardCategory := reader.getString(row, "reward_category")
+
 	return &budget.Expenditure{
 		Owner:          reader.owner,
 		Name:           reader.getString(row, "name"),
@@ -68,7 +71,10 @@ func (reader *CsvExpenditureReader) ReadRow(row []string) (*budget.Expenditure, 
 		Amount:         amount,
 		Method:         reader.getString(row, "method"),
 		BudgetCategory: reader.getString(row, "budget_category"),
-		RewardCategory: reader.getString(row, "reward_category"),
+		RewardCategory: sql.NullString{
+			Valid: rewardCategory != "",
+			String: strings.ToUpper(rewardCategory),
+		},
 		Comment:        reader.getString(row, "comment"),
 	}, nil
 }

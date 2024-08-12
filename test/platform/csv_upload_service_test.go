@@ -41,7 +41,7 @@ func TestCSVUploadSuccess(t *testing.T) {
 	require.Equal(t, "walmart", expenditures[0].Name)
 	require.Equal(t, "debit", expenditures[0].Method)
 	require.Equal(t, "groceries", expenditures[0].BudgetCategory)
-	require.Equal(t, "", expenditures[0].RewardCategory)
+	require.Equal(t, "", expenditures[0].RewardCategory.String)
 	require.Equal(t, "", expenditures[0].Comment)
 
 	require.Equal(t, "2006-07-08", expenditures[1].Date.UTC().Format(time.DateOnly))
@@ -49,7 +49,7 @@ func TestCSVUploadSuccess(t *testing.T) {
 	require.Equal(t, "target", expenditures[1].Name)
 	require.Equal(t, "credit", expenditures[1].Method)
 	require.Equal(t, "groceries", expenditures[1].BudgetCategory)
-	require.Equal(t, "retail", expenditures[1].RewardCategory)
+	require.Equal(t, "GROCERY", expenditures[1].RewardCategory.String)
 	require.Equal(t, "", expenditures[1].Comment)
 
 	require.Equal(t, "2006-07-08", expenditures[2].Date.UTC().Format(time.DateOnly))
@@ -57,7 +57,7 @@ func TestCSVUploadSuccess(t *testing.T) {
 	require.Equal(t, "lawn mowing", expenditures[2].Name)
 	require.Equal(t, "cash", expenditures[2].Method)
 	require.Equal(t, "maintenance", expenditures[2].BudgetCategory)
-	require.Equal(t, "", expenditures[2].RewardCategory)
+	require.Equal(t, "", expenditures[2].RewardCategory.String)
 	require.Equal(t, "lawn mowing kid", expenditures[2].Comment)
 }
 

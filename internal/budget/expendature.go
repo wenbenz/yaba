@@ -1,6 +1,7 @@
 package budget
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,7 +14,7 @@ type Expenditure struct {
 	Date           time.Time `db:"date"`
 	Method         string    `db:"method"`
 	BudgetCategory string    `db:"budget_category"`
-	RewardCategory string    `db:"reward_category"`
+	RewardCategory sql.NullString    `db:"reward_category"`
 	Comment        string    `db:"comment"`
 	ID             int       `db:"id"`
 }

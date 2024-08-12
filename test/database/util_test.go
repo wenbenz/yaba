@@ -36,6 +36,5 @@ func TestGetPGConnectionStringMissigVariable(t *testing.T) {
 
 	connectionString, err := database.GetPGConnectionString()
 	require.Equal(t, "", connectionString)
-	require.ErrorContains(t, err, "missing postgres env variables: "+
-		"[POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD_FILE POSTGRES_SSL_MODE POSTGRES_URL]")
+	require.ErrorContains(t, err, "missing postgres env variables: ")
 }

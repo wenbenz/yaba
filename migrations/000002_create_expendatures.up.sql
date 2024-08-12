@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS expenditure (
     name VARCHAR(50),
     method VARCHAR(50),
     budget_category VARCHAR(20),
-    reward_category reward_category,
+    reward_category reward_category NULL,
     comment TEXT
 );
 
