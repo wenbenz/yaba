@@ -65,7 +65,7 @@ func initPool(container *postgres.PostgresContainer) *pgxpool.Pool {
 
 // This is a convenience func and the generic is to avoid val.(type).
 //
-
+//nolint:ireturn
 func must[T any](v T, err error) T {
 	if err != nil {
 		panic(err)
