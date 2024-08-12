@@ -87,7 +87,7 @@ func TestInvalidCSVs(t *testing.T) {
 
 		csvReader := csv.NewReader(f)
 		_, err = importer.ImportExpendituresFromCSVReader(owner, csvReader)
-		require.ErrorContains(t, err, test.errorMsg)
+		require.ErrorContains(t, err, test.errorMsg, "failing test: "+test.filename)
 	}
 }
 
@@ -106,11 +106,11 @@ func TestCsvExpenditureReader(t *testing.T) {
 	expenditure, err := reader.ReadRow(row)
 	require.NoError(t, err)
 
-	require.Equal(t, expenditure.Date.Format(time.DateOnly), date)
+	require.Equal(t, date, expenditure.Date.Format(time.DateOnly))
 	require.InDelta(t, 12345.67, expenditure.Amount, .001)
-	require.Equal(t, expenditure.Name, name)
-	require.Equal(t, expenditure.Method, method)
-	require.Equal(t, expenditure.BudgetCategory, budgetCategory)
-	require.Equal(t, expenditure.RewardCategory, rewardCategory)
-	require.Equal(t, expenditure.Comment, comment)
+	require.Equal(t, name, expenditure.Name)
+	require.Equal(t, method, expenditure.Method)
+	require.Equal(t, budgetCategory, expenditure.BudgetCategory)
+	require.Equal(t, rewardCategory, expenditure.RewardCategory.String)
+	require.Equal(t, comment, expenditure.Comment)
 }

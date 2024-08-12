@@ -24,7 +24,7 @@ LIMIT $4;
 
 const insertExpenditure = `
 INSERT INTO expenditure (owner, name, amount, date, method, budget_category, reward_category, comment)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, '')::reward_category, $8)
 `
 
 func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, owner uuid.UUID, since, until time.Time, limit int,
