@@ -72,10 +72,10 @@ func (reader *CsvExpenditureReader) ReadRow(row []string) (*budget.Expenditure, 
 		Method:         reader.getString(row, "method"),
 		BudgetCategory: reader.getString(row, "budget_category"),
 		RewardCategory: sql.NullString{
-			Valid: rewardCategory != "",
+			Valid:  rewardCategory != "",
 			String: strings.ToUpper(rewardCategory),
 		},
-		Comment:        reader.getString(row, "comment"),
+		Comment: reader.getString(row, "comment"),
 	}, nil
 }
 

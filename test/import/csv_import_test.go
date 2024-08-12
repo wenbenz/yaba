@@ -87,7 +87,7 @@ func TestInvalidCSVs(t *testing.T) {
 
 		csvReader := csv.NewReader(f)
 		_, err = importer.ImportExpendituresFromCSVReader(owner, csvReader)
-		require.ErrorContains(t, err, test.errorMsg)
+		require.ErrorContains(t, err, test.errorMsg, "failing test: "+test.filename)
 	}
 }
 

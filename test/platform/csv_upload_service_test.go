@@ -65,23 +65,36 @@ func TestCSVUploadBadCSV(t *testing.T) {
 	t.Parallel()
 
 	pool := helper.GetTestPool()
-
-	path := "testdata/invalid.csv"
-	f, err := os.Open(path)
-	require.NoError(t, err)
-
-	user, err := uuid.NewRandom()
-	require.NoError(t, err)
-
 	ctx := context.Background()
 
-	require.ErrorContains(t, platform.UploadSpendingsCSV(ctx, pool, user, f),
-		"failed to import: failed to parse dollars from '12.b'")
+	testCases := []struct {
+		filename string
+		errorMsg string
+	}{
+		{
+			filename: "invalid.csv",
+			errorMsg: "failed to import: failed to parse dollars from '12.b'",
+		},
+		{
+			filename: "invalid_category.csv",
+			errorMsg: "invalid input value for enum reward_category",
+		},
+	}
+	for _, test := range testCases {
+		path := "testdata/" + test.filename
+		f, err := os.Open(path)
+		require.NoError(t, err)
 
-	date, err := time.Parse(time.DateOnly, "2006-07-08")
-	require.NoError(t, err)
+		user, err := uuid.NewRandom()
+		require.NoError(t, err)
 
-	expenditures, err := database.ListExpenditures(ctx, pool, user, date, date, 10)
-	require.Empty(t, expenditures)
-	require.NoError(t, err)
+		require.ErrorContains(t, platform.UploadSpendingsCSV(ctx, pool, user, f), test.errorMsg)
+
+		date, err := time.Parse(time.DateOnly, "2006-07-08")
+		require.NoError(t, err)
+
+		expenditures, err := database.ListExpenditures(ctx, pool, user, date, date, 10)
+		require.Empty(t, expenditures)
+		require.NoError(t, err)
+	}
 }
