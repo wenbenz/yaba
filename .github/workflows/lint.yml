@@ -8,14 +8,6 @@ on:
 
 jobs:
   lint:
-    name: lint
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: stable
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: v1.59
+    - name: Golangci-lint
+      uses: golangci/golangci-lint-action@v6.1.0
+
