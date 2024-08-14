@@ -29,6 +29,13 @@ services:
     secrets:
       - db_password
 
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    links:
+      - db
+
 secrets:
    db_password:
      file: db_password.txt
