@@ -1,0 +1,3 @@
+ALTER TABLE IF EXISTS expenditure
+    DROP COLUMN IF EXISTS created,
+    DROP COLUMN IF EXISTS source;

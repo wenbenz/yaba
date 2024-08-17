@@ -23,8 +23,8 @@ LIMIT $4;
 `
 
 const insertExpenditure = `
-INSERT INTO expenditure (owner, name, amount, date, method, budget_category, reward_category, comment)
-VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, '')::reward_category, $8)
+INSERT INTO expenditure (owner, name, amount, date, method, budget_category, reward_category, comment, created, source)
+VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, '')::reward_category, $8, NOW(), $9)
 `
 
 func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, owner uuid.UUID, since, until time.Time, limit int,
@@ -42,7 +42,7 @@ func PersistExpenditures(ctx context.Context, pool *pgxpool.Pool, expenditures [
 	batch := &pgx.Batch{}
 	for _, e := range expenditures {
 		batch.Queue(insertExpenditure, e.Owner, e.Name, e.Amount, e.Date,
-			e.Method, e.BudgetCategory, e.RewardCategory, e.Comment)
+			e.Method, e.BudgetCategory, e.RewardCategory, e.Comment, e.Source)
 	}
 
 	if err := pool.SendBatch(ctx, batch).Close(); err != nil {

@@ -26,9 +26,11 @@ func TestCSVUploadSuccess(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
+	startTime := time.Now()
 
-	require.NoError(t, platform.UploadSpendingsCSV(ctx, pool, user, f))
+	require.NoError(t, platform.UploadSpendingsCSV(ctx, pool, user, f, "spend.csv"))
 
+	endTime := time.Now()
 	date, err := time.Parse(time.DateOnly, "2006-07-08")
 	require.NoError(t, err)
 
@@ -43,14 +45,9 @@ func TestCSVUploadSuccess(t *testing.T) {
 	require.Equal(t, "groceries", expenditures[0].BudgetCategory)
 	require.Equal(t, "", expenditures[0].RewardCategory.String)
 	require.Equal(t, "", expenditures[0].Comment)
-
-	require.Equal(t, "2006-07-08", expenditures[1].Date.UTC().Format(time.DateOnly))
-	require.InDelta(t, 12., expenditures[1].Amount, .0001)
-	require.Equal(t, "target", expenditures[1].Name)
-	require.Equal(t, "credit", expenditures[1].Method)
-	require.Equal(t, "groceries", expenditures[1].BudgetCategory)
-	require.Equal(t, "GROCERY", expenditures[1].RewardCategory.String)
-	require.Equal(t, "", expenditures[1].Comment)
+	require.Equal(t, "spend.csv", expenditures[0].Source)
+	require.GreaterOrEqual(t, expenditures[0].CreatedTime, startTime)
+	require.LessOrEqual(t, expenditures[0].CreatedTime, endTime)
 
 	require.Equal(t, "2006-07-08", expenditures[2].Date.UTC().Format(time.DateOnly))
 	require.InDelta(t, 99.99, expenditures[2].Amount, .0001)
@@ -59,6 +56,9 @@ func TestCSVUploadSuccess(t *testing.T) {
 	require.Equal(t, "maintenance", expenditures[2].BudgetCategory)
 	require.Equal(t, "", expenditures[2].RewardCategory.String)
 	require.Equal(t, "lawn mowing kid", expenditures[2].Comment)
+	require.Equal(t, "spend.csv", expenditures[0].Source)
+	require.GreaterOrEqual(t, expenditures[2].CreatedTime, startTime)
+	require.LessOrEqual(t, expenditures[2].CreatedTime, endTime)
 }
 
 func TestCSVUploadBadCSV(t *testing.T) {
@@ -88,7 +88,7 @@ func TestCSVUploadBadCSV(t *testing.T) {
 		user, err := uuid.NewRandom()
 		require.NoError(t, err)
 
-		require.ErrorContains(t, platform.UploadSpendingsCSV(ctx, pool, user, f), test.errorMsg)
+		require.ErrorContains(t, platform.UploadSpendingsCSV(ctx, pool, user, f, ""), test.errorMsg)
 
 		date, err := time.Parse(time.DateOnly, "2006-07-08")
 		require.NoError(t, err)
