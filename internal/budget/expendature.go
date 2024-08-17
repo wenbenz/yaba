@@ -8,6 +8,7 @@ import (
 )
 
 type Expenditure struct {
+	ID             int            `db:"id"`
 	Owner          uuid.UUID      `db:"owner"`
 	Name           string         `db:"name"`
 	Amount         float64        `db:"amount"`
@@ -16,5 +17,6 @@ type Expenditure struct {
 	BudgetCategory string         `db:"budget_category"`
 	RewardCategory sql.NullString `db:"reward_category"`
 	Comment        string         `db:"comment"`
-	ID             int            `db:"id"`
+	CreatedTime    time.Time      `db:"created"`
+	Source         string         `db:"source"`
 }
