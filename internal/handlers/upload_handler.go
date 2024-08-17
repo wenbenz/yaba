@@ -24,7 +24,7 @@ func (h UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("handling upload for user " + user.String())
 
-	file, _, err := r.FormFile("myFile")
+	file, header, err := r.FormFile("myFile")
 	if err != nil {
 		log.Println("Error Retrieving the File")
 		log.Println(err)
@@ -35,7 +35,7 @@ func (h UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	defer file.Close()
 
-	err = platform.UploadSpendingsCSV(r.Context(), h.Pool, user, file)
+	err = platform.UploadSpendingsCSV(r.Context(), h.Pool, user, file, header.Filename)
 	if err != nil {
 		log.Println("Error reading CSV")
 		log.Println(err)
