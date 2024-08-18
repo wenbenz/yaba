@@ -1,23 +1,7 @@
-services:
-  web:
-    image: yaba
-    ports:
-      - "9222:9222"
-    env_file:
-      - config/postgres.env
-    environment:
-      # All operations will be from a single unauthenticated user.
-      # This configuration is for self-hosted use cases.
-      - SINGLE_USER_MODE=true
-      - SINGLE_USER_UUID=b49585ce-1ba0-4875-a99a-431b4c44c4d0
-      - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
-    secrets:
-      - db_password
-    links:
-      - db
-    depends_on:
-      - db
+# Docker infrastructure only config. This config only starts a postgres instance
+# that can be used for debugging. For other configurations, see config/examples/docker-compose
 
+services:
   db:
     image: postgres:16.3
     ports:
@@ -28,13 +12,6 @@ services:
       - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
     secrets:
       - db_password
-
-  grafana:
-    image: grafana/grafana
-    ports:
-      - "3000:3000"
-    links:
-      - db
 
 secrets:
    db_password:
