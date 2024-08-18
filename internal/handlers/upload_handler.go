@@ -77,6 +77,7 @@ func (h UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		allFailures := <-failures
 		if len(allFailures) != 0 {
 			w.WriteHeader(http.StatusBadRequest)
+			
 			if responseObject, err := json.Marshal(allFailures); err == nil {
 				_, _ = w.Write(responseObject)
 			}
