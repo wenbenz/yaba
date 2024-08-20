@@ -27,4 +27,4 @@ CREATE TABLE IF NOT EXISTS expenditure (
     comment TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_owner_date ON expenditure USING BTREE(owner, date);
+CREATE INDEX IF NOT EXISTS idx_owner_date_id ON expenditure USING BTREE(owner, date, id);

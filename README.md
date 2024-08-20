@@ -63,3 +63,7 @@ migrate -database ${POSTGRES_URL} -path server/migrations down 1
 ```
 
 Note that migrations in both directions can take a number to determine how many migrations to apply to the db (as shown in the `down` command), and all of the migrations are applied if no number is specified (as in the `up` command).
+
+## Adding GraphQL endpoints
+
+This repo uses `github.com/99designs/gqlgen` to generate graphql schemas.

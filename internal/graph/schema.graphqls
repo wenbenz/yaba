@@ -1,0 +1,52 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+# Maps to ExternalBudget
+# type Budget {
+# 	id: ID!
+#   owner: String!
+#   name: String!
+#   strategy: String!
+#   incomes: [Income]
+#   expenses: [Expense]
+# }
+
+# type Income {
+#   source: String!
+#   amount: Float!
+# }
+
+# type Expense {
+#   category: String!
+#   amount: Float!
+#   isFixed: Boolean
+#   isSlack: Boolean
+# }
+
+# input NewTodo {
+#   text: String!
+#   userId: String!
+# }
+
+type Expenditure {
+  id: String
+  owner: String
+  name: String
+  amount: String
+  date: String
+  method: String
+  budget_category: String
+  reward_category: String
+  comment: String
+  created: String
+  source: String
+}
+
+type Query {
+  expenditure(since: String, until: String, count: Int): [Expenditure]
+}
+
+# type Mutation {
+#   createTodo(input: NewTodo!): Todo!
+# }

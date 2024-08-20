@@ -8,9 +8,10 @@ import (
 	"strings"
 	"time"
 	"yaba/internal/database"
+	"yaba/internal/graph"
 	"yaba/internal/handlers"
 
-	"github.com/graphql-go/handler"
+	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -43,15 +44,9 @@ func main() {
 func buildServer(pool *pgxpool.Pool) http.Server {
 	mux := http.NewServeMux()
 
-	graphqlSchema, err := handlers.CreateGraphqlSchema()
-	if err != nil {
-		log.Fatalln("failed to create graphql schema: ", err)
-	}
-
-	gqlHandler := handler.New(&handler.Config{
-		Schema: graphqlSchema,
-		Pretty: true,
-	})
+	gqlHandler := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
+		Pool: pool,
+	}}))
 
 	mux.Handle("/graphql", gqlHandler)
 	mux.Handle("/upload", handlers.UploadHandler{

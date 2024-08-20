@@ -18,7 +18,7 @@ SELECT * FROM expenditure
 WHERE owner = $1
   AND date >= $2
   AND date <= $3
-ORDER BY date
+ORDER BY date, id
 LIMIT $4;
 `
 
