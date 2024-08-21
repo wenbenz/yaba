@@ -74,6 +74,7 @@ WHERE budget_id = $1
 
 func GetBudget(ctx context.Context, pool *pgxpool.Pool, budgetID uuid.UUID) (*budget.Budget, error) {
 	var budgets []*budget.Budget
+
 	var err error
 
 	if err = pgxscan.Select(ctx, pool, &budgets, getBudget, budgetID); err == nil {
@@ -92,8 +93,8 @@ func GetBudget(ctx context.Context, pool *pgxpool.Pool, budgetID uuid.UUID) (*bu
 }
 
 func GetBudgets(ctx context.Context, pool *pgxpool.Pool, owner uuid.UUID, limit int) ([]*budget.Budget, error) {
-	// First, see which budgets actually exist
 	var budgets []*budget.Budget
+
 	var err error
 
 	if err = pgxscan.Select(ctx, pool, &budgets, getBudgetsByOwner, owner, limit); err == nil {
