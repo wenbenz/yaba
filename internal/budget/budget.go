@@ -1,35 +1,17 @@
 package budget
 
 import (
-	"strings"
-
 	"github.com/google/uuid"
 )
 
 type Strategy int8
 
-const (
-	Unknown Strategy = iota - 1
-	ZeroBased
-)
-
-// External representation of Budget.
-type ExternalBudget struct {
-	ID       uuid.UUID  `json:"id,omitempty"`
-	Owner    uuid.UUID  `json:"owner"`
-	Name     string     `json:"name"`
-	Strategy string     `json:"strategy"`
-	Incomes  []*Income  `json:"incomes"`
-	Expenses []*Expense `json:"expenses"`
-}
-
 type Budget struct {
 	ID       uuid.UUID `db:"id"`
 	Owner    uuid.UUID `db:"owner"`
 	Name     string    `db:"name"`
-	Strategy Strategy  `db:"strategy"`
-	Incomes  map[string]*Income
-	Expenses map[string]*Expense
+	Incomes  []*Income
+	Expenses []*Expense
 }
 
 type Income struct {
@@ -46,29 +28,32 @@ type Expense struct {
 	Slack    bool      `db:"is_slack"  json:"isSlack"`
 }
 
-func NewZeroBasedBudget(owner uuid.UUID, name string) *Budget {
+func NewBudget(owner uuid.UUID, name string) *Budget {
 	return &Budget{
 		ID:       uuid.New(),
 		Owner:    owner,
 		Name:     name,
-		Strategy: ZeroBased,
-		Incomes:  make(map[string]*Income),
-		Expenses: make(map[string]*Expense),
+		Incomes:  []*Income{},
+		Expenses: []*Expense{},
 	}
 }
 
 func (b *Budget) SetBudgetIncome(source string, amount float64) {
-	s := strings.ToLower(source)
-	b.Incomes[s] = &Income{
+	b.Incomes = append(b.Incomes, &Income{
 		Owner:  b.ID,
 		Source: source,
 		Amount: amount,
-	}
+	})
 }
 
 func (b *Budget) RemoveBudgetIncome(source string) {
-	s := strings.ToLower(source)
-	delete(b.Incomes, s)
+	for i, income := range b.Incomes {
+		if income.Source == source {
+			b.Incomes = append(b.Incomes[:i], b.Incomes[i+1:]...)
+
+			return
+		}
+	}
 }
 
 func (b *Budget) SetFixedExpense(category string, amount float64) {
@@ -84,83 +69,21 @@ func (b *Budget) SetSlackExpense(category string) {
 }
 
 func (b *Budget) SetExpense(category string, amount float64, fixed, slack bool) {
-	c := strings.ToLower(category)
-	b.Expenses[c] = &Expense{
+	b.Expenses = append(b.Expenses, &Expense{
 		BudgetID: b.ID,
-		Category: c,
+		Category: category,
 		Amount:   amount,
 		Fixed:    fixed,
 		Slack:    slack,
-	}
+	})
 }
 
 func (b *Budget) RemoveExpense(category string) {
-	c := strings.ToLower(category)
-	delete(b.Expenses, c)
-}
+	for i, expense := range b.Expenses {
+		if expense.Category == category {
+			b.Expenses = append(b.Expenses[:i], b.Expenses[i+1:]...)
 
-func (b *Budget) ToExternal() *ExternalBudget {
-	var strategy string
-
-	switch b.Strategy {
-	case ZeroBased:
-		strategy = "ZERO_BASED"
-	case Unknown:
-		strategy = "UNKNOWN"
-	}
-
-	i := 0
-
-	incomes := make([]*Income, len(b.Incomes))
-	for _, in := range b.Incomes {
-		incomes[i] = in
-		i++
-	}
-
-	i = 0
-
-	expenses := make([]*Expense, len(b.Expenses))
-	for _, ex := range b.Expenses {
-		expenses[i] = ex
-		i++
-	}
-
-	return &ExternalBudget{
-		ID:       b.ID,
-		Owner:    b.Owner,
-		Name:     b.Name,
-		Strategy: strategy,
-		Incomes:  incomes,
-		Expenses: expenses,
-	}
-}
-
-func (b *ExternalBudget) ToInternal() *Budget {
-	var strategy Strategy
-
-	switch b.Strategy {
-	case "ZERO_BASED":
-		strategy = ZeroBased
-	default:
-		strategy = Unknown
-	}
-
-	incomes := make(map[string]*Income, len(b.Incomes))
-	for _, in := range b.Incomes {
-		incomes[in.Source] = in
-	}
-
-	expenses := make(map[string]*Expense, len(b.Expenses))
-	for _, ex := range b.Expenses {
-		expenses[ex.Category] = ex
-	}
-
-	return &Budget{
-		ID:       b.ID,
-		Owner:    b.Owner,
-		Name:     b.Name,
-		Strategy: strategy,
-		Incomes:  incomes,
-		Expenses: expenses,
+			return
+		}
 	}
 }

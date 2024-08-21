@@ -12,17 +12,22 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+const getBudget = `
+SELECT * FROM budget
+WHERE id = $1;
+`
+
 const getBudgetsByOwner = `
 SELECT * FROM budget
-WHERE owner = $1;
+WHERE owner = $1
+LIMIT $2;
 `
 
 const upsertBudget = `
-INSERT INTO budget (id, owner, name, strategy)
-VALUES ($1, $2, $3, $4)
+INSERT INTO budget (id, owner, name)
+VALUES ($1, $2, $3)
 ON CONFLICT (id) DO UPDATE
-SET name = $3,
-    strategy = $4;
+SET name = $3;
 `
 
 const deleteBudget = `
@@ -66,10 +71,19 @@ DELETE FROM expense
 WHERE budget_id = $1
 `
 
-func GetBudgets(ctx context.Context, pool *pgxpool.Pool, owner uuid.UUID) ([]*budget.Budget, error) {
+func GetBudget(ctx context.Context, pool *pgxpool.Pool, budgetID uuid.UUID) (*budget.Budget, error) {
+	var budget *budget.Budget
+	if err := pgxscan.Select(ctx, pool, &budget, getBudget, budgetID); err != nil {
+		return nil, fmt.Errorf("failed to fetch budget: %w", err)
+	}
+
+	return budget, nil
+}
+
+func GetBudgets(ctx context.Context, pool *pgxpool.Pool, owner uuid.UUID, limit int) ([]*budget.Budget, error) {
 	// First, see which budgets actually exist
 	var budgets []*budget.Budget
-	if err := pgxscan.Select(ctx, pool, &budgets, getBudgetsByOwner, owner); err != nil {
+	if err := pgxscan.Select(ctx, pool, &budgets, getBudgetsByOwner, owner, limit); err != nil {
 		return nil, fmt.Errorf("failed to get budgets: %w", err)
 	}
 
@@ -78,14 +92,8 @@ func GetBudgets(ctx context.Context, pool *pgxpool.Pool, owner uuid.UUID) ([]*bu
 	for _, b := range budgets {
 		// get expenses
 		batch.Queue(getExpensesForBudget, b.ID).Query(func(rows pgx.Rows) error {
-			var expenses []*budget.Expense
-			if err := pgxscan.ScanAll(&expenses, rows); err != nil {
+			if err := pgxscan.ScanAll(&b.Expenses, rows); err != nil {
 				return fmt.Errorf("failed to scan expenses: %w", err)
-			}
-
-			b.Expenses = make(map[string]*budget.Expense)
-			for _, e := range expenses {
-				b.Expenses[e.Category] = e
 			}
 
 			return nil
@@ -93,14 +101,8 @@ func GetBudgets(ctx context.Context, pool *pgxpool.Pool, owner uuid.UUID) ([]*bu
 
 		// get incomes
 		batch.Queue(getIncomesByOwner, b.ID).Query(func(rows pgx.Rows) error {
-			var incomes []*budget.Income
-			if err := pgxscan.ScanAll(&incomes, rows); err != nil {
+			if err := pgxscan.ScanAll(&b.Incomes, rows); err != nil {
 				return fmt.Errorf("failed to scan incomes: %w", err)
-			}
-
-			b.Incomes = make(map[string]*budget.Income)
-			for _, income := range incomes {
-				b.Incomes[income.Source] = income
 			}
 
 			return nil
@@ -116,7 +118,7 @@ func GetBudgets(ctx context.Context, pool *pgxpool.Pool, owner uuid.UUID) ([]*bu
 
 func PersistBudget(ctx context.Context, pool *pgxpool.Pool, budget *budget.Budget) error {
 	batch := &pgx.Batch{}
-	batch.Queue(upsertBudget, budget.ID, budget.Owner, budget.Name, budget.Strategy)
+	batch.Queue(upsertBudget, budget.ID, budget.Owner, budget.Name)
 	batch.Queue(deleteIncomeByOwner, budget.ID)
 	batch.Queue(deleteExpenseByBudget, budget.ID)
 

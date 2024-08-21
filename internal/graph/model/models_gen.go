@@ -2,7 +2,27 @@
 
 package model
 
-type Expenditure struct {
+import (
+	"fmt"
+	"io"
+	"strconv"
+)
+
+type AggregatedExpendituresResponse struct {
+	GroupByCategory *string  `json:"groupByCategory,omitempty"`
+	Amount          *float64 `json:"amount,omitempty"`
+	Span            *string  `json:"span,omitempty"`
+}
+
+type BudgetResponse struct {
+	ID       string             `json:"id"`
+	Owner    string             `json:"owner"`
+	Name     string             `json:"name"`
+	Incomes  []*IncomeResponse  `json:"incomes,omitempty"`
+	Expenses []*ExpenseResponse `json:"expenses,omitempty"`
+}
+
+type ExpenditureResponse struct {
 	ID             *string `json:"id,omitempty"`
 	Owner          *string `json:"owner,omitempty"`
 	Name           *string `json:"name,omitempty"`
@@ -16,5 +36,86 @@ type Expenditure struct {
 	Source         *string `json:"source,omitempty"`
 }
 
+type ExpenseInput struct {
+	Category string  `json:"category"`
+	Amount   float64 `json:"amount"`
+	IsFixed  *bool   `json:"isFixed,omitempty"`
+	IsSlack  *bool   `json:"isSlack,omitempty"`
+}
+
+type ExpenseResponse struct {
+	Category string  `json:"category"`
+	Amount   float64 `json:"amount"`
+	IsFixed  *bool   `json:"isFixed,omitempty"`
+	IsSlack  *bool   `json:"isSlack,omitempty"`
+}
+
+type IncomeInput struct {
+	Source string  `json:"source"`
+	Amount float64 `json:"amount"`
+}
+
+type IncomeResponse struct {
+	Source string  `json:"source"`
+	Amount float64 `json:"amount"`
+}
+
+type Mutation struct {
+}
+
+type NewBudgetInput struct {
+	Name     string          `json:"name"`
+	Incomes  []*IncomeInput  `json:"incomes,omitempty"`
+	Expenses []*ExpenseInput `json:"expenses,omitempty"`
+}
+
 type Query struct {
+}
+
+type UpdateBudgetInput struct {
+	ID       string          `json:"id"`
+	Name     *string         `json:"name,omitempty"`
+	Incomes  []*IncomeInput  `json:"incomes,omitempty"`
+	Expenses []*ExpenseInput `json:"expenses,omitempty"`
+}
+
+type Aggregation string
+
+const (
+	AggregationSum  Aggregation = "SUM"
+	AggregationMean Aggregation = "MEAN"
+)
+
+var AllAggregation = []Aggregation{
+	AggregationSum,
+	AggregationMean,
+}
+
+func (e Aggregation) IsValid() bool {
+	switch e {
+	case AggregationSum, AggregationMean:
+		return true
+	}
+	return false
+}
+
+func (e Aggregation) String() string {
+	return string(e)
+}
+
+func (e *Aggregation) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Aggregation(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Aggregation", str)
+	}
+	return nil
+}
+
+func (e Aggregation) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }

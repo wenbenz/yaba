@@ -39,6 +39,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Mutation() MutationResolver
 	Query() QueryResolver
 }
 
@@ -46,7 +47,21 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
-	Expenditure struct {
+	AggregatedExpendituresResponse struct {
+		Amount          func(childComplexity int) int
+		GroupByCategory func(childComplexity int) int
+		Span            func(childComplexity int) int
+	}
+
+	BudgetResponse struct {
+		Expenses func(childComplexity int) int
+		ID       func(childComplexity int) int
+		Incomes  func(childComplexity int) int
+		Name     func(childComplexity int) int
+		Owner    func(childComplexity int) int
+	}
+
+	ExpenditureResponse struct {
 		Amount         func(childComplexity int) int
 		BudgetCategory func(childComplexity int) int
 		Comment        func(childComplexity int) int
@@ -60,13 +75,40 @@ type ComplexityRoot struct {
 		Source         func(childComplexity int) int
 	}
 
+	ExpenseResponse struct {
+		Amount   func(childComplexity int) int
+		Category func(childComplexity int) int
+		IsFixed  func(childComplexity int) int
+		IsSlack  func(childComplexity int) int
+	}
+
+	IncomeResponse struct {
+		Amount func(childComplexity int) int
+		Source func(childComplexity int) int
+	}
+
+	Mutation struct {
+		CreateBudget func(childComplexity int, input model.NewBudgetInput) int
+		UpdateBudget func(childComplexity int, input model.UpdateBudgetInput) int
+	}
+
 	Query struct {
-		Expenditure func(childComplexity int, since *string, until *string, count *int) int
+		AggregatedExpenditures func(childComplexity int, since *string, until *string, span *string, groupByCategory *string, aggregation *model.Aggregation) int
+		Budget                 func(childComplexity int, id *string) int
+		Budgets                func(childComplexity int, first *int) int
+		Expenditures           func(childComplexity int, since *string, until *string, count *int) int
 	}
 }
 
+type MutationResolver interface {
+	CreateBudget(ctx context.Context, input model.NewBudgetInput) (*model.BudgetResponse, error)
+	UpdateBudget(ctx context.Context, input model.UpdateBudgetInput) (*model.BudgetResponse, error)
+}
 type QueryResolver interface {
-	Expenditure(ctx context.Context, since *string, until *string, count *int) ([]*model.Expenditure, error)
+	Budget(ctx context.Context, id *string) (*model.BudgetResponse, error)
+	Budgets(ctx context.Context, first *int) ([]*model.BudgetResponse, error)
+	Expenditures(ctx context.Context, since *string, until *string, count *int) ([]*model.ExpenditureResponse, error)
+	AggregatedExpenditures(ctx context.Context, since *string, until *string, span *string, groupByCategory *string, aggregation *model.Aggregation) ([]*model.AggregatedExpendituresResponse, error)
 }
 
 type executableSchema struct {
@@ -88,94 +130,252 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
-	case "Expenditure.amount":
-		if e.complexity.Expenditure.Amount == nil {
+	case "AggregatedExpendituresResponse.amount":
+		if e.complexity.AggregatedExpendituresResponse.Amount == nil {
 			break
 		}
 
-		return e.complexity.Expenditure.Amount(childComplexity), true
+		return e.complexity.AggregatedExpendituresResponse.Amount(childComplexity), true
 
-	case "Expenditure.budget_category":
-		if e.complexity.Expenditure.BudgetCategory == nil {
+	case "AggregatedExpendituresResponse.groupByCategory":
+		if e.complexity.AggregatedExpendituresResponse.GroupByCategory == nil {
 			break
 		}
 
-		return e.complexity.Expenditure.BudgetCategory(childComplexity), true
+		return e.complexity.AggregatedExpendituresResponse.GroupByCategory(childComplexity), true
 
-	case "Expenditure.comment":
-		if e.complexity.Expenditure.Comment == nil {
+	case "AggregatedExpendituresResponse.span":
+		if e.complexity.AggregatedExpendituresResponse.Span == nil {
 			break
 		}
 
-		return e.complexity.Expenditure.Comment(childComplexity), true
+		return e.complexity.AggregatedExpendituresResponse.Span(childComplexity), true
 
-	case "Expenditure.created":
-		if e.complexity.Expenditure.Created == nil {
+	case "BudgetResponse.expenses":
+		if e.complexity.BudgetResponse.Expenses == nil {
 			break
 		}
 
-		return e.complexity.Expenditure.Created(childComplexity), true
+		return e.complexity.BudgetResponse.Expenses(childComplexity), true
 
-	case "Expenditure.date":
-		if e.complexity.Expenditure.Date == nil {
+	case "BudgetResponse.id":
+		if e.complexity.BudgetResponse.ID == nil {
 			break
 		}
 
-		return e.complexity.Expenditure.Date(childComplexity), true
+		return e.complexity.BudgetResponse.ID(childComplexity), true
 
-	case "Expenditure.id":
-		if e.complexity.Expenditure.ID == nil {
+	case "BudgetResponse.incomes":
+		if e.complexity.BudgetResponse.Incomes == nil {
 			break
 		}
 
-		return e.complexity.Expenditure.ID(childComplexity), true
+		return e.complexity.BudgetResponse.Incomes(childComplexity), true
 
-	case "Expenditure.method":
-		if e.complexity.Expenditure.Method == nil {
+	case "BudgetResponse.name":
+		if e.complexity.BudgetResponse.Name == nil {
 			break
 		}
 
-		return e.complexity.Expenditure.Method(childComplexity), true
+		return e.complexity.BudgetResponse.Name(childComplexity), true
 
-	case "Expenditure.name":
-		if e.complexity.Expenditure.Name == nil {
+	case "BudgetResponse.owner":
+		if e.complexity.BudgetResponse.Owner == nil {
 			break
 		}
 
-		return e.complexity.Expenditure.Name(childComplexity), true
+		return e.complexity.BudgetResponse.Owner(childComplexity), true
 
-	case "Expenditure.owner":
-		if e.complexity.Expenditure.Owner == nil {
+	case "ExpenditureResponse.amount":
+		if e.complexity.ExpenditureResponse.Amount == nil {
 			break
 		}
 
-		return e.complexity.Expenditure.Owner(childComplexity), true
+		return e.complexity.ExpenditureResponse.Amount(childComplexity), true
 
-	case "Expenditure.reward_category":
-		if e.complexity.Expenditure.RewardCategory == nil {
+	case "ExpenditureResponse.budget_category":
+		if e.complexity.ExpenditureResponse.BudgetCategory == nil {
 			break
 		}
 
-		return e.complexity.Expenditure.RewardCategory(childComplexity), true
+		return e.complexity.ExpenditureResponse.BudgetCategory(childComplexity), true
 
-	case "Expenditure.source":
-		if e.complexity.Expenditure.Source == nil {
+	case "ExpenditureResponse.comment":
+		if e.complexity.ExpenditureResponse.Comment == nil {
 			break
 		}
 
-		return e.complexity.Expenditure.Source(childComplexity), true
+		return e.complexity.ExpenditureResponse.Comment(childComplexity), true
 
-	case "Query.expenditure":
-		if e.complexity.Query.Expenditure == nil {
+	case "ExpenditureResponse.created":
+		if e.complexity.ExpenditureResponse.Created == nil {
 			break
 		}
 
-		args, err := ec.field_Query_expenditure_args(context.TODO(), rawArgs)
+		return e.complexity.ExpenditureResponse.Created(childComplexity), true
+
+	case "ExpenditureResponse.date":
+		if e.complexity.ExpenditureResponse.Date == nil {
+			break
+		}
+
+		return e.complexity.ExpenditureResponse.Date(childComplexity), true
+
+	case "ExpenditureResponse.id":
+		if e.complexity.ExpenditureResponse.ID == nil {
+			break
+		}
+
+		return e.complexity.ExpenditureResponse.ID(childComplexity), true
+
+	case "ExpenditureResponse.method":
+		if e.complexity.ExpenditureResponse.Method == nil {
+			break
+		}
+
+		return e.complexity.ExpenditureResponse.Method(childComplexity), true
+
+	case "ExpenditureResponse.name":
+		if e.complexity.ExpenditureResponse.Name == nil {
+			break
+		}
+
+		return e.complexity.ExpenditureResponse.Name(childComplexity), true
+
+	case "ExpenditureResponse.owner":
+		if e.complexity.ExpenditureResponse.Owner == nil {
+			break
+		}
+
+		return e.complexity.ExpenditureResponse.Owner(childComplexity), true
+
+	case "ExpenditureResponse.reward_category":
+		if e.complexity.ExpenditureResponse.RewardCategory == nil {
+			break
+		}
+
+		return e.complexity.ExpenditureResponse.RewardCategory(childComplexity), true
+
+	case "ExpenditureResponse.source":
+		if e.complexity.ExpenditureResponse.Source == nil {
+			break
+		}
+
+		return e.complexity.ExpenditureResponse.Source(childComplexity), true
+
+	case "ExpenseResponse.amount":
+		if e.complexity.ExpenseResponse.Amount == nil {
+			break
+		}
+
+		return e.complexity.ExpenseResponse.Amount(childComplexity), true
+
+	case "ExpenseResponse.category":
+		if e.complexity.ExpenseResponse.Category == nil {
+			break
+		}
+
+		return e.complexity.ExpenseResponse.Category(childComplexity), true
+
+	case "ExpenseResponse.isFixed":
+		if e.complexity.ExpenseResponse.IsFixed == nil {
+			break
+		}
+
+		return e.complexity.ExpenseResponse.IsFixed(childComplexity), true
+
+	case "ExpenseResponse.isSlack":
+		if e.complexity.ExpenseResponse.IsSlack == nil {
+			break
+		}
+
+		return e.complexity.ExpenseResponse.IsSlack(childComplexity), true
+
+	case "IncomeResponse.amount":
+		if e.complexity.IncomeResponse.Amount == nil {
+			break
+		}
+
+		return e.complexity.IncomeResponse.Amount(childComplexity), true
+
+	case "IncomeResponse.source":
+		if e.complexity.IncomeResponse.Source == nil {
+			break
+		}
+
+		return e.complexity.IncomeResponse.Source(childComplexity), true
+
+	case "Mutation.createBudget":
+		if e.complexity.Mutation.CreateBudget == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createBudget_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.Expenditure(childComplexity, args["since"].(*string), args["until"].(*string), args["count"].(*int)), true
+		return e.complexity.Mutation.CreateBudget(childComplexity, args["input"].(model.NewBudgetInput)), true
+
+	case "Mutation.updateBudget":
+		if e.complexity.Mutation.UpdateBudget == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateBudget_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateBudget(childComplexity, args["input"].(model.UpdateBudgetInput)), true
+
+	case "Query.aggregatedExpenditures":
+		if e.complexity.Query.AggregatedExpenditures == nil {
+			break
+		}
+
+		args, err := ec.field_Query_aggregatedExpenditures_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.AggregatedExpenditures(childComplexity, args["since"].(*string), args["until"].(*string), args["span"].(*string), args["groupByCategory"].(*string), args["aggregation"].(*model.Aggregation)), true
+
+	case "Query.budget":
+		if e.complexity.Query.Budget == nil {
+			break
+		}
+
+		args, err := ec.field_Query_budget_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Budget(childComplexity, args["id"].(*string)), true
+
+	case "Query.budgets":
+		if e.complexity.Query.Budgets == nil {
+			break
+		}
+
+		args, err := ec.field_Query_budgets_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Budgets(childComplexity, args["first"].(*int)), true
+
+	case "Query.expenditures":
+		if e.complexity.Query.Expenditures == nil {
+			break
+		}
+
+		args, err := ec.field_Query_expenditures_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Expenditures(childComplexity, args["since"].(*string), args["until"].(*string), args["count"].(*int)), true
 
 	}
 	return 0, false
@@ -184,7 +384,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e, 0, 0, make(chan graphql.DeferredResult)}
-	inputUnmarshalMap := graphql.BuildUnmarshalerMap()
+	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputExpenseInput,
+		ec.unmarshalInputIncomeInput,
+		ec.unmarshalInputNewBudgetInput,
+		ec.unmarshalInputUpdateBudgetInput,
+	)
 	first := true
 
 	switch rc.Operation.Operation {
@@ -217,6 +422,21 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			}
 
 			return &response
+		}
+	case ast.Mutation:
+		return func(ctx context.Context) *graphql.Response {
+			if !first {
+				return nil
+			}
+			first = false
+			ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
+			data := ec._Mutation(ctx, rc.Operation.SelectionSet)
+			var buf bytes.Buffer
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
 		}
 
 	default:
@@ -285,6 +505,36 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
+func (ec *executionContext) field_Mutation_createBudget_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.NewBudgetInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNNewBudgetInput2yabaᚋinternalᚋgraphᚋmodelᚐNewBudgetInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateBudget_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.UpdateBudgetInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNUpdateBudgetInput2yabaᚋinternalᚋgraphᚋmodelᚐUpdateBudgetInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -300,7 +550,88 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_expenditure_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_aggregatedExpenditures_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["since"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("since"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["since"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["until"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("until"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["until"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["span"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("span"))
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["span"] = arg2
+	var arg3 *string
+	if tmp, ok := rawArgs["groupByCategory"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("groupByCategory"))
+		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["groupByCategory"] = arg3
+	var arg4 *model.Aggregation
+	if tmp, ok := rawArgs["aggregation"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("aggregation"))
+		arg4, err = ec.unmarshalOAggregation2ᚖyabaᚋinternalᚋgraphᚋmodelᚐAggregation(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["aggregation"] = arg4
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_budget_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_budgets_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_expenditures_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
@@ -371,8 +702,361 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _Expenditure_id(ctx context.Context, field graphql.CollectedField, obj *model.Expenditure) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Expenditure_id(ctx, field)
+func (ec *executionContext) _AggregatedExpendituresResponse_groupByCategory(ctx context.Context, field graphql.CollectedField, obj *model.AggregatedExpendituresResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedExpendituresResponse_groupByCategory(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.GroupByCategory, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedExpendituresResponse_groupByCategory(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedExpendituresResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AggregatedExpendituresResponse_amount(ctx context.Context, field graphql.CollectedField, obj *model.AggregatedExpendituresResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedExpendituresResponse_amount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Amount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedExpendituresResponse_amount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedExpendituresResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AggregatedExpendituresResponse_span(ctx context.Context, field graphql.CollectedField, obj *model.AggregatedExpendituresResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedExpendituresResponse_span(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Span, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedExpendituresResponse_span(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedExpendituresResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BudgetResponse_id(ctx context.Context, field graphql.CollectedField, obj *model.BudgetResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BudgetResponse_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BudgetResponse_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BudgetResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BudgetResponse_owner(ctx context.Context, field graphql.CollectedField, obj *model.BudgetResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BudgetResponse_owner(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Owner, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BudgetResponse_owner(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BudgetResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BudgetResponse_name(ctx context.Context, field graphql.CollectedField, obj *model.BudgetResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BudgetResponse_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BudgetResponse_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BudgetResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BudgetResponse_incomes(ctx context.Context, field graphql.CollectedField, obj *model.BudgetResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BudgetResponse_incomes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Incomes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.IncomeResponse)
+	fc.Result = res
+	return ec.marshalOIncomeResponse2ᚕᚖyabaᚋinternalᚋgraphᚋmodelᚐIncomeResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BudgetResponse_incomes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BudgetResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "source":
+				return ec.fieldContext_IncomeResponse_source(ctx, field)
+			case "amount":
+				return ec.fieldContext_IncomeResponse_amount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type IncomeResponse", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BudgetResponse_expenses(ctx context.Context, field graphql.CollectedField, obj *model.BudgetResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BudgetResponse_expenses(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Expenses, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ExpenseResponse)
+	fc.Result = res
+	return ec.marshalOExpenseResponse2ᚕᚖyabaᚋinternalᚋgraphᚋmodelᚐExpenseResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BudgetResponse_expenses(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BudgetResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "category":
+				return ec.fieldContext_ExpenseResponse_category(ctx, field)
+			case "amount":
+				return ec.fieldContext_ExpenseResponse_amount(ctx, field)
+			case "isFixed":
+				return ec.fieldContext_ExpenseResponse_isFixed(ctx, field)
+			case "isSlack":
+				return ec.fieldContext_ExpenseResponse_isSlack(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ExpenseResponse", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ExpenditureResponse_id(ctx context.Context, field graphql.CollectedField, obj *model.ExpenditureResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ExpenditureResponse_id(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -399,9 +1083,9 @@ func (ec *executionContext) _Expenditure_id(ctx context.Context, field graphql.C
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Expenditure_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ExpenditureResponse_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Expenditure",
+		Object:     "ExpenditureResponse",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -412,8 +1096,8 @@ func (ec *executionContext) fieldContext_Expenditure_id(_ context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Expenditure_owner(ctx context.Context, field graphql.CollectedField, obj *model.Expenditure) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Expenditure_owner(ctx, field)
+func (ec *executionContext) _ExpenditureResponse_owner(ctx context.Context, field graphql.CollectedField, obj *model.ExpenditureResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ExpenditureResponse_owner(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -440,9 +1124,9 @@ func (ec *executionContext) _Expenditure_owner(ctx context.Context, field graphq
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Expenditure_owner(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ExpenditureResponse_owner(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Expenditure",
+		Object:     "ExpenditureResponse",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -453,8 +1137,8 @@ func (ec *executionContext) fieldContext_Expenditure_owner(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Expenditure_name(ctx context.Context, field graphql.CollectedField, obj *model.Expenditure) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Expenditure_name(ctx, field)
+func (ec *executionContext) _ExpenditureResponse_name(ctx context.Context, field graphql.CollectedField, obj *model.ExpenditureResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ExpenditureResponse_name(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -481,9 +1165,9 @@ func (ec *executionContext) _Expenditure_name(ctx context.Context, field graphql
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Expenditure_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ExpenditureResponse_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Expenditure",
+		Object:     "ExpenditureResponse",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -494,8 +1178,8 @@ func (ec *executionContext) fieldContext_Expenditure_name(_ context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Expenditure_amount(ctx context.Context, field graphql.CollectedField, obj *model.Expenditure) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Expenditure_amount(ctx, field)
+func (ec *executionContext) _ExpenditureResponse_amount(ctx context.Context, field graphql.CollectedField, obj *model.ExpenditureResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ExpenditureResponse_amount(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -522,9 +1206,9 @@ func (ec *executionContext) _Expenditure_amount(ctx context.Context, field graph
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Expenditure_amount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ExpenditureResponse_amount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Expenditure",
+		Object:     "ExpenditureResponse",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -535,8 +1219,8 @@ func (ec *executionContext) fieldContext_Expenditure_amount(_ context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _Expenditure_date(ctx context.Context, field graphql.CollectedField, obj *model.Expenditure) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Expenditure_date(ctx, field)
+func (ec *executionContext) _ExpenditureResponse_date(ctx context.Context, field graphql.CollectedField, obj *model.ExpenditureResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ExpenditureResponse_date(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -563,9 +1247,9 @@ func (ec *executionContext) _Expenditure_date(ctx context.Context, field graphql
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Expenditure_date(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ExpenditureResponse_date(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Expenditure",
+		Object:     "ExpenditureResponse",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -576,8 +1260,8 @@ func (ec *executionContext) fieldContext_Expenditure_date(_ context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Expenditure_method(ctx context.Context, field graphql.CollectedField, obj *model.Expenditure) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Expenditure_method(ctx, field)
+func (ec *executionContext) _ExpenditureResponse_method(ctx context.Context, field graphql.CollectedField, obj *model.ExpenditureResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ExpenditureResponse_method(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -604,9 +1288,9 @@ func (ec *executionContext) _Expenditure_method(ctx context.Context, field graph
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Expenditure_method(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ExpenditureResponse_method(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Expenditure",
+		Object:     "ExpenditureResponse",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -617,8 +1301,8 @@ func (ec *executionContext) fieldContext_Expenditure_method(_ context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _Expenditure_budget_category(ctx context.Context, field graphql.CollectedField, obj *model.Expenditure) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Expenditure_budget_category(ctx, field)
+func (ec *executionContext) _ExpenditureResponse_budget_category(ctx context.Context, field graphql.CollectedField, obj *model.ExpenditureResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ExpenditureResponse_budget_category(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -645,9 +1329,9 @@ func (ec *executionContext) _Expenditure_budget_category(ctx context.Context, fi
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Expenditure_budget_category(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ExpenditureResponse_budget_category(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Expenditure",
+		Object:     "ExpenditureResponse",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -658,8 +1342,8 @@ func (ec *executionContext) fieldContext_Expenditure_budget_category(_ context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _Expenditure_reward_category(ctx context.Context, field graphql.CollectedField, obj *model.Expenditure) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Expenditure_reward_category(ctx, field)
+func (ec *executionContext) _ExpenditureResponse_reward_category(ctx context.Context, field graphql.CollectedField, obj *model.ExpenditureResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ExpenditureResponse_reward_category(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -686,9 +1370,9 @@ func (ec *executionContext) _Expenditure_reward_category(ctx context.Context, fi
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Expenditure_reward_category(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ExpenditureResponse_reward_category(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Expenditure",
+		Object:     "ExpenditureResponse",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -699,8 +1383,8 @@ func (ec *executionContext) fieldContext_Expenditure_reward_category(_ context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _Expenditure_comment(ctx context.Context, field graphql.CollectedField, obj *model.Expenditure) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Expenditure_comment(ctx, field)
+func (ec *executionContext) _ExpenditureResponse_comment(ctx context.Context, field graphql.CollectedField, obj *model.ExpenditureResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ExpenditureResponse_comment(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -727,9 +1411,9 @@ func (ec *executionContext) _Expenditure_comment(ctx context.Context, field grap
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Expenditure_comment(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ExpenditureResponse_comment(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Expenditure",
+		Object:     "ExpenditureResponse",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -740,8 +1424,8 @@ func (ec *executionContext) fieldContext_Expenditure_comment(_ context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _Expenditure_created(ctx context.Context, field graphql.CollectedField, obj *model.Expenditure) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Expenditure_created(ctx, field)
+func (ec *executionContext) _ExpenditureResponse_created(ctx context.Context, field graphql.CollectedField, obj *model.ExpenditureResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ExpenditureResponse_created(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -768,9 +1452,9 @@ func (ec *executionContext) _Expenditure_created(ctx context.Context, field grap
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Expenditure_created(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ExpenditureResponse_created(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Expenditure",
+		Object:     "ExpenditureResponse",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -781,8 +1465,8 @@ func (ec *executionContext) fieldContext_Expenditure_created(_ context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _Expenditure_source(ctx context.Context, field graphql.CollectedField, obj *model.Expenditure) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Expenditure_source(ctx, field)
+func (ec *executionContext) _ExpenditureResponse_source(ctx context.Context, field graphql.CollectedField, obj *model.ExpenditureResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ExpenditureResponse_source(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -809,9 +1493,9 @@ func (ec *executionContext) _Expenditure_source(ctx context.Context, field graph
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Expenditure_source(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ExpenditureResponse_source(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Expenditure",
+		Object:     "ExpenditureResponse",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -822,8 +1506,8 @@ func (ec *executionContext) fieldContext_Expenditure_source(_ context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_expenditure(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_expenditure(ctx, field)
+func (ec *executionContext) _ExpenseResponse_category(ctx context.Context, field graphql.CollectedField, obj *model.ExpenseResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ExpenseResponse_category(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -836,7 +1520,95 @@ func (ec *executionContext) _Query_expenditure(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Expenditure(rctx, fc.Args["since"].(*string), fc.Args["until"].(*string), fc.Args["count"].(*int))
+		return obj.Category, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ExpenseResponse_category(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ExpenseResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ExpenseResponse_amount(ctx context.Context, field graphql.CollectedField, obj *model.ExpenseResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ExpenseResponse_amount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Amount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ExpenseResponse_amount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ExpenseResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ExpenseResponse_isFixed(ctx context.Context, field graphql.CollectedField, obj *model.ExpenseResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ExpenseResponse_isFixed(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsFixed, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -845,43 +1617,201 @@ func (ec *executionContext) _Query_expenditure(ctx context.Context, field graphq
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Expenditure)
+	res := resTmp.(*bool)
 	fc.Result = res
-	return ec.marshalOExpenditure2ᚕᚖyabaᚋinternalᚋgraphᚋmodelᚐExpenditure(ctx, field.Selections, res)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_expenditure(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ExpenseResponse_isFixed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Query",
+		Object:     "ExpenseResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ExpenseResponse_isSlack(ctx context.Context, field graphql.CollectedField, obj *model.ExpenseResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ExpenseResponse_isSlack(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsSlack, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ExpenseResponse_isSlack(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ExpenseResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _IncomeResponse_source(ctx context.Context, field graphql.CollectedField, obj *model.IncomeResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_IncomeResponse_source(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Source, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_IncomeResponse_source(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "IncomeResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _IncomeResponse_amount(ctx context.Context, field graphql.CollectedField, obj *model.IncomeResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_IncomeResponse_amount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Amount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_IncomeResponse_amount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "IncomeResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createBudget(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createBudget(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateBudget(rctx, fc.Args["input"].(model.NewBudgetInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.BudgetResponse)
+	fc.Result = res
+	return ec.marshalOBudgetResponse2ᚖyabaᚋinternalᚋgraphᚋmodelᚐBudgetResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createBudget(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_Expenditure_id(ctx, field)
+				return ec.fieldContext_BudgetResponse_id(ctx, field)
 			case "owner":
-				return ec.fieldContext_Expenditure_owner(ctx, field)
+				return ec.fieldContext_BudgetResponse_owner(ctx, field)
 			case "name":
-				return ec.fieldContext_Expenditure_name(ctx, field)
-			case "amount":
-				return ec.fieldContext_Expenditure_amount(ctx, field)
-			case "date":
-				return ec.fieldContext_Expenditure_date(ctx, field)
-			case "method":
-				return ec.fieldContext_Expenditure_method(ctx, field)
-			case "budget_category":
-				return ec.fieldContext_Expenditure_budget_category(ctx, field)
-			case "reward_category":
-				return ec.fieldContext_Expenditure_reward_category(ctx, field)
-			case "comment":
-				return ec.fieldContext_Expenditure_comment(ctx, field)
-			case "created":
-				return ec.fieldContext_Expenditure_created(ctx, field)
-			case "source":
-				return ec.fieldContext_Expenditure_source(ctx, field)
+				return ec.fieldContext_BudgetResponse_name(ctx, field)
+			case "incomes":
+				return ec.fieldContext_BudgetResponse_incomes(ctx, field)
+			case "expenses":
+				return ec.fieldContext_BudgetResponse_expenses(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Expenditure", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type BudgetResponse", field.Name)
 		},
 	}
 	defer func() {
@@ -891,7 +1821,335 @@ func (ec *executionContext) fieldContext_Query_expenditure(ctx context.Context, 
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_expenditure_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_createBudget_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateBudget(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateBudget(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateBudget(rctx, fc.Args["input"].(model.UpdateBudgetInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.BudgetResponse)
+	fc.Result = res
+	return ec.marshalOBudgetResponse2ᚖyabaᚋinternalᚋgraphᚋmodelᚐBudgetResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateBudget(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_BudgetResponse_id(ctx, field)
+			case "owner":
+				return ec.fieldContext_BudgetResponse_owner(ctx, field)
+			case "name":
+				return ec.fieldContext_BudgetResponse_name(ctx, field)
+			case "incomes":
+				return ec.fieldContext_BudgetResponse_incomes(ctx, field)
+			case "expenses":
+				return ec.fieldContext_BudgetResponse_expenses(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BudgetResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateBudget_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_budget(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_budget(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Budget(rctx, fc.Args["id"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.BudgetResponse)
+	fc.Result = res
+	return ec.marshalOBudgetResponse2ᚖyabaᚋinternalᚋgraphᚋmodelᚐBudgetResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_budget(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_BudgetResponse_id(ctx, field)
+			case "owner":
+				return ec.fieldContext_BudgetResponse_owner(ctx, field)
+			case "name":
+				return ec.fieldContext_BudgetResponse_name(ctx, field)
+			case "incomes":
+				return ec.fieldContext_BudgetResponse_incomes(ctx, field)
+			case "expenses":
+				return ec.fieldContext_BudgetResponse_expenses(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BudgetResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_budget_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_budgets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_budgets(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Budgets(rctx, fc.Args["first"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.BudgetResponse)
+	fc.Result = res
+	return ec.marshalOBudgetResponse2ᚕᚖyabaᚋinternalᚋgraphᚋmodelᚐBudgetResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_budgets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_BudgetResponse_id(ctx, field)
+			case "owner":
+				return ec.fieldContext_BudgetResponse_owner(ctx, field)
+			case "name":
+				return ec.fieldContext_BudgetResponse_name(ctx, field)
+			case "incomes":
+				return ec.fieldContext_BudgetResponse_incomes(ctx, field)
+			case "expenses":
+				return ec.fieldContext_BudgetResponse_expenses(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BudgetResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_budgets_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_expenditures(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_expenditures(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Expenditures(rctx, fc.Args["since"].(*string), fc.Args["until"].(*string), fc.Args["count"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ExpenditureResponse)
+	fc.Result = res
+	return ec.marshalOExpenditureResponse2ᚕᚖyabaᚋinternalᚋgraphᚋmodelᚐExpenditureResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_expenditures(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ExpenditureResponse_id(ctx, field)
+			case "owner":
+				return ec.fieldContext_ExpenditureResponse_owner(ctx, field)
+			case "name":
+				return ec.fieldContext_ExpenditureResponse_name(ctx, field)
+			case "amount":
+				return ec.fieldContext_ExpenditureResponse_amount(ctx, field)
+			case "date":
+				return ec.fieldContext_ExpenditureResponse_date(ctx, field)
+			case "method":
+				return ec.fieldContext_ExpenditureResponse_method(ctx, field)
+			case "budget_category":
+				return ec.fieldContext_ExpenditureResponse_budget_category(ctx, field)
+			case "reward_category":
+				return ec.fieldContext_ExpenditureResponse_reward_category(ctx, field)
+			case "comment":
+				return ec.fieldContext_ExpenditureResponse_comment(ctx, field)
+			case "created":
+				return ec.fieldContext_ExpenditureResponse_created(ctx, field)
+			case "source":
+				return ec.fieldContext_ExpenditureResponse_source(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ExpenditureResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_expenditures_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_aggregatedExpenditures(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_aggregatedExpenditures(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AggregatedExpenditures(rctx, fc.Args["since"].(*string), fc.Args["until"].(*string), fc.Args["span"].(*string), fc.Args["groupByCategory"].(*string), fc.Args["aggregation"].(*model.Aggregation))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.AggregatedExpendituresResponse)
+	fc.Result = res
+	return ec.marshalOAggregatedExpendituresResponse2ᚕᚖyabaᚋinternalᚋgraphᚋmodelᚐAggregatedExpendituresResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_aggregatedExpenditures(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "groupByCategory":
+				return ec.fieldContext_AggregatedExpendituresResponse_groupByCategory(ctx, field)
+			case "amount":
+				return ec.fieldContext_AggregatedExpendituresResponse_amount(ctx, field)
+			case "span":
+				return ec.fieldContext_AggregatedExpendituresResponse_span(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AggregatedExpendituresResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_aggregatedExpenditures_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -2800,6 +4058,177 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(_ context.Context
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputExpenseInput(ctx context.Context, obj interface{}) (model.ExpenseInput, error) {
+	var it model.ExpenseInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"category", "amount", "isFixed", "isSlack"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "category":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Category = data
+		case "amount":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("amount"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Amount = data
+		case "isFixed":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isFixed"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IsFixed = data
+		case "isSlack":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isSlack"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IsSlack = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputIncomeInput(ctx context.Context, obj interface{}) (model.IncomeInput, error) {
+	var it model.IncomeInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"source", "amount"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "source":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Source = data
+		case "amount":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("amount"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Amount = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputNewBudgetInput(ctx context.Context, obj interface{}) (model.NewBudgetInput, error) {
+	var it model.NewBudgetInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "incomes", "expenses"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "incomes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("incomes"))
+			data, err := ec.unmarshalOIncomeInput2ᚕᚖyabaᚋinternalᚋgraphᚋmodelᚐIncomeInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Incomes = data
+		case "expenses":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expenses"))
+			data, err := ec.unmarshalOExpenseInput2ᚕᚖyabaᚋinternalᚋgraphᚋmodelᚐExpenseInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Expenses = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateBudgetInput(ctx context.Context, obj interface{}) (model.UpdateBudgetInput, error) {
+	var it model.UpdateBudgetInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "name", "incomes", "expenses"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "incomes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("incomes"))
+			data, err := ec.unmarshalOIncomeInput2ᚕᚖyabaᚋinternalᚋgraphᚋmodelᚐIncomeInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Incomes = data
+		case "expenses":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expenses"))
+			data, err := ec.unmarshalOExpenseInput2ᚕᚖyabaᚋinternalᚋgraphᚋmodelᚐExpenseInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Expenses = data
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -2808,39 +4237,274 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(_ context.Context
 
 // region    **************************** object.gotpl ****************************
 
-var expenditureImplementors = []string{"Expenditure"}
+var aggregatedExpendituresResponseImplementors = []string{"AggregatedExpendituresResponse"}
 
-func (ec *executionContext) _Expenditure(ctx context.Context, sel ast.SelectionSet, obj *model.Expenditure) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, expenditureImplementors)
+func (ec *executionContext) _AggregatedExpendituresResponse(ctx context.Context, sel ast.SelectionSet, obj *model.AggregatedExpendituresResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, aggregatedExpendituresResponseImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("Expenditure")
-		case "id":
-			out.Values[i] = ec._Expenditure_id(ctx, field, obj)
-		case "owner":
-			out.Values[i] = ec._Expenditure_owner(ctx, field, obj)
-		case "name":
-			out.Values[i] = ec._Expenditure_name(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("AggregatedExpendituresResponse")
+		case "groupByCategory":
+			out.Values[i] = ec._AggregatedExpendituresResponse_groupByCategory(ctx, field, obj)
 		case "amount":
-			out.Values[i] = ec._Expenditure_amount(ctx, field, obj)
+			out.Values[i] = ec._AggregatedExpendituresResponse_amount(ctx, field, obj)
+		case "span":
+			out.Values[i] = ec._AggregatedExpendituresResponse_span(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var budgetResponseImplementors = []string{"BudgetResponse"}
+
+func (ec *executionContext) _BudgetResponse(ctx context.Context, sel ast.SelectionSet, obj *model.BudgetResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, budgetResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BudgetResponse")
+		case "id":
+			out.Values[i] = ec._BudgetResponse_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "owner":
+			out.Values[i] = ec._BudgetResponse_owner(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._BudgetResponse_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "incomes":
+			out.Values[i] = ec._BudgetResponse_incomes(ctx, field, obj)
+		case "expenses":
+			out.Values[i] = ec._BudgetResponse_expenses(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var expenditureResponseImplementors = []string{"ExpenditureResponse"}
+
+func (ec *executionContext) _ExpenditureResponse(ctx context.Context, sel ast.SelectionSet, obj *model.ExpenditureResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, expenditureResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ExpenditureResponse")
+		case "id":
+			out.Values[i] = ec._ExpenditureResponse_id(ctx, field, obj)
+		case "owner":
+			out.Values[i] = ec._ExpenditureResponse_owner(ctx, field, obj)
+		case "name":
+			out.Values[i] = ec._ExpenditureResponse_name(ctx, field, obj)
+		case "amount":
+			out.Values[i] = ec._ExpenditureResponse_amount(ctx, field, obj)
 		case "date":
-			out.Values[i] = ec._Expenditure_date(ctx, field, obj)
+			out.Values[i] = ec._ExpenditureResponse_date(ctx, field, obj)
 		case "method":
-			out.Values[i] = ec._Expenditure_method(ctx, field, obj)
+			out.Values[i] = ec._ExpenditureResponse_method(ctx, field, obj)
 		case "budget_category":
-			out.Values[i] = ec._Expenditure_budget_category(ctx, field, obj)
+			out.Values[i] = ec._ExpenditureResponse_budget_category(ctx, field, obj)
 		case "reward_category":
-			out.Values[i] = ec._Expenditure_reward_category(ctx, field, obj)
+			out.Values[i] = ec._ExpenditureResponse_reward_category(ctx, field, obj)
 		case "comment":
-			out.Values[i] = ec._Expenditure_comment(ctx, field, obj)
+			out.Values[i] = ec._ExpenditureResponse_comment(ctx, field, obj)
 		case "created":
-			out.Values[i] = ec._Expenditure_created(ctx, field, obj)
+			out.Values[i] = ec._ExpenditureResponse_created(ctx, field, obj)
 		case "source":
-			out.Values[i] = ec._Expenditure_source(ctx, field, obj)
+			out.Values[i] = ec._ExpenditureResponse_source(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var expenseResponseImplementors = []string{"ExpenseResponse"}
+
+func (ec *executionContext) _ExpenseResponse(ctx context.Context, sel ast.SelectionSet, obj *model.ExpenseResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, expenseResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ExpenseResponse")
+		case "category":
+			out.Values[i] = ec._ExpenseResponse_category(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "amount":
+			out.Values[i] = ec._ExpenseResponse_amount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "isFixed":
+			out.Values[i] = ec._ExpenseResponse_isFixed(ctx, field, obj)
+		case "isSlack":
+			out.Values[i] = ec._ExpenseResponse_isSlack(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var incomeResponseImplementors = []string{"IncomeResponse"}
+
+func (ec *executionContext) _IncomeResponse(ctx context.Context, sel ast.SelectionSet, obj *model.IncomeResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, incomeResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("IncomeResponse")
+		case "source":
+			out.Values[i] = ec._IncomeResponse_source(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "amount":
+			out.Values[i] = ec._IncomeResponse_amount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var mutationImplementors = []string{"Mutation"}
+
+func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mutationImplementors)
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Mutation",
+	})
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		innerCtx := graphql.WithRootFieldContext(ctx, &graphql.RootFieldContext{
+			Object: field.Name,
+			Field:  field,
+		})
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Mutation")
+		case "createBudget":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createBudget(ctx, field)
+			})
+		case "updateBudget":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateBudget(ctx, field)
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2883,7 +4547,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "expenditure":
+		case "budget":
 			field := field
 
 			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
@@ -2892,7 +4556,64 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_expenditure(ctx, field)
+				res = ec._Query_budget(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "budgets":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_budgets(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "expenditures":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_expenditures(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "aggregatedExpenditures":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_aggregatedExpenditures(ctx, field)
 				return res
 			}
 
@@ -3274,6 +4995,41 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	res := graphql.MarshalFloatContext(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return graphql.WrapContextMarshaler(ctx, res)
+}
+
+func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
+	res, err := graphql.UnmarshalID(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	res := graphql.MarshalID(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNNewBudgetInput2yabaᚋinternalᚋgraphᚋmodelᚐNewBudgetInput(ctx context.Context, v interface{}) (model.NewBudgetInput, error) {
+	res, err := ec.unmarshalInputNewBudgetInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -3287,6 +5043,11 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNUpdateBudgetInput2yabaᚋinternalᚋgraphᚋmodelᚐUpdateBudgetInput(ctx context.Context, v interface{}) (model.UpdateBudgetInput, error) {
+	res, err := ec.unmarshalInputUpdateBudgetInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -3542,33 +5303,7 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
-func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
-	res, err := graphql.UnmarshalBoolean(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
-	res := graphql.MarshalBoolean(v)
-	return res
-}
-
-func (ec *executionContext) unmarshalOBoolean2ᚖbool(ctx context.Context, v interface{}) (*bool, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := graphql.UnmarshalBoolean(v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast.SelectionSet, v *bool) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	res := graphql.MarshalBoolean(*v)
-	return res
-}
-
-func (ec *executionContext) marshalOExpenditure2ᚕᚖyabaᚋinternalᚋgraphᚋmodelᚐExpenditure(ctx context.Context, sel ast.SelectionSet, v []*model.Expenditure) graphql.Marshaler {
+func (ec *executionContext) marshalOAggregatedExpendituresResponse2ᚕᚖyabaᚋinternalᚋgraphᚋmodelᚐAggregatedExpendituresResponse(ctx context.Context, sel ast.SelectionSet, v []*model.AggregatedExpendituresResponse) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -3595,7 +5330,7 @@ func (ec *executionContext) marshalOExpenditure2ᚕᚖyabaᚋinternalᚋgraphᚋ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOExpenditure2ᚖyabaᚋinternalᚋgraphᚋmodelᚐExpenditure(ctx, sel, v[i])
+			ret[i] = ec.marshalOAggregatedExpendituresResponse2ᚖyabaᚋinternalᚋgraphᚋmodelᚐAggregatedExpendituresResponse(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -3609,11 +5344,333 @@ func (ec *executionContext) marshalOExpenditure2ᚕᚖyabaᚋinternalᚋgraphᚋ
 	return ret
 }
 
-func (ec *executionContext) marshalOExpenditure2ᚖyabaᚋinternalᚋgraphᚋmodelᚐExpenditure(ctx context.Context, sel ast.SelectionSet, v *model.Expenditure) graphql.Marshaler {
+func (ec *executionContext) marshalOAggregatedExpendituresResponse2ᚖyabaᚋinternalᚋgraphᚋmodelᚐAggregatedExpendituresResponse(ctx context.Context, sel ast.SelectionSet, v *model.AggregatedExpendituresResponse) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._Expenditure(ctx, sel, v)
+	return ec._AggregatedExpendituresResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOAggregation2ᚖyabaᚋinternalᚋgraphᚋmodelᚐAggregation(ctx context.Context, v interface{}) (*model.Aggregation, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.Aggregation)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOAggregation2ᚖyabaᚋinternalᚋgraphᚋmodelᚐAggregation(ctx context.Context, sel ast.SelectionSet, v *model.Aggregation) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
+	res, err := graphql.UnmarshalBoolean(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
+	res := graphql.MarshalBoolean(v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOBoolean2ᚖbool(ctx context.Context, v interface{}) (*bool, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalBoolean(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast.SelectionSet, v *bool) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalBoolean(*v)
+	return res
+}
+
+func (ec *executionContext) marshalOBudgetResponse2ᚕᚖyabaᚋinternalᚋgraphᚋmodelᚐBudgetResponse(ctx context.Context, sel ast.SelectionSet, v []*model.BudgetResponse) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOBudgetResponse2ᚖyabaᚋinternalᚋgraphᚋmodelᚐBudgetResponse(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOBudgetResponse2ᚖyabaᚋinternalᚋgraphᚋmodelᚐBudgetResponse(ctx context.Context, sel ast.SelectionSet, v *model.BudgetResponse) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._BudgetResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOExpenditureResponse2ᚕᚖyabaᚋinternalᚋgraphᚋmodelᚐExpenditureResponse(ctx context.Context, sel ast.SelectionSet, v []*model.ExpenditureResponse) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOExpenditureResponse2ᚖyabaᚋinternalᚋgraphᚋmodelᚐExpenditureResponse(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOExpenditureResponse2ᚖyabaᚋinternalᚋgraphᚋmodelᚐExpenditureResponse(ctx context.Context, sel ast.SelectionSet, v *model.ExpenditureResponse) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ExpenditureResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOExpenseInput2ᚕᚖyabaᚋinternalᚋgraphᚋmodelᚐExpenseInput(ctx context.Context, v interface{}) ([]*model.ExpenseInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.ExpenseInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOExpenseInput2ᚖyabaᚋinternalᚋgraphᚋmodelᚐExpenseInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOExpenseInput2ᚖyabaᚋinternalᚋgraphᚋmodelᚐExpenseInput(ctx context.Context, v interface{}) (*model.ExpenseInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputExpenseInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOExpenseResponse2ᚕᚖyabaᚋinternalᚋgraphᚋmodelᚐExpenseResponse(ctx context.Context, sel ast.SelectionSet, v []*model.ExpenseResponse) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOExpenseResponse2ᚖyabaᚋinternalᚋgraphᚋmodelᚐExpenseResponse(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOExpenseResponse2ᚖyabaᚋinternalᚋgraphᚋmodelᚐExpenseResponse(ctx context.Context, sel ast.SelectionSet, v *model.ExpenseResponse) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ExpenseResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v interface{}) (*float64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel ast.SelectionSet, v *float64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalFloatContext(*v)
+	return graphql.WrapContextMarshaler(ctx, res)
+}
+
+func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalID(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalID(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOIncomeInput2ᚕᚖyabaᚋinternalᚋgraphᚋmodelᚐIncomeInput(ctx context.Context, v interface{}) ([]*model.IncomeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.IncomeInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOIncomeInput2ᚖyabaᚋinternalᚋgraphᚋmodelᚐIncomeInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOIncomeInput2ᚖyabaᚋinternalᚋgraphᚋmodelᚐIncomeInput(ctx context.Context, v interface{}) (*model.IncomeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputIncomeInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOIncomeResponse2ᚕᚖyabaᚋinternalᚋgraphᚋmodelᚐIncomeResponse(ctx context.Context, sel ast.SelectionSet, v []*model.IncomeResponse) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOIncomeResponse2ᚖyabaᚋinternalᚋgraphᚋmodelᚐIncomeResponse(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOIncomeResponse2ᚖyabaᚋinternalᚋgraphᚋmodelᚐIncomeResponse(ctx context.Context, sel ast.SelectionSet, v *model.IncomeResponse) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._IncomeResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {

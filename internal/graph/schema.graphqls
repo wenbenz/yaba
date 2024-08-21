@@ -2,51 +2,86 @@
 #
 # https://gqlgen.com/getting-started/
 
-# Maps to ExternalBudget
-# type Budget {
-# 	id: ID!
-#   owner: String!
-#   name: String!
-#   strategy: String!
-#   incomes: [Income]
-#   expenses: [Expense]
-# }
+type BudgetResponse {
+    id: ID!
+    owner: String!
+    name: String!
+    incomes: [IncomeResponse]
+    expenses: [ExpenseResponse]
+}
 
-# type Income {
-#   source: String!
-#   amount: Float!
-# }
+type IncomeResponse {
+    source: String!
+    amount: Float!
+}
 
-# type Expense {
-#   category: String!
-#   amount: Float!
-#   isFixed: Boolean
-#   isSlack: Boolean
-# }
+type ExpenseResponse {
+    category: String!
+    amount: Float!
+    isFixed: Boolean
+    isSlack: Boolean
+}
 
-# input NewTodo {
-#   text: String!
-#   userId: String!
-# }
+type ExpenditureResponse {
+    id: String
+    owner: String
+    name: String
+    amount: String
+    date: String
+    method: String
+    budget_category: String
+    reward_category: String
+    comment: String
+    created: String
+    source: String
+}
 
-type Expenditure {
-  id: String
-  owner: String
-  name: String
-  amount: String
-  date: String
-  method: String
-  budget_category: String
-  reward_category: String
-  comment: String
-  created: String
-  source: String
+enum Aggregation {
+    SUM
+    MEAN
+}
+
+type AggregatedExpendituresResponse {
+    groupByCategory: String
+    amount: Float,
+    span: String
 }
 
 type Query {
-  expenditure(since: String, until: String, count: Int): [Expenditure]
+    budget(id: ID): BudgetResponse
+    budgets(first: Int): [BudgetResponse]
+
+    expenditures(since: String, until: String, count: Int): [ExpenditureResponse]
+    aggregatedExpenditures(since: String, until: String, span: String,
+        groupByCategory: String, aggregation: Aggregation): [AggregatedExpendituresResponse]
 }
 
-# type Mutation {
-#   createTodo(input: NewTodo!): Todo!
-# }
+input NewBudgetInput {
+  name: String!
+  incomes: [IncomeInput]
+  expenses: [ExpenseInput]
+}
+
+input UpdateBudgetInput {
+  id: ID!
+  name: String
+  incomes: [IncomeInput]
+  expenses: [ExpenseInput]
+}
+
+input IncomeInput {
+  source: String!
+  amount: Float!
+}
+
+input ExpenseInput {
+  category: String!
+  amount: Float!
+  isFixed: Boolean
+  isSlack: Boolean
+}
+
+type Mutation {
+    createBudget(input: NewBudgetInput!): BudgetResponse
+    updateBudget(input: UpdateBudgetInput!): BudgetResponse
+}

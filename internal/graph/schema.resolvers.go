@@ -7,7 +7,6 @@ package graph
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 	"yaba/internal/constants"
 	"yaba/internal/database"
@@ -16,51 +15,107 @@ import (
 	"github.com/google/uuid"
 )
 
-// Expenditure is the resolver for the expenditure field.
-func (r *queryResolver) Expenditure(ctx context.Context, since *string, until *string, count *int) ([]*model.Expenditure, error) {
+// CreateBudget is the resolver for the createBudget field.
+func (r *mutationResolver) CreateBudget(ctx context.Context, input model.NewBudgetInput) (*model.BudgetResponse, error) {
+	user := ctx.Value(constants.CTXUser).(uuid.UUID)
+
+	b := model.BudgetFromNewBudgetInput(user, &input)
+
+	if err := database.PersistBudget(ctx, r.Pool, b); err != nil {
+		return nil, err
+	}
+
+	return model.BudgetToBudgetResponse(b), nil
+}
+
+// UpdateBudget is the resolver for the updateBudget field.
+func (r *mutationResolver) UpdateBudget(ctx context.Context, input model.UpdateBudgetInput) (*model.BudgetResponse, error) {
+	user := ctx.Value(constants.CTXUser).(uuid.UUID)
+	budgetID, err := uuid.Parse(input.ID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid budget ID: %w", err)
+	}
+
+	// Check that user owns this budget
+	existing, err := database.GetBudget(ctx, r.Pool, budgetID)
+	if err != nil {
+		return nil, fmt.Errorf("budget not found: %w", err)
+	}
+
+	if existing.Owner != user {
+		return nil, fmt.Errorf("user does not own this budget")
+	}
+
+	// Persist budget
+	b := model.BudgetFromUpdateBudgetInput(budgetID, user, &input)
+	if err := database.PersistBudget(ctx, r.Pool, b); err != nil {
+		return nil, err
+	}
+
+	return model.BudgetToBudgetResponse(b), nil
+}
+
+// Budget is the resolver for the budget field.
+func (r *queryResolver) Budget(ctx context.Context, id *string) (*model.BudgetResponse, error) {
+	budgetID, err := uuid.Parse(*id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid budget ID: %w", err)
+	}
+
+	b, err := database.GetBudget(ctx, r.Pool, budgetID)
+	if err != nil {
+		return nil, err
+	}
+
+	return model.BudgetToBudgetResponse(b), nil
+}
+
+// Budgets is the resolver for the budgets field.
+func (r *queryResolver) Budgets(ctx context.Context, first *int) ([]*model.BudgetResponse, error) {
+	user := ctx.Value(constants.CTXUser).(uuid.UUID)
+	b, err := database.GetBudgets(ctx, r.Pool, user, *first)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]*model.BudgetResponse, len(b))
+	for i := range b {
+		out[i] = model.BudgetToBudgetResponse(b[i])
+	}
+
+	return out, nil
+}
+
+// Expenditures is the resolver for the expenditures field.
+func (r *queryResolver) Expenditures(ctx context.Context, since *string, until *string, count *int) ([]*model.ExpenditureResponse, error) {
 	sinceTime, err := time.Parse(time.RFC3339, *since)
 	if err != nil {
-		return []*model.Expenditure{}, err
+		return []*model.ExpenditureResponse{}, err
 	}
 
 	untilTime, err := time.Parse(time.RFC3339, *until)
 	if err != nil {
-		return []*model.Expenditure{}, err
+		return []*model.ExpenditureResponse{}, err
 	}
 
-	expenditures, err := database.ListExpenditures(ctx, r.Pool, ctx.Value(constants.CTXUser).(uuid.UUID), sinceTime, untilTime, *count);
+	expenditures, err := database.ListExpenditures(ctx, r.Pool, ctx.Value(constants.CTXUser).(uuid.UUID), sinceTime, untilTime, *count)
 	if err != nil {
-		return []*model.Expenditure{}, err
+		return []*model.ExpenditureResponse{}, err
 	}
 
-	ret := make([]*model.Expenditure, len(expenditures))
-	for i, obj := range expenditures {
-		id := strconv.Itoa(obj.ID)
-		owner := obj.Owner.String()
-		amount := fmt.Sprintf("%.2f", obj.Amount)
-		date := obj.Date.Format(time.DateOnly)
-		cat := obj.RewardCategory.String
-		created := obj.CreatedTime.Format(time.RFC3339)
-
-		ret[i] = &model.Expenditure{
-			ID: &id,
-			Owner: &owner,
-			Name: &obj.Name,
-			Amount: &amount,
-			Date: &date,
-			Method: &obj.Method,
-			BudgetCategory: &obj.BudgetCategory,
-			RewardCategory: &cat,
-			Comment: &obj.Comment,
-			Created: &created,
-			Source: &obj.Source,
-		}
-	}
-
-	return ret, nil
+	return model.ExpendituresToExpenitureResponse(expenditures), nil
 }
+
+// AggregatedExpenditures is the resolver for the aggregatedExpenditures field.
+func (r *queryResolver) AggregatedExpenditures(ctx context.Context, since *string, until *string, span *string, groupByCategory *string, aggregation *model.Aggregation) ([]*model.AggregatedExpendituresResponse, error) {
+	panic(fmt.Errorf("not implemented: AggregatedExpenditures - aggregatedExpenditures"))
+}
+
+// Mutation returns MutationResolver implementation.
+func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
