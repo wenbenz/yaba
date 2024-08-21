@@ -17,3 +17,11 @@ type InvalidStateError struct {
 func (e InvalidStateError) Error() string {
 	return e.Message
 }
+
+type NoSuchElementError struct {
+	Element any
+}
+
+func (e NoSuchElementError) Error() string {
+	return fmt.Sprintf("no such element: %v", e.Element)
+}

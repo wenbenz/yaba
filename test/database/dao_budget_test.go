@@ -23,7 +23,7 @@ func TestBasicBudgetOperations(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create and save a budget
-	b := budget.NewZeroBasedBudget(owner, "name")
+	b := budget.NewBudget(owner, "name")
 	b.SetBudgetIncome("work", 5000)
 	b.SetBudgetIncome("gig", 1000)
 	b.SetFixedExpense("housing", 1500)
@@ -33,12 +33,17 @@ func TestBasicBudgetOperations(t *testing.T) {
 	require.NoError(t, database.PersistBudget(ctx, pool, b))
 
 	// List budgets should show the created budget
-	budgets, err := database.GetBudgets(ctx, pool, owner)
+	budgets, err := database.GetBudgets(ctx, pool, owner, 10)
 	require.NoError(t, err)
 	require.Len(t, budgets, 1)
 	require.EqualValues(t, b, budgets[0])
 	require.Len(t, budgets[0].Incomes, 2)
 	require.Len(t, budgets[0].Expenses, 4)
+
+	// Get specific budget
+	fetched, err := database.GetBudget(ctx, pool, b.ID)
+	require.NoError(t, err)
+	require.EqualValues(t, b, fetched)
 
 	// Change the budget and save it
 	b.RemoveExpense("savings")
@@ -48,7 +53,7 @@ func TestBasicBudgetOperations(t *testing.T) {
 	require.NoError(t, database.PersistBudget(ctx, pool, b))
 
 	// Get the updated budget
-	budgets, err = database.GetBudgets(ctx, pool, owner)
+	budgets, err = database.GetBudgets(ctx, pool, owner, 10)
 	require.NoError(t, err)
 	require.Len(t, budgets, 1)
 	require.EqualValues(t, b, budgets[0])
@@ -57,7 +62,18 @@ func TestBasicBudgetOperations(t *testing.T) {
 
 	// Delete the budget
 	require.NoError(t, database.DeleteBudget(ctx, pool, b))
-	budgets, err = database.GetBudgets(ctx, pool, owner)
+	budgets, err = database.GetBudgets(ctx, pool, owner, 10)
 	require.NoError(t, err)
 	require.Empty(t, budgets)
+}
+
+func TestGetNonExistingBudget(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	pool := helper.GetTestPool()
+
+	// Get specific budget
+	_, err := database.GetBudget(ctx, pool, uuid.New())
+	require.ErrorContains(t, err, "no such element")
 }

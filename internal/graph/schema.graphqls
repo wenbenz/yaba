@@ -1,0 +1,87 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+type BudgetResponse {
+    id: ID!
+    owner: String!
+    name: String!
+    incomes: [IncomeResponse]
+    expenses: [ExpenseResponse]
+}
+
+type IncomeResponse {
+    source: String!
+    amount: Float!
+}
+
+type ExpenseResponse {
+    category: String!
+    amount: Float!
+    isFixed: Boolean
+    isSlack: Boolean
+}
+
+type ExpenditureResponse {
+    id: String
+    owner: String
+    name: String
+    amount: String
+    date: String
+    method: String
+    budget_category: String
+    reward_category: String
+    comment: String
+    created: String
+    source: String
+}
+
+enum Aggregation {
+    SUM
+    MEAN
+}
+
+type AggregatedExpendituresResponse {
+    groupByCategory: String
+    amount: Float,
+    span: String
+}
+
+type Query {
+    budget(id: ID): BudgetResponse
+    budgets(first: Int): [BudgetResponse]
+
+    expenditures(since: String, until: String, count: Int): [ExpenditureResponse]
+    aggregatedExpenditures(since: String, until: String, span: String,
+        groupByCategory: String, aggregation: Aggregation): [AggregatedExpendituresResponse]
+}
+
+input NewBudgetInput {
+  name: String!
+  incomes: [IncomeInput]
+  expenses: [ExpenseInput]
+}
+
+input UpdateBudgetInput {
+  id: ID!
+  name: String
+  incomes: [IncomeInput]
+  expenses: [ExpenseInput]
+}
+
+input IncomeInput {
+  source: String!
+  amount: Float!
+}
+
+input ExpenseInput {
+  category: String!
+  amount: Float!
+  isFixed: Boolean
+  isSlack: Boolean
+}
+
+type Mutation {
+    createBudget(input: NewBudgetInput!): BudgetResponse
+    updateBudget(input: UpdateBudgetInput!): BudgetResponse
+}

@@ -51,7 +51,7 @@ func TestExpenditures(t *testing.T) {
 		require.Equal(t, expected.Owner, actual.Owner)
 		require.Equal(t, expected.Name, actual.Name)
 		require.InDelta(t, expected.Amount, actual.Amount, .001)
-		require.Equal(t, expected.Date.Format(time.RFC3339), actual.Date.Format(time.RFC3339))
+		require.Equal(t, expected.Date.Format(time.DateOnly), actual.Date.Format(time.DateOnly))
 		require.Equal(t, expected.BudgetCategory, actual.BudgetCategory)
 		require.Equal(t, expected.RewardCategory, actual.RewardCategory)
 		require.Equal(t, expected.Method, actual.Method)

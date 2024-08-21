@@ -22,9 +22,9 @@ CREATE TABLE IF NOT EXISTS expenditure (
     date TIMESTAMPTZ NOT NULL,
     name VARCHAR(50),
     method VARCHAR(50),
-    budget_category VARCHAR(20),
+    budget_category VARCHAR(50),
     reward_category reward_category NULL,
     comment TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_owner_date ON expenditure USING BTREE(owner, date);
+CREATE INDEX IF NOT EXISTS idx_owner_date_id ON expenditure USING BTREE(owner, date, id);

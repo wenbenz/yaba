@@ -1,0 +1,7 @@
+# Default genqlient config; for full documentation see:
+# https://github.com/Khan/genqlient/blob/main/docs/genqlient.yaml
+schema: internal/graph/schema.graphqls
+operations:
+- internal/graph/client/genqlient.graphql
+generated: internal/graph/client/generated.go
+optional: value

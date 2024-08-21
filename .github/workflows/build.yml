@@ -21,6 +21,12 @@ jobs:
       with:
         go-version: '1.21'
 
+    - name: Generate GraphQL server code
+      run: go run github.com/99designs/gqlgen generate
+
+    - name: Generate GraphQL client code
+      run: go run github.com/Khan/genqlient genqlient.yaml
+
     - name: Build
       run: go build -v ./...
 
