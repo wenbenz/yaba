@@ -11,7 +11,7 @@ import (
 	"time"
 	"yaba/internal/database"
 	"yaba/internal/graph/client"
-	"yaba/server"
+	"yaba/internal/server"
 	"yaba/test/helper"
 )
 

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 	"yaba/internal/database"
-	"yaba/server"
+	"yaba/internal/server"
 )
 
 func main() {
