@@ -1,4 +1,4 @@
-package graph
+package server
 
 // This file will be automatically regenerated based on the schema, any resolver implementations
 // will be copied through when generating and any unknown code will be moved to the end.
@@ -88,12 +88,12 @@ func (r *queryResolver) Budgets(ctx context.Context, first *int) ([]*model.Budge
 
 // Expenditures is the resolver for the expenditures field.
 func (r *queryResolver) Expenditures(ctx context.Context, since *string, until *string, count *int) ([]*model.ExpenditureResponse, error) {
-	sinceTime, err := time.Parse(time.RFC3339, *since)
+	sinceTime, err := time.Parse(time.DateOnly, *since)
 	if err != nil {
 		return []*model.ExpenditureResponse{}, err
 	}
 
-	untilTime, err := time.Parse(time.RFC3339, *until)
+	untilTime, err := time.Parse(time.DateOnly, *until)
 	if err != nil {
 		return []*model.ExpenditureResponse{}, err
 	}

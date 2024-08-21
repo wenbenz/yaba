@@ -1,0 +1,83 @@
+query GetBudget($id: ID) {
+    budget(id: $id) {
+        id
+        name
+        incomes {
+            source
+            amount
+        }
+        expenses {
+            category
+            amount
+            isFixed
+            isSlack
+        }
+    }
+}
+
+query ListBudgets($first: Int) {
+    budgets(first: $first) {
+        id
+        name
+        incomes {
+            source
+            amount
+        }
+        expenses {
+            category
+            amount
+            isFixed
+            isSlack
+        }
+    }
+}
+
+query ListExpenditures($since: String, $until: String, $first: Int) {
+    expenditures(since: $since, until: $until, count: $first) {
+        id
+        name
+        amount
+        date
+        method
+        budget_category
+        reward_category
+        comment
+        created
+        source
+    }
+}
+
+mutation CreateBudget ($name: String!, $incomes: [IncomeInput], $expenses: [ExpenseInput]) {
+    createBudget(input: { name: $name, incomes: $incomes, expenses: $expenses }) {
+        id
+        owner
+        name
+        incomes {
+            source
+            amount
+        }
+        expenses {
+            category
+            amount
+            isFixed
+            isSlack
+        }
+    }
+}
+mutation UpdateBudget ($id: ID!, $name: String, $incomes: [IncomeInput], $expenses: [ExpenseInput]) {
+    updateBudget(input: { id: $id, name: $name, incomes: $incomes, expenses: $expenses }) {
+        id
+        owner
+        name
+        incomes {
+            source
+            amount
+        }
+        expenses {
+            category
+            amount
+            isFixed
+            isSlack
+        }
+    }
+}

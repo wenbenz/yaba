@@ -17,7 +17,7 @@ func ExpendituresToExpenitureResponse(expenditures []*budget.Expenditure) []*Exp
 		amount := fmt.Sprintf("%.2f", obj.Amount)
 		date := obj.Date.Format(time.DateOnly)
 		cat := obj.RewardCategory.String
-		created := obj.CreatedTime.Format(time.RFC3339)
+		created := obj.CreatedTime.Format(time.DateOnly)
 
 		ret[i] = &ExpenditureResponse{
 			ID:             &id,

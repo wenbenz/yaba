@@ -10,3 +10,11 @@ linters:
     - gofumpt
     - goimports
     - nolintlint
+
+issues:
+  exclude-rules:
+    - path: 'test/'
+      linters:
+        - funlen
+        - goconst
+        - mnd

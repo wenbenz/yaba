@@ -19,7 +19,7 @@ func BudgetFromNewBudgetInput(owner uuid.UUID, input *NewBudgetInput) *budget.Bu
 
 func BudgetFromUpdateBudgetInput(budgetID, owner uuid.UUID, input *UpdateBudgetInput) *budget.Budget {
 	return &budget.Budget{
-		ID:       uuid.UUID{},
+		ID:       budgetID,
 		Owner:    owner,
 		Name:     *input.Name,
 		Incomes:  incomesFromIncomeInput(budgetID, input.Incomes),
