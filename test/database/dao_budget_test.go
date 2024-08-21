@@ -40,6 +40,11 @@ func TestBasicBudgetOperations(t *testing.T) {
 	require.Len(t, budgets[0].Incomes, 2)
 	require.Len(t, budgets[0].Expenses, 4)
 
+	// Get specific budget
+	fetched, err := database.GetBudget(ctx, pool, b.ID)
+	require.NoError(t, err)
+	require.EqualValues(t, b, fetched)
+
 	// Change the budget and save it
 	b.RemoveExpense("savings")
 	b.SetFixedExpense("dance", 200)
@@ -60,4 +65,15 @@ func TestBasicBudgetOperations(t *testing.T) {
 	budgets, err = database.GetBudgets(ctx, pool, owner, 10)
 	require.NoError(t, err)
 	require.Empty(t, budgets)
+}
+
+func TestGetNonExistingBudget(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	pool := helper.GetTestPool()
+
+	// Get specific budget
+	_, err := database.GetBudget(ctx, pool, uuid.New())
+	require.ErrorContains(t, err, "no such element")
 }

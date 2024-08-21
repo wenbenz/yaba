@@ -74,12 +74,18 @@ WHERE budget_id = $1
 
 func GetBudget(ctx context.Context, pool *pgxpool.Pool, budgetID uuid.UUID) (*budget.Budget, error) {
 	var budgets []*budget.Budget
-	if err := pgxscan.Select(ctx, pool, &budgets, getBudget, budgetID); err != nil {
-		return nil, fmt.Errorf("failed to fetch budget: %w", err)
+	var err error
+
+	if err = pgxscan.Select(ctx, pool, &budgets, getBudget, budgetID); err == nil {
+		if len(budgets) == 0 {
+			err = errors.NoSuchElementError{Element: budgetID}
+		} else {
+			err = populateBudgets(ctx, pool, budgets)
+		}
 	}
 
-	if len(budgets) == 0 {
-		return nil, errors.NoSuchElementError{Element: budgetID}
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch budget: %w", err)
 	}
 
 	return budgets[0], nil
@@ -88,13 +94,14 @@ func GetBudget(ctx context.Context, pool *pgxpool.Pool, budgetID uuid.UUID) (*bu
 func GetBudgets(ctx context.Context, pool *pgxpool.Pool, owner uuid.UUID, limit int) ([]*budget.Budget, error) {
 	// First, see which budgets actually exist
 	var budgets []*budget.Budget
-	if err := pgxscan.Select(ctx, pool, &budgets, getBudgetsByOwner, owner, limit); err != nil {
-		return nil, fmt.Errorf("failed to get budgets: %w", err)
+	var err error
+
+	if err = pgxscan.Select(ctx, pool, &budgets, getBudgetsByOwner, owner, limit); err == nil {
+		err = populateBudgets(ctx, pool, budgets)
 	}
 
-	err := populateBudgets(ctx, pool, budgets)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get budgets: %w", err)
 	}
 
 	return budgets, nil
