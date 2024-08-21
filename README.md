@@ -19,7 +19,7 @@ similar transactions.
 ## Quick Start
 Build the YABA docker image
 ```shell
-docker build --tag yaba .
+docker build --tag wenbenz/yaba .
 ```
 
 You may consider the following flags for debugging
