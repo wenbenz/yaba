@@ -7,12 +7,13 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"yaba/graph/server"
 )
 
 func BuildServerHandler(pool *pgxpool.Pool) http.Handler {
 	mux := http.NewServeMux()
 
-	gqlHandler := handler.NewDefaultServer(NewExecutableSchema(Config{Resolvers: &Resolver{
+	gqlHandler := handler.NewDefaultServer(server.NewExecutableSchema(server.Config{Resolvers: &server.Resolver{
 		Pool: pool,
 	}}))
 
