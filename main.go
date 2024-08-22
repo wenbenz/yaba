@@ -25,6 +25,7 @@ func main() {
 	// Ping postgres server to make sure things are working
 	startTime := time.Now()
 	ticker := time.NewTicker(time.Second)
+
 	for t := range ticker.C {
 		err = pool.Ping(context.Background())
 		if err == nil || t.After(startTime.Add(time.Minute)) {
@@ -33,6 +34,7 @@ func main() {
 
 		log.Println("failed to ping database:", err)
 	}
+
 	ticker.Stop()
 
 	if err != nil {
