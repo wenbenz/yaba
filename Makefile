@@ -22,3 +22,6 @@ clean:
 
 docker:
 	docker build --tag wenbenz/yaba:latest .
+
+cover:
+	go test -v -race -covermode=atomic -coverprofile=coverage.out yaba/internal/...

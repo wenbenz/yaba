@@ -1,14 +1,13 @@
-package import_test
+package importer_test
 
 import (
 	"encoding/csv"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 	"time"
-	"yaba/internal/import"
-
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
+	importer "yaba/internal/import"
 )
 
 func TestValidCSVs(t *testing.T) {

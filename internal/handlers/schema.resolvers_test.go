@@ -1,4 +1,4 @@
-package graph_test
+package handlers_test
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"yaba/graph/client"
 	"yaba/internal/database"
 	"yaba/internal/server"
-	"yaba/test/helper"
+	"yaba/internal/test/helper"
 )
 
 func TestExpenditures(t *testing.T) {

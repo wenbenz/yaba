@@ -1,14 +1,13 @@
 package handlers_test
 
 import (
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"yaba/internal/constants"
 	"yaba/internal/handlers"
-
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
 )
 
 type funcHandler struct {

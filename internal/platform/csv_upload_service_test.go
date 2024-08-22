@@ -2,15 +2,14 @@ package platform_test
 
 import (
 	"context"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 	"time"
 	"yaba/internal/database"
 	"yaba/internal/platform"
-	"yaba/test/helper"
-
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
+	"yaba/internal/test/helper"
 )
 
 func TestCSVUploadSuccess(t *testing.T) {
