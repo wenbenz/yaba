@@ -43,9 +43,14 @@ func main() {
 
 	log.Println("Connected to db!")
 
+	rootHandler, err := handlers.BuildServerHandler(pool)
+	if err != nil {
+		log.Fatalln("could not build root handler:", err)
+	}
+
 	// Server setup
 	yabaServer := http.Server{
-		Handler:      handlers.BuildServerHandler(pool),
+		Handler:      rootHandler,
 		Addr:         ":9222",
 		ReadTimeout:  1 * time.Second,
 		WriteTimeout: 1 * time.Second,

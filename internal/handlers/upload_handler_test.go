@@ -41,17 +41,16 @@ func TestUploadNoUser(t *testing.T) {
 func TestUploadCSV(t *testing.T) {
 	t.Parallel()
 
-	user := uuid.New()
-
-	w := httptest.NewRecorder()
-
 	pool := helper.GetTestPool()
 	handler := handlers.UploadHandler{Pool: pool}
+	user := uuid.New()
+	ctx := context.WithValue(context.Background(), constants.CTXUser, user)
+	w := httptest.NewRecorder()
 
 	request, err := UploadCSVRequest([]string{"testdata/spend.csv", "testdata/spend2.csv"})
 	require.NoError(t, err)
 
-	request = request.WithContext(context.WithValue(context.Background(), constants.CTXUser, user))
+	request = request.WithContext(ctx)
 
 	handler.ServeHTTP(w, request)
 	require.Equal(t, http.StatusOK, w.Code)

@@ -1,4 +1,4 @@
-package server
+package handlers
 
 // This file will be automatically regenerated based on the schema, any resolver implementations
 // will be copied through when generating and any unknown code will be moved to the end.
@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 	"yaba/graph/model"
+	"yaba/graph/server"
 	"yaba/internal/constants"
 	"yaba/internal/database"
 
@@ -56,8 +57,8 @@ func (r *mutationResolver) UpdateBudget(ctx context.Context, input model.UpdateB
 }
 
 // Budget is the resolver for the budget field.
-func (r *queryResolver) Budget(ctx context.Context, id *string) (*model.BudgetResponse, error) {
-	budgetID, err := uuid.Parse(*id)
+func (r *queryResolver) Budget(ctx context.Context, id string) (*model.BudgetResponse, error) {
+	budgetID, err := uuid.Parse(id)
 	if err != nil {
 		return nil, fmt.Errorf("invalid budget ID: %w", err)
 	}
@@ -111,11 +112,11 @@ func (r *queryResolver) AggregatedExpenditures(ctx context.Context, since *strin
 	panic(fmt.Errorf("not implemented: AggregatedExpenditures - aggregatedExpenditures"))
 }
 
-// Mutation returns MutationResolver implementation.
-func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
+// Mutation returns server.MutationResolver implementation.
+func (r *Resolver) Mutation() server.MutationResolver { return &mutationResolver{r} }
 
-// Query returns QueryResolver implementation.
-func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
+// Query returns server.QueryResolver implementation.
+func (r *Resolver) Query() server.QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

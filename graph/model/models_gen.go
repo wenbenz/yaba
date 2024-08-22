@@ -15,9 +15,9 @@ type AggregatedExpendituresResponse struct {
 }
 
 type BudgetResponse struct {
-	ID       string             `json:"id"`
-	Owner    string             `json:"owner"`
-	Name     string             `json:"name"`
+	ID       *string            `json:"id,omitempty"`
+	Owner    *string            `json:"owner,omitempty"`
+	Name     *string            `json:"name,omitempty"`
 	Incomes  []*IncomeResponse  `json:"incomes,omitempty"`
 	Expenses []*ExpenseResponse `json:"expenses,omitempty"`
 }
@@ -44,10 +44,10 @@ type ExpenseInput struct {
 }
 
 type ExpenseResponse struct {
-	Category string  `json:"category"`
-	Amount   float64 `json:"amount"`
-	IsFixed  *bool   `json:"isFixed,omitempty"`
-	IsSlack  *bool   `json:"isSlack,omitempty"`
+	Category *string  `json:"category,omitempty"`
+	Amount   *float64 `json:"amount,omitempty"`
+	IsFixed  *bool    `json:"isFixed,omitempty"`
+	IsSlack  *bool    `json:"isSlack,omitempty"`
 }
 
 type IncomeInput struct {
@@ -56,8 +56,8 @@ type IncomeInput struct {
 }
 
 type IncomeResponse struct {
-	Source string  `json:"source"`
-	Amount float64 `json:"amount"`
+	Source *string  `json:"source,omitempty"`
+	Amount *float64 `json:"amount,omitempty"`
 }
 
 type Mutation struct {
