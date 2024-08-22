@@ -7,7 +7,7 @@ services:
     ports:
       - "5432:5432"
     env_file:
-      - config/postgres.env
+      - config/examples/env/single_user_docker.env
     environment:
       - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
     secrets:

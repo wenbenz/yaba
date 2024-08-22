@@ -3,7 +3,7 @@ package database
 import (
 	"fmt"
 	"os"
-	"yaba/internal/errors"
+	"yaba/errors"
 )
 
 func getEnvTrackMissing(key string, missing *[]string) string {

@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 	"io"
 	"mime"
 	"mime/multipart"
@@ -18,10 +20,7 @@ import (
 	"yaba/internal/constants"
 	"yaba/internal/database"
 	"yaba/internal/handlers"
-	"yaba/test/helper"
-
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
+	"yaba/internal/test/helper"
 )
 
 func TestUploadNoUser(t *testing.T) {

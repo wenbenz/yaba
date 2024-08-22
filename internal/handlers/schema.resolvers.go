@@ -1,4 +1,4 @@
-package server
+package handlers
 
 // This file will be automatically regenerated based on the schema, any resolver implementations
 // will be copied through when generating and any unknown code will be moved to the end.
@@ -8,9 +8,9 @@ import (
 	"context"
 	"fmt"
 	"time"
+	"yaba/graph/model"
 	"yaba/internal/constants"
 	"yaba/internal/database"
-	"yaba/internal/graph/model"
 
 	"github.com/google/uuid"
 )
@@ -107,7 +107,7 @@ func (r *queryResolver) Expenditures(ctx context.Context, since *string, until *
 }
 
 // AggregatedExpenditures is the resolver for the aggregatedExpenditures field.
-func (r *queryResolver) AggregatedExpenditures(ctx context.Context, since *string, until *string, span *string, groupByCategory *string, aggregation *model.Aggregation) ([]*model.AggregatedExpendituresResponse, error) {
+func (r *queryResolver) AggregatedExpenditures(ctx context.Context, since *string, until *string, span *model.Timespan, groupByCategory *string, aggregation *model.Aggregation) ([]*model.AggregatedExpendituresResponse, error) {
 	panic(fmt.Errorf("not implemented: AggregatedExpenditures - aggregatedExpenditures"))
 }
 

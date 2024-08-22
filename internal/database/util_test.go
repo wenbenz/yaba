@@ -1,10 +1,9 @@
 package database_test
 
 import (
+	"github.com/stretchr/testify/require"
 	"testing"
 	"yaba/internal/database"
-
-	"github.com/stretchr/testify/require"
 )
 
 func TestGetPGConnectionString(t *testing.T) {

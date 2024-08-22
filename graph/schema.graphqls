@@ -41,6 +41,13 @@ enum Aggregation {
     MEAN
 }
 
+enum Timespan {
+    DAY
+    WEEK
+    MONTH
+    YEAR
+}
+
 type AggregatedExpendituresResponse {
     groupByCategory: String
     amount: Float,
@@ -52,7 +59,7 @@ type Query {
     budgets(first: Int): [BudgetResponse]
 
     expenditures(since: String, until: String, count: Int): [ExpenditureResponse]
-    aggregatedExpenditures(since: String, until: String, span: String,
+    aggregatedExpenditures(since: String, until: String, span: Timespan,
         groupByCategory: String, aggregation: Aggregation): [AggregatedExpendituresResponse]
 }
 

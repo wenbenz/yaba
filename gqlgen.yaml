@@ -1,11 +1,11 @@
 # Where are all the schema files located? globs are supported eg  src/**/*.graphqls
 schema:
-  - internal/graph/*.graphqls
+  - graph/*.graphqls
 
 # Where should the generated server code go?
 exec:
-  filename: internal/graph/server/generated.go
-  package: server
+  filename: internal/handlers/generated.go
+  package: handlers
 
 # Uncomment to enable federation
 # federation:
@@ -14,14 +14,14 @@ exec:
 
 # Where should any generated models go?
 model:
-  filename: internal/graph/model/models_gen.go
+  filename: graph/model/models_gen.go
   package: model
 
 # Where should the resolver implementations go?
 resolver:
   layout: follow-schema
-  dir: internal/graph/server
-  package: server
+  dir: internal/handlers/
+  package: handlers
   filename_template: "{name}.resolvers.go"
   # Optional: turn on to not generate template comments above resolvers
   # omit_template_comment: false
@@ -30,13 +30,13 @@ resolver:
 # struct_tag: json
 
 # Optional: turn on to use []Thing instead of []*Thing
-# omit_slice_element_pointers: false
+omit_slice_element_pointers: false
 
 # Optional: turn on to omit Is<Name>() methods to interface and unions
-# omit_interface_checks : true
+omit_interface_checks : true
 
 # Optional: turn on to skip generation of ComplexityRoot struct content and Complexity function
-# omit_complexity: false
+omit_complexity: true
 
 # Optional: turn on to not generate any file notice comments in generated files
 # omit_gqlgen_file_notice: false
@@ -66,7 +66,7 @@ struct_fields_always_pointers: false
 # gqlgen will search for any type names in the schema in these go packages
 # if they match it will use them, otherwise it will generate them.
 autobind:
-#  - "yaba/internal/graph/model"
+#  - "yaba/graph/model"
 
 # This section declares type mapping between the GraphQL and go type systems
 #

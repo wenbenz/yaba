@@ -3,8 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
-	"yaba/internal/errors"
-
+	"yaba/errors"
 	"yaba/internal/budget"
 
 	"github.com/georgysavva/scany/v2/pgxscan"

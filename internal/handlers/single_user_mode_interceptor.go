@@ -3,13 +3,12 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"net/http"
 	"os"
 	"strings"
+	"yaba/errors"
 	"yaba/internal/constants"
-	"yaba/internal/errors"
-
-	"github.com/google/uuid"
 )
 
 type SingleUserModeInterceptor struct {

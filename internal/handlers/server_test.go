@@ -1,4 +1,4 @@
-package graph_test
+package handlers_test
 
 import (
 	"context"
@@ -9,10 +9,11 @@ import (
 	"strconv"
 	"testing"
 	"time"
+	"yaba/graph/client"
 	"yaba/internal/database"
-	"yaba/internal/graph/client"
-	"yaba/internal/server"
-	"yaba/test/helper"
+	"yaba/internal/handlers"
+
+	"yaba/internal/test/helper"
 )
 
 func TestExpenditures(t *testing.T) {
@@ -23,7 +24,7 @@ func TestExpenditures(t *testing.T) {
 
 	ctx := context.Background()
 	pool := helper.GetTestPool()
-	svr := httptest.NewServer(server.BuildServerHandler(pool))
+	svr := httptest.NewServer(handlers.BuildServerHandler(pool))
 
 	startDate, _ := time.Parse(time.DateOnly, "2020-01-01")
 	endDate, _ := time.Parse(time.DateOnly, "2020-02-01")
@@ -70,7 +71,7 @@ func TestCreateEmptyBudget(t *testing.T) {
 
 	ctx := context.Background()
 	pool := helper.GetTestPool()
-	svr := httptest.NewServer(server.BuildServerHandler(pool))
+	svr := httptest.NewServer(handlers.BuildServerHandler(pool))
 
 	gql := graphql.NewClient(svr.URL+"/graphql", svr.Client())
 	listBudgetsResponse, err := client.ListBudgets(ctx, gql, 10)
@@ -107,7 +108,7 @@ func TestCreateFullBudget(t *testing.T) {
 
 	ctx := context.Background()
 	pool := helper.GetTestPool()
-	svr := httptest.NewServer(server.BuildServerHandler(pool))
+	svr := httptest.NewServer(handlers.BuildServerHandler(pool))
 
 	gql := graphql.NewClient(svr.URL+"/graphql", svr.Client())
 	listBudgetsResponse, err := client.ListBudgets(ctx, gql, 10)
@@ -164,7 +165,7 @@ func TestUpdateBudget(t *testing.T) {
 
 	ctx := context.Background()
 	pool := helper.GetTestPool()
-	svr := httptest.NewServer(server.BuildServerHandler(pool))
+	svr := httptest.NewServer(handlers.BuildServerHandler(pool))
 
 	gql := graphql.NewClient(svr.URL+"/graphql", svr.Client())
 	listBudgetsResponse, err := client.ListBudgets(ctx, gql, 10)
@@ -262,7 +263,7 @@ func TestUpdateFailsWrongOwner(t *testing.T) {
 
 	ctx := context.Background()
 	pool := helper.GetTestPool()
-	svr := httptest.NewServer(server.BuildServerHandler(pool))
+	svr := httptest.NewServer(handlers.BuildServerHandler(pool))
 
 	gql := graphql.NewClient(svr.URL+"/graphql", svr.Client())
 	listBudgetsResponse, err := client.ListBudgets(ctx, gql, 10)

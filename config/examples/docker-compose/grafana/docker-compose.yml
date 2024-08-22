@@ -10,16 +10,12 @@
 
 services:
   web:
-    image: yaba
+    image: wenbenz/yaba
     ports:
       - "9222:9222"
     env_file:
-      - config/postgres.env
+      - ../../env/single_user_docker.env
     environment:
-      # All operations will be from a single unauthenticated user.
-      # This configuration is for self-hosted use cases.
-      - SINGLE_USER_MODE=true
-      - SINGLE_USER_UUID=b49585ce-1ba0-4875-a99a-431b4c44c4d0
       - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
     secrets:
       - db_password
@@ -33,7 +29,7 @@ services:
     ports:
       - "5432:5432"
     env_file:
-      - config/postgres.env
+      - ../../env/single_user_docker.env
     environment:
       - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
     secrets:
@@ -48,4 +44,4 @@ services:
 
 secrets:
    db_password:
-     file: db_password.txt
+     file: ../../../../db_password.txt

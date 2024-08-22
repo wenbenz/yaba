@@ -15,7 +15,7 @@ func MockExpenditures(n int, owner uuid.UUID, startDate, endDate time.Time) []*b
 			ID:             int(gofakeit.Int64()),
 			Owner:          owner,
 			Name:           gofakeit.Company(),
-			Amount:         gofakeit.Float64Range(0, 1000),
+			Amount:         gofakeit.Float64Range(0, 1000), //nolint:mnd
 			Date:           gofakeit.DateRange(startDate, endDate),
 			Method:         gofakeit.CreditCardType(),
 			BudgetCategory: gofakeit.BeerStyle(),
@@ -34,7 +34,7 @@ func MockExpenditures(n int, owner uuid.UUID, startDate, endDate time.Time) []*b
 				}),
 				Valid: gofakeit.Bool(),
 			},
-			Comment:     gofakeit.HipsterSentence(5),
+			Comment:     gofakeit.HipsterSentence(5), //nolint:mnd
 			CreatedTime: gofakeit.DateRange(startDate, endDate),
 			Source:      gofakeit.Word() + ".csv",
 		}

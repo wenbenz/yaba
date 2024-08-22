@@ -119,3 +119,48 @@ func (e *Aggregation) UnmarshalGQL(v interface{}) error {
 func (e Aggregation) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
+
+type Timespan string
+
+const (
+	TimespanDay   Timespan = "DAY"
+	TimespanWeek  Timespan = "WEEK"
+	TimespanMonth Timespan = "MONTH"
+	TimespanYear  Timespan = "YEAR"
+)
+
+var AllTimespan = []Timespan{
+	TimespanDay,
+	TimespanWeek,
+	TimespanMonth,
+	TimespanYear,
+}
+
+func (e Timespan) IsValid() bool {
+	switch e {
+	case TimespanDay, TimespanWeek, TimespanMonth, TimespanYear:
+		return true
+	}
+	return false
+}
+
+func (e Timespan) String() string {
+	return string(e)
+}
+
+func (e *Timespan) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Timespan(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Timespan", str)
+	}
+	return nil
+}
+
+func (e Timespan) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
