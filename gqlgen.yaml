@@ -30,13 +30,13 @@ resolver:
 # struct_tag: json
 
 # Optional: turn on to use []Thing instead of []*Thing
-# omit_slice_element_pointers: false
+omit_slice_element_pointers: false
 
 # Optional: turn on to omit Is<Name>() methods to interface and unions
-# omit_interface_checks : true
+omit_interface_checks : true
 
 # Optional: turn on to skip generation of ComplexityRoot struct content and Complexity function
-# omit_complexity: false
+omit_complexity: true
 
 # Optional: turn on to not generate any file notice comments in generated files
 # omit_gqlgen_file_notice: false
