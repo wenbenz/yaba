@@ -28,6 +28,3 @@ go.work.sum
 .DS_Store
 
 db_password.txt
-/graph/server/generated.go
-/graph/model/models_gen.go
-/graph/client/generated.go
