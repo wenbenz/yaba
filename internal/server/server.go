@@ -7,14 +7,15 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	gqlServer "yaba/internal/graph/server"
+	gqlServer "yaba/graph/server"
+	server2 "yaba/graph/server"
 	"yaba/internal/handlers"
 )
 
 func BuildServerHandler(pool *pgxpool.Pool) http.Handler {
 	mux := http.NewServeMux()
 
-	gqlHandler := handler.NewDefaultServer(gqlServer.NewExecutableSchema(gqlServer.Config{Resolvers: &gqlServer.Resolver{
+	gqlHandler := handler.NewDefaultServer(gqlServer.NewExecutableSchema(gqlServer.Config{Resolvers: &server2.Resolver{
 		Pool: pool,
 	}}))
 

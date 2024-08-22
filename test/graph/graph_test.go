@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+	"yaba/graph/client"
 	"yaba/internal/database"
-	"yaba/internal/graph/client"
 	"yaba/internal/server"
 	"yaba/test/helper"
 )

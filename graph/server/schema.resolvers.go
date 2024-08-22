@@ -8,9 +8,9 @@ import (
 	"context"
 	"fmt"
 	"time"
+	"yaba/graph/model"
 	"yaba/internal/constants"
 	"yaba/internal/database"
-	"yaba/internal/graph/model"
 
 	"github.com/google/uuid"
 )

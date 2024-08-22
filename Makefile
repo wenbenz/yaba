@@ -1,22 +1,24 @@
-.PHONY: clean deps gqlgen gqlient docker
+.PHONY: clean deps docker graphql
 yaba: deps graphql build
 
 deps:
 	go get
 
-graphql: gqlgen gqlient
+graphql: graph/server/generated.go graph/model/models_gen.go graph/client/generated.go
 
-gqlient:
+graph/client/generated.go:
 	go run github.com/Khan/genqlient genqlient.yaml
 
-gqlgen:
+graph/model/models_gen.go: graph/server/generated.go
+
+graph/server/generated.go:
 	go run github.com/99designs/gqlgen generate
 
 build:
 	go build
 
 clean:
-	rm ./internal/graph/client/generated.go ./internal/graph/model/models_gen.go ./internal/graph/server/generated.go \
+	rm ./graph/client/generated.go ./graph/model/models_gen.go ./graph/server/generated.go \
 		./yaba ./coverage.out
 
 docker:
