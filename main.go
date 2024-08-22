@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 	"yaba/internal/database"
-	"yaba/internal/server"
+	"yaba/internal/handlers"
 )
 
 func main() {
@@ -45,7 +45,7 @@ func main() {
 
 	// Server setup
 	yabaServer := http.Server{
-		Handler:      server.BuildServerHandler(pool),
+		Handler:      handlers.BuildServerHandler(pool),
 		Addr:         ":9222",
 		ReadTimeout:  1 * time.Second,
 		WriteTimeout: 1 * time.Second,

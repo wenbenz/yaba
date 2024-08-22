@@ -9,7 +9,7 @@ RUN go mod download
 # Build the app binary
 COPY errors ./errors
 COPY graph/model ./graph/model
-COPY internal ./internal
+COPY internal ./internalf
 COPY main.go ./
 RUN CGO_ENABLED=0 GOOS=linux go build -o ./yaba
 

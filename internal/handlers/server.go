@@ -1,4 +1,4 @@
-package server
+package handlers
 
 import (
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -7,18 +7,17 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"yaba/internal/handlers"
 )
 
 func BuildServerHandler(pool *pgxpool.Pool) http.Handler {
 	mux := http.NewServeMux()
 
-	gqlHandler := handler.NewDefaultServer(handlers.NewExecutableSchema(handlers.Config{Resolvers: &handlers.Resolver{
+	gqlHandler := handler.NewDefaultServer(NewExecutableSchema(Config{Resolvers: &Resolver{
 		Pool: pool,
 	}}))
 
 	mux.Handle("/graphql", gqlHandler)
-	mux.Handle("/upload", handlers.UploadHandler{
+	mux.Handle("/upload", UploadHandler{
 		Pool: pool,
 	})
 
@@ -27,7 +26,7 @@ func BuildServerHandler(pool *pgxpool.Pool) http.Handler {
 	singleUserMode := os.Getenv("SINGLE_USER_MODE")
 	if strings.ToLower(singleUserMode) == "true" {
 		var err error
-		if handler, err = handlers.InterceptSingleUserMode(handler); err != nil {
+		if handler, err = InterceptSingleUserMode(handler); err != nil {
 			log.Fatalln(err)
 		}
 	}
