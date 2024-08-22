@@ -107,7 +107,7 @@ func (r *queryResolver) Expenditures(ctx context.Context, since *string, until *
 }
 
 // AggregatedExpenditures is the resolver for the aggregatedExpenditures field.
-func (r *queryResolver) AggregatedExpenditures(ctx context.Context, since *string, until *string, span *string, groupByCategory *string, aggregation *model.Aggregation) ([]*model.AggregatedExpendituresResponse, error) {
+func (r *queryResolver) AggregatedExpenditures(ctx context.Context, since *string, until *string, span *model.Timespan, groupByCategory *string, aggregation *model.Aggregation) ([]*model.AggregatedExpendituresResponse, error) {
 	panic(fmt.Errorf("not implemented: AggregatedExpenditures - aggregatedExpenditures"))
 }
 
