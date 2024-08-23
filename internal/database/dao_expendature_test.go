@@ -44,7 +44,7 @@ func TestExpenditures(t *testing.T) {
 	require.NoError(t, database.PersistExpenditures(ctx, pool, expenditures))
 
 	// Fetch newly created expenditures
-	fetched, err := database.ListExpenditures(ctx, pool, startDate, endDate, 100)
+	fetched, err := database.ListExpenditures(ctx, pool, startDate, endDate, nil, 100)
 	require.NoError(t, err)
 	require.Len(t, fetched, numExpenditures)
 
@@ -61,13 +61,13 @@ func TestExpenditures(t *testing.T) {
 	}
 
 	// Fetch with smaller limit
-	fetched, err = database.ListExpenditures(ctx, pool, expenditures[0].Date, endDate, 10)
+	fetched, err = database.ListExpenditures(ctx, pool, expenditures[0].Date, endDate, nil, 10)
 	require.NoError(t, err)
 	require.Equal(t, expenditures[0].Name, fetched[0].Name)
 	require.Equal(t, expenditures[9].Name, fetched[9].Name)
 
 	// Fetch with time range
-	fetched, err = database.ListExpenditures(ctx, pool, fetched[4].Date, fetched[8].Date, 10)
+	fetched, err = database.ListExpenditures(ctx, pool, fetched[4].Date, fetched[8].Date, nil, 10)
 	require.NoError(t, err)
 	require.Equal(t, expenditures[4].Name, fetched[0].Name)
 	require.Equal(t, expenditures[8].Name, fetched[4].Name)
@@ -234,7 +234,7 @@ func TestAggregateExpenditures(t *testing.T) {
 			require.NoError(t, err)
 
 			// Calculate the expected and compare the amounts
-			expenditures, err := database.ListExpenditures(ctx, pool, startDate, endDate, 300)
+			expenditures, err := database.ListExpenditures(ctx, pool, startDate, endDate, nil, 300)
 			require.NoError(t, err)
 
 			expected := tc.expectedAmounts(expenditures)
