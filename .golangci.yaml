@@ -18,3 +18,7 @@ issues:
         - funlen
         - goconst
         - mnd
+
+linters-settings:
+  wsl:
+    allow-cuddle-declarations: true
