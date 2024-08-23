@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 	"yaba/graph/model"
@@ -31,9 +30,12 @@ INSERT INTO expenditure (owner, name, amount, date, method, budget_category, rew
 VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, '')::reward_category, $8, NOW(), $9)
 `
 
-func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, since, until time.Time, limit int) ([]*budget.Expenditure, error) {
+func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, since, until time.Time, limit int,
+) ([]*budget.Expenditure, error) {
 	var expenditures []*budget.Expenditure
-	if err := pgxscan.Select(ctx, pool, &expenditures, listExpenditures, ctxutil.GetUser(ctx), since, until, limit); err != nil {
+
+	err := pgxscan.Select(ctx, pool, &expenditures, listExpenditures, ctxutil.GetUser(ctx), since, until, limit)
+	if err != nil {
 		return nil, fmt.Errorf("failed to get expenditures: %w", err)
 	}
 
@@ -42,8 +44,8 @@ func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, since, until time
 
 func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, endDate time.Time,
 	timespan model.Timespan, aggregation model.Aggregation, groupBy model.GroupBy) ([]*budget.ExpenditureSummary, error) {
-
 	var category string
+
 	switch groupBy {
 	case model.GroupByNone:
 		category = "'Total'"
@@ -64,7 +66,7 @@ func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, e
 
 	sq := squirrel.Select(date+" as date",
 		category+" as category",
-		fmt.Sprintf("%s(amount) as amount", aggregation.String())).
+		aggregation.String()+"(amount) as amount").
 		From("expenditure").
 		Where("owner = $1 AND date >= $2 AND date <= $3", ctxutil.GetUser(ctx), startDate, endDate).
 		GroupBy(date).
@@ -83,7 +85,6 @@ func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, e
 	err = pgxscan.Select(ctx, pool, &expenditures, query, args...)
 
 	if err != nil {
-		log.Println("Error executing query: ", query, args, err)
 		return []*budget.ExpenditureSummary{}, fmt.Errorf("failed to get expenditures: %w", err)
 	}
 

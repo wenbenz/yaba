@@ -40,6 +40,7 @@ func ExpendituresToExpenitureResponse(expenditures []*budget.Expenditure) []*Exp
 func ExpenditureSummariesToAggregateExpenditures(expenditures []*budget.ExpenditureSummary, timespan Timespan,
 ) []*AggregatedExpendituresResponse {
 	ret := make([]*AggregatedExpendituresResponse, len(expenditures))
+
 	for i, obj := range expenditures {
 		start := obj.StartDate.Format(time.DateOnly)
 		ret[i] = &AggregatedExpendituresResponse{

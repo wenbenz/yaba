@@ -27,6 +27,7 @@ func TestExpenditures(t *testing.T) {
 
 	endDate := time.Now()
 	startDate := endDate.AddDate(0, 0, -numExpenditures+1)
+
 	for i := range numExpenditures {
 		expenditures[i] = &budget.Expenditure{
 			Owner:          owner,
@@ -53,12 +54,13 @@ func TestExpenditures(t *testing.T) {
 		require.InDelta(t, expected.Amount, actual.Amount, .001)
 		require.Equal(t, expected.Date.Format(time.DateOnly), actual.Date.Format(time.DateOnly))
 		require.Equal(t, expected.BudgetCategory, actual.BudgetCategory)
+		require.Equal(t, expected.Method, actual.Method)
+		require.Equal(t, expected.Comment, actual.Comment)
 		require.Equal(t, expected.RewardCategory.Valid, actual.RewardCategory.Valid)
+
 		if expected.RewardCategory.Valid {
 			require.Equal(t, expected.RewardCategory, actual.RewardCategory)
 		}
-		require.Equal(t, expected.Method, actual.Method)
-		require.Equal(t, expected.Comment, actual.Comment)
 	}
 
 	// Fetch with smaller limit
