@@ -3,18 +3,19 @@ package database
 import (
 	"context"
 	"fmt"
-	"yaba/errors"
-	"yaba/internal/budget"
-
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"yaba/errors"
+	"yaba/internal/budget"
+	"yaba/internal/ctxutil"
 )
 
 const getBudget = `
 SELECT * FROM budget
-WHERE id = $1;
+WHERE owner = $1
+  AND id = $2;
 `
 
 const getBudgetsByOwner = `
@@ -32,7 +33,8 @@ SET name = $3;
 
 const deleteBudget = `
 DELETE FROM budget
-WHERE id = $1
+WHERE owner = $1
+  AND id = $2;
 `
 
 const getIncomesByOwner = `
@@ -71,12 +73,12 @@ DELETE FROM expense
 WHERE budget_id = $1
 `
 
-func GetBudget(ctx context.Context, pool *pgxpool.Pool, budgetID uuid.UUID) (*budget.Budget, error) {
+func GetBudget(ctx context.Context, pool *pgxpool.Pool, owner, budgetID uuid.UUID) (*budget.Budget, error) {
 	var budgets []*budget.Budget
 
 	var err error
 
-	if err = pgxscan.Select(ctx, pool, &budgets, getBudget, budgetID); err == nil {
+	if err = pgxscan.Select(ctx, pool, &budgets, getBudget, owner, budgetID); err == nil {
 		if len(budgets) == 0 {
 			err = errors.NoSuchElementError{Element: budgetID}
 		} else {
@@ -169,7 +171,7 @@ func PersistBudget(ctx context.Context, pool *pgxpool.Pool, budget *budget.Budge
 
 func DeleteBudget(ctx context.Context, pool *pgxpool.Pool, budget *budget.Budget) error {
 	batch := &pgx.Batch{}
-	batch.Queue(deleteBudget, budget.ID)
+	batch.Queue(deleteBudget, ctxutil.GetUser(ctx), budget.ID)
 	batch.Queue(deleteIncomeByOwner, budget.ID)
 	batch.Queue(deleteExpenseByBudget, budget.ID)
 

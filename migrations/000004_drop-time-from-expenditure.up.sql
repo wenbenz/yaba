@@ -1,0 +1,1 @@
+ALTER TABLE expenditure ALTER COLUMN date TYPE DATE;

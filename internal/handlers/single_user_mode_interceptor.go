@@ -1,14 +1,13 @@
 package handlers
 
 import (
-	"context"
 	"fmt"
 	"github.com/google/uuid"
 	"net/http"
 	"os"
 	"strings"
 	"yaba/errors"
-	"yaba/internal/constants"
+	"yaba/internal/ctxutil"
 )
 
 type SingleUserModeInterceptor struct {
@@ -17,7 +16,7 @@ type SingleUserModeInterceptor struct {
 }
 
 func (interceptor SingleUserModeInterceptor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := context.WithValue(r.Context(), constants.CTXUser, interceptor.UserID)
+	ctx := ctxutil.WithUser(r.Context(), interceptor.UserID)
 	interceptor.Intercepted.ServeHTTP(w, r.WithContext(ctx))
 }
 

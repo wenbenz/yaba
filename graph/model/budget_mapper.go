@@ -29,6 +29,7 @@ func BudgetFromUpdateBudgetInput(budgetID, owner uuid.UUID, input *UpdateBudgetI
 
 func BudgetToBudgetResponse(b *budget.Budget) *BudgetResponse {
 	id, owner, name := b.ID.String(), b.Owner.String(), b.Name
+
 	return &BudgetResponse{
 		ID:       &id,
 		Owner:    &owner,

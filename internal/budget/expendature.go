@@ -20,3 +20,9 @@ type Expenditure struct {
 	CreatedTime    time.Time      `db:"created"`
 	Source         string         `db:"source"`
 }
+
+type ExpenditureSummary struct {
+	Category  string    `db:"category"`
+	Amount    float64   `db:"amount"`
+	StartDate time.Time `db:"date"`
+}

@@ -8,68 +8,22 @@ import (
 	"testing"
 	"time"
 	"yaba/graph/model"
-	"yaba/internal/constants"
+	"yaba/internal/ctxutil"
 	"yaba/internal/database"
 	"yaba/internal/handlers"
 
 	"yaba/internal/test/helper"
 )
 
-func TestExpenditures(t *testing.T) {
-	t.Parallel()
-
-	user := uuid.New()
-	ctx := context.WithValue(context.Background(), constants.CTXUser, user)
-	pool := helper.GetTestPool()
-	resolver := &handlers.Resolver{Pool: pool}
-
-	startDateString, endDateString := "2020-01-01", "2020-02-01"
-	startDate, _ := time.Parse(time.DateOnly, startDateString)
-	endDate, _ := time.Parse(time.DateOnly, endDateString)
-	limit := 301
-
-	err := database.PersistExpenditures(ctx, pool, helper.MockExpenditures(300, user, startDate, endDate))
-	require.NoError(t, err)
-
-	persistedExpenditures, err := database.ListExpenditures(ctx, pool, user, startDate, endDate, limit)
-	require.NoError(t, err)
-	require.Len(t, persistedExpenditures, 300)
-
-	expenditures, err := resolver.Query().Expenditures(ctx, &startDateString, &endDateString, &limit)
-	require.NoError(t, err)
-	require.Len(t, expenditures, 300)
-
-	for i, expenditure := range expenditures {
-		require.Equal(t, persistedExpenditures[i].Name, *expenditure.Name)
-		amount, err := strconv.ParseFloat(*expenditure.Amount, 64)
-		require.NoError(t, err)
-		require.InDelta(t, persistedExpenditures[i].Amount, amount, .009)
-		require.Equal(t, persistedExpenditures[i].CreatedTime.Format(time.DateOnly), *expenditure.Created)
-		require.Equal(t, persistedExpenditures[i].Date.Format(time.DateOnly), *expenditure.Date)
-		require.Equal(t, persistedExpenditures[i].Comment, *expenditure.Comment)
-		require.Equal(t, persistedExpenditures[i].BudgetCategory, *expenditure.BudgetCategory)
-		require.Equal(t, strconv.Itoa(persistedExpenditures[i].ID), *expenditure.ID)
-		require.Equal(t, persistedExpenditures[i].Method, *expenditure.Method)
-		require.Equal(t, persistedExpenditures[i].Source, *expenditure.Source)
-
-		if persistedExpenditures[i].RewardCategory.Valid {
-			require.Equal(t, persistedExpenditures[i].RewardCategory.String, *expenditure.RewardCategory)
-		} else {
-			require.Equal(t, "", *expenditure.RewardCategory)
-		}
-	}
-}
-
 func TestCreateEmptyBudget(t *testing.T) {
 	t.Parallel()
 
 	user := uuid.New()
-	ctx := context.WithValue(context.Background(), constants.CTXUser, user)
+	ctx := ctxutil.WithUser(context.Background(), user)
 	pool := helper.GetTestPool()
 	resolver := &handlers.Resolver{Pool: pool}
-	limit := 10
 
-	budgets, err := resolver.Query().Budgets(ctx, &limit)
+	budgets, err := resolver.Query().Budgets(ctx, nil)
 	require.NoError(t, err)
 	require.Empty(t, budgets)
 
@@ -81,7 +35,7 @@ func TestCreateEmptyBudget(t *testing.T) {
 
 	require.NoError(t, err)
 
-	budgets, err = resolver.Query().Budgets(ctx, &limit)
+	budgets, err = resolver.Query().Budgets(ctx, nil)
 	require.NoError(t, err)
 	require.Len(t, budgets, 1)
 
@@ -102,7 +56,7 @@ func TestCreateFullBudget(t *testing.T) {
 	t.Parallel()
 
 	user := uuid.New()
-	ctx := context.WithValue(context.Background(), constants.CTXUser, user)
+	ctx := ctxutil.WithUser(context.Background(), user)
 	pool := helper.GetTestPool()
 	resolver := &handlers.Resolver{Pool: pool}
 	limit := 10
@@ -153,7 +107,7 @@ func TestUpdateBudget(t *testing.T) {
 	t.Parallel()
 
 	user := uuid.New()
-	ctx := context.WithValue(context.Background(), constants.CTXUser, user)
+	ctx := ctxutil.WithUser(context.Background(), user)
 	pool := helper.GetTestPool()
 	resolver := &handlers.Resolver{Pool: pool}
 	limit := 10
@@ -195,7 +149,7 @@ func TestUpdateBudget(t *testing.T) {
 	require.Len(t, b.Expenses, 4)
 
 	newName := "Budget2"
-	resolver.Mutation().UpdateBudget(ctx, model.UpdateBudgetInput{
+	_, err = resolver.Mutation().UpdateBudget(ctx, model.UpdateBudgetInput{
 		ID:   *b.ID,
 		Name: &newName,
 		Incomes: []*model.IncomeInput{
@@ -240,7 +194,7 @@ func TestUpdateFailsWrongOwner(t *testing.T) {
 	t.Parallel()
 
 	user := uuid.New()
-	ctx := context.WithValue(context.Background(), constants.CTXUser, user)
+	ctx := ctxutil.WithUser(context.Background(), user)
 	pool := helper.GetTestPool()
 	resolver := &handlers.Resolver{Pool: pool}
 	limit := 10
@@ -258,7 +212,8 @@ func TestUpdateFailsWrongOwner(t *testing.T) {
 	require.NoError(t, err)
 
 	// Just gonna go in and change the owner
-	tag, err := pool.Exec(ctx, "UPDATE budget SET owner = $2 WHERE owner = $1;", user, uuid.New())
+	newOwner := uuid.New()
+	tag, err := pool.Exec(ctx, "UPDATE budget SET owner = $2 WHERE owner = $1;", user, newOwner)
 	require.NoError(t, err)
 	require.Equal(t, int64(1), tag.RowsAffected())
 
@@ -268,13 +223,106 @@ func TestUpdateFailsWrongOwner(t *testing.T) {
 		Name: &newName,
 	})
 
-	require.ErrorContains(t, err, "user does not own this budget")
+	require.ErrorContains(t, err, "budget not found")
 
 	budgetID, err := uuid.Parse(*b.ID)
 	require.NoError(t, err)
 
-	dbBudget, err := database.GetBudget(ctx, pool, budgetID)
+	dbBudget, err := database.GetBudget(ctx, pool, newOwner, budgetID)
 	require.NoError(t, err)
 	require.Equal(t, budgetID, dbBudget.ID)
 	require.Equal(t, "Budget V1", dbBudget.Name)
+}
+
+func TestExpenditures(t *testing.T) {
+	t.Parallel()
+
+	user := uuid.New()
+	ctx := ctxutil.WithUser(context.Background(), user)
+	pool := helper.GetTestPool()
+	resolver := &handlers.Resolver{Pool: pool}
+
+	startDateString, endDateString := "2020-01-01", "2020-02-01"
+	startDate, _ := time.Parse(time.DateOnly, startDateString)
+	endDate, _ := time.Parse(time.DateOnly, endDateString)
+	limit := 301
+
+	err := database.PersistExpenditures(ctx, pool, helper.MockExpenditures(300, user, startDate, endDate))
+	require.NoError(t, err)
+
+	persistedExpenditures, err := database.ListExpenditures(ctx, pool, startDate, endDate, limit)
+	require.NoError(t, err)
+	require.Len(t, persistedExpenditures, 300)
+
+	expenditures, err := resolver.Query().Expenditures(ctx, &startDateString, &endDateString, &limit)
+	require.NoError(t, err)
+	require.Len(t, expenditures, 300)
+
+	for i, expenditure := range expenditures {
+		require.Equal(t, persistedExpenditures[i].Name, *expenditure.Name)
+		amount, err := strconv.ParseFloat(*expenditure.Amount, 64)
+		require.NoError(t, err)
+		require.InDelta(t, persistedExpenditures[i].Amount, amount, .009)
+		require.Equal(t, persistedExpenditures[i].CreatedTime.Format(time.DateOnly), *expenditure.Created)
+		require.Equal(t, persistedExpenditures[i].Date.Format(time.DateOnly), *expenditure.Date)
+		require.Equal(t, persistedExpenditures[i].Comment, *expenditure.Comment)
+		require.Equal(t, persistedExpenditures[i].BudgetCategory, *expenditure.BudgetCategory)
+		require.Equal(t, strconv.Itoa(persistedExpenditures[i].ID), *expenditure.ID)
+		require.Equal(t, persistedExpenditures[i].Method, *expenditure.Method)
+		require.Equal(t, persistedExpenditures[i].Source, *expenditure.Source)
+
+		if persistedExpenditures[i].RewardCategory.Valid {
+			require.Equal(t, persistedExpenditures[i].RewardCategory.String, *expenditure.RewardCategory)
+		} else {
+			require.Equal(t, "", *expenditure.RewardCategory)
+		}
+	}
+
+	// nil range should return everything
+	expenditures, err = resolver.Query().Expenditures(ctx, nil, nil, nil)
+	require.NoError(t, err)
+	require.Len(t, expenditures, 10)
+}
+
+func TestAggregateExpenditures(t *testing.T) {
+	t.Parallel()
+
+	user := uuid.New()
+	ctx := ctxutil.WithUser(context.Background(), user)
+	pool := helper.GetTestPool()
+	resolver := &handlers.Resolver{Pool: pool}
+
+	startDateString, endDateString := "2020-01-01", "2020-02-28"
+	startDate, _ := time.Parse(time.DateOnly, startDateString)
+	endDate, _ := time.Parse(time.DateOnly, endDateString)
+
+	err := database.PersistExpenditures(ctx, pool, helper.MockExpenditures(300, user, startDate, endDate))
+	require.NoError(t, err)
+
+	// Default default aggregation is sum. This should return 2 points: the sum of each month.
+	span := model.TimespanMonth
+	aggregate, err := resolver.Query().AggregatedExpenditures(ctx, nil, nil, &span, nil, nil)
+	require.NoError(t, err)
+	require.Len(t, aggregate, 2)
+
+	// Calculate the expected
+	expenditures, err := database.ListExpenditures(ctx, pool, startDate, endDate, 300)
+	require.NoError(t, err)
+
+	jan, feb := 0., 0.
+
+	for _, expenditure := range expenditures {
+		//nolint:exhaustive
+		switch expenditure.Date.Month() {
+		case time.January:
+			jan += expenditure.Amount
+		case time.February:
+			feb += expenditure.Amount
+		default:
+			t.Error("Unexpected month")
+		}
+	}
+
+	require.InDelta(t, jan, *aggregate[0].Amount, 0.001)
+	require.InDelta(t, feb, *aggregate[1].Amount, 0.001)
 }

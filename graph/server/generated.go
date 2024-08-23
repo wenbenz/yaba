@@ -56,7 +56,7 @@ type QueryResolver interface {
 	Budget(ctx context.Context, id string) (*model.BudgetResponse, error)
 	Budgets(ctx context.Context, first *int) ([]*model.BudgetResponse, error)
 	Expenditures(ctx context.Context, since *string, until *string, count *int) ([]*model.ExpenditureResponse, error)
-	AggregatedExpenditures(ctx context.Context, since *string, until *string, span *model.Timespan, groupByCategory *string, aggregation *model.Aggregation) ([]*model.AggregatedExpendituresResponse, error)
+	AggregatedExpenditures(ctx context.Context, since *string, until *string, span *model.Timespan, groupBy *model.GroupBy, aggregation *model.Aggregation) ([]*model.AggregatedExpendituresResponse, error)
 }
 
 type executableSchema struct {
@@ -225,7 +225,7 @@ type ExpenditureResponse {
 
 enum Aggregation {
     SUM
-    MEAN
+    AVG
 }
 
 enum Timespan {
@@ -235,19 +235,26 @@ enum Timespan {
     YEAR
 }
 
+enum GroupBy {
+    NONE
+    BUDGET_CATEGORY
+    REWARD_CATEGORY
+}
+
 type AggregatedExpendituresResponse {
     groupByCategory: String
     amount: Float,
-    span: String
+    spanStart: String,
+    span: Timespan
 }
 
 type Query {
     budget(id: ID!): BudgetResponse
-    budgets(first: Int = 1): [BudgetResponse]
+    budgets(first: Int): [BudgetResponse]
 
-    expenditures(since: String, until: String, count: Int = 10): [ExpenditureResponse]
-    aggregatedExpenditures(since: String, until: String, span: Timespan = MONTH,
-        groupByCategory: String, aggregation: Aggregation = SUM): [AggregatedExpendituresResponse]
+    expenditures(since: String, until: String, count: Int): [ExpenditureResponse]
+    aggregatedExpenditures(since: String, until: String, span: Timespan,
+        groupBy: GroupBy, aggregation: Aggregation): [AggregatedExpendituresResponse]
 }
 
 input NewBudgetInput {
@@ -362,15 +369,15 @@ func (ec *executionContext) field_Query_aggregatedExpenditures_args(ctx context.
 		}
 	}
 	args["span"] = arg2
-	var arg3 *string
-	if tmp, ok := rawArgs["groupByCategory"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("groupByCategory"))
-		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	var arg3 *model.GroupBy
+	if tmp, ok := rawArgs["groupBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("groupBy"))
+		arg3, err = ec.unmarshalOGroupBy2ᚖyabaᚋgraphᚋmodelᚐGroupBy(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["groupByCategory"] = arg3
+	args["groupBy"] = arg3
 	var arg4 *model.Aggregation
 	if tmp, ok := rawArgs["aggregation"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("aggregation"))
@@ -566,6 +573,47 @@ func (ec *executionContext) fieldContext_AggregatedExpendituresResponse_amount(_
 	return fc, nil
 }
 
+func (ec *executionContext) _AggregatedExpendituresResponse_spanStart(ctx context.Context, field graphql.CollectedField, obj *model.AggregatedExpendituresResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AggregatedExpendituresResponse_spanStart(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SpanStart, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AggregatedExpendituresResponse_spanStart(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AggregatedExpendituresResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _AggregatedExpendituresResponse_span(ctx context.Context, field graphql.CollectedField, obj *model.AggregatedExpendituresResponse) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_AggregatedExpendituresResponse_span(ctx, field)
 	if err != nil {
@@ -589,9 +637,9 @@ func (ec *executionContext) _AggregatedExpendituresResponse_span(ctx context.Con
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.Timespan)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOTimespan2ᚖyabaᚋgraphᚋmodelᚐTimespan(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_AggregatedExpendituresResponse_span(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -601,7 +649,7 @@ func (ec *executionContext) fieldContext_AggregatedExpendituresResponse_span(_ c
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Timespan does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1871,7 +1919,7 @@ func (ec *executionContext) _Query_aggregatedExpenditures(ctx context.Context, f
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().AggregatedExpenditures(rctx, fc.Args["since"].(*string), fc.Args["until"].(*string), fc.Args["span"].(*model.Timespan), fc.Args["groupByCategory"].(*string), fc.Args["aggregation"].(*model.Aggregation))
+		return ec.resolvers.Query().AggregatedExpenditures(rctx, fc.Args["since"].(*string), fc.Args["until"].(*string), fc.Args["span"].(*model.Timespan), fc.Args["groupBy"].(*model.GroupBy), fc.Args["aggregation"].(*model.Aggregation))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1897,6 +1945,8 @@ func (ec *executionContext) fieldContext_Query_aggregatedExpenditures(ctx contex
 				return ec.fieldContext_AggregatedExpendituresResponse_groupByCategory(ctx, field)
 			case "amount":
 				return ec.fieldContext_AggregatedExpendituresResponse_amount(ctx, field)
+			case "spanStart":
+				return ec.fieldContext_AggregatedExpendituresResponse_spanStart(ctx, field)
 			case "span":
 				return ec.fieldContext_AggregatedExpendituresResponse_span(ctx, field)
 			}
@@ -4020,6 +4070,8 @@ func (ec *executionContext) _AggregatedExpendituresResponse(ctx context.Context,
 			out.Values[i] = ec._AggregatedExpendituresResponse_groupByCategory(ctx, field, obj)
 		case "amount":
 			out.Values[i] = ec._AggregatedExpendituresResponse_amount(ctx, field, obj)
+		case "spanStart":
+			out.Values[i] = ec._AggregatedExpendituresResponse_spanStart(ctx, field, obj)
 		case "span":
 			out.Values[i] = ec._AggregatedExpendituresResponse_span(ctx, field, obj)
 		default:
@@ -5326,6 +5378,22 @@ func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel as
 	}
 	res := graphql.MarshalFloatContext(*v)
 	return graphql.WrapContextMarshaler(ctx, res)
+}
+
+func (ec *executionContext) unmarshalOGroupBy2ᚖyabaᚋgraphᚋmodelᚐGroupBy(ctx context.Context, v interface{}) (*model.GroupBy, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.GroupBy)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOGroupBy2ᚖyabaᚋgraphᚋmodelᚐGroupBy(ctx context.Context, sel ast.SelectionSet, v *model.GroupBy) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

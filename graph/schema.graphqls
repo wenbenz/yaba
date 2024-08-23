@@ -38,7 +38,7 @@ type ExpenditureResponse {
 
 enum Aggregation {
     SUM
-    MEAN
+    AVG
 }
 
 enum Timespan {
@@ -48,19 +48,26 @@ enum Timespan {
     YEAR
 }
 
+enum GroupBy {
+    NONE
+    BUDGET_CATEGORY
+    REWARD_CATEGORY
+}
+
 type AggregatedExpendituresResponse {
     groupByCategory: String
     amount: Float,
-    span: String
+    spanStart: String,
+    span: Timespan
 }
 
 type Query {
     budget(id: ID!): BudgetResponse
-    budgets(first: Int = 1): [BudgetResponse]
+    budgets(first: Int): [BudgetResponse]
 
-    expenditures(since: String, until: String, count: Int = 10): [ExpenditureResponse]
-    aggregatedExpenditures(since: String, until: String, span: Timespan = MONTH,
-        groupByCategory: String, aggregation: Aggregation = SUM): [AggregatedExpendituresResponse]
+    expenditures(since: String, until: String, count: Int): [ExpenditureResponse]
+    aggregatedExpenditures(since: String, until: String, span: Timespan,
+        groupBy: GroupBy, aggregation: Aggregation): [AggregatedExpendituresResponse]
 }
 
 input NewBudgetInput {

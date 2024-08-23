@@ -3,6 +3,7 @@ package database_test
 import (
 	"context"
 	"testing"
+	"yaba/internal/ctxutil"
 	"yaba/internal/database"
 	"yaba/internal/test/helper"
 
@@ -14,12 +15,10 @@ import (
 func TestBasicBudgetOperations(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-
 	pool := helper.GetTestPool()
 
-	owner, err := uuid.NewRandom()
-	require.NoError(t, err)
+	owner := uuid.New()
+	ctx := ctxutil.WithUser(context.Background(), owner)
 
 	// Create and save a budget
 	b := budget.NewBudget(owner, "name")
@@ -40,7 +39,7 @@ func TestBasicBudgetOperations(t *testing.T) {
 	require.Len(t, budgets[0].Expenses, 4)
 
 	// Get specific budget
-	fetched, err := database.GetBudget(ctx, pool, b.ID)
+	fetched, err := database.GetBudget(ctx, pool, owner, b.ID)
 	require.NoError(t, err)
 	require.EqualValues(t, b, fetched)
 
@@ -73,6 +72,6 @@ func TestGetNonExistingBudget(t *testing.T) {
 	pool := helper.GetTestPool()
 
 	// Get specific budget
-	_, err := database.GetBudget(ctx, pool, uuid.New())
+	_, err := database.GetBudget(ctx, pool, uuid.New(), uuid.New())
 	require.ErrorContains(t, err, "no such element")
 }

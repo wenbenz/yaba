@@ -17,7 +17,7 @@ import (
 	"strconv"
 	"testing"
 	"time"
-	"yaba/internal/constants"
+	"yaba/internal/ctxutil"
 	"yaba/internal/database"
 	"yaba/internal/handlers"
 	"yaba/internal/test/helper"
@@ -44,7 +44,7 @@ func TestUploadCSV(t *testing.T) {
 	pool := helper.GetTestPool()
 	handler := handlers.UploadHandler{Pool: pool}
 	user := uuid.New()
-	ctx := context.WithValue(context.Background(), constants.CTXUser, user)
+	ctx := ctxutil.WithUser(context.Background(), user)
 	w := httptest.NewRecorder()
 
 	request, err := UploadCSVRequest([]string{"testdata/spend.csv", "testdata/spend2.csv"})
@@ -57,7 +57,7 @@ func TestUploadCSV(t *testing.T) {
 
 	// Check that rows in each csv exist
 	date := time.Date(2006, time.July, 8, 0, 0, 0, 0, time.UTC)
-	expenditures, err := database.ListExpenditures(context.Background(), pool, user, date, date, 100)
+	expenditures, err := database.ListExpenditures(ctx, pool, date, date, 100)
 	require.NoError(t, err)
 	require.Len(t, expenditures, 4)
 }
@@ -75,7 +75,7 @@ func TestUploadNotCSV(t *testing.T) {
 	request, err := UploadCSVRequest([]string{"testdata/file.txt"})
 	require.NoError(t, err)
 
-	request = request.WithContext(context.WithValue(context.Background(), constants.CTXUser, user))
+	request = request.WithContext(ctxutil.WithUser(context.Background(), user))
 
 	handler.ServeHTTP(w, request)
 	require.Equal(t, http.StatusBadRequest, w.Code)
@@ -98,7 +98,7 @@ func TestUploadWrongKey(t *testing.T) {
 	request, err := UploadFileRequest([]string{"testdata/file.txt"}, "text/csv", "foobar")
 	require.NoError(t, err)
 
-	request = request.WithContext(context.WithValue(context.Background(), constants.CTXUser, user))
+	request = request.WithContext(ctxutil.WithUser(context.Background(), user))
 
 	handler.ServeHTTP(w, request)
 	require.Equal(t, http.StatusUnprocessableEntity, w.Code)
@@ -112,12 +112,13 @@ func TestUploadCSVPartialSuccess(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	pool := helper.GetTestPool()
+	ctx := ctxutil.WithUser(context.Background(), user)
 	handler := handlers.UploadHandler{Pool: pool}
 
 	request, err := UploadCSVRequest([]string{"testdata/spend.csv", "testdata/file.txt"})
 	require.NoError(t, err)
 
-	request = request.WithContext(context.WithValue(context.Background(), constants.CTXUser, user))
+	request = request.WithContext(ctxutil.WithUser(context.Background(), user))
 
 	handler.ServeHTTP(w, request)
 	require.Equal(t, http.StatusBadRequest, w.Code)
@@ -128,7 +129,7 @@ func TestUploadCSVPartialSuccess(t *testing.T) {
 
 	// Check that rows in the CSV
 	date := time.Date(2006, time.July, 8, 0, 0, 0, 0, time.UTC)
-	expenditures, err := database.ListExpenditures(context.Background(), pool, user, date, date, 100)
+	expenditures, err := database.ListExpenditures(ctx, pool, date, date, 100)
 	require.NoError(t, err)
 	require.Len(t, expenditures, 3)
 }

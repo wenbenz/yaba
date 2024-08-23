@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 	"time"
+	"yaba/internal/ctxutil"
 	"yaba/internal/database"
 	"yaba/internal/platform"
 	"yaba/internal/test/helper"
@@ -24,7 +25,7 @@ func TestCSVUploadSuccess(t *testing.T) {
 	user, err := uuid.NewRandom()
 	require.NoError(t, err)
 
-	ctx := context.Background()
+	ctx := ctxutil.WithUser(context.Background(), user)
 	startTime := time.Now()
 
 	require.NoError(t, platform.UploadSpendingsCSV(ctx, pool, user, f, "spend.csv"))
@@ -33,7 +34,7 @@ func TestCSVUploadSuccess(t *testing.T) {
 	date, err := time.Parse(time.DateOnly, "2006-07-08")
 	require.NoError(t, err)
 
-	expenditures, err := database.ListExpenditures(ctx, pool, user, date, date, 10)
+	expenditures, err := database.ListExpenditures(ctx, pool, date, date, 10)
 	require.NoError(t, err)
 	require.Len(t, expenditures, 3)
 
@@ -92,7 +93,7 @@ func TestCSVUploadBadCSV(t *testing.T) {
 		date, err := time.Parse(time.DateOnly, "2006-07-08")
 		require.NoError(t, err)
 
-		expenditures, err := database.ListExpenditures(ctx, pool, user, date, date, 10)
+		expenditures, err := database.ListExpenditures(ctx, pool, date, date, 10)
 		require.Empty(t, expenditures)
 		require.NoError(t, err)
 	}
