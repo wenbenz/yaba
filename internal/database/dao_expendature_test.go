@@ -195,33 +195,7 @@ func TestAggregateExpenditures(t *testing.T) {
 			aggregate: model.AggregationSum,
 			groupBy:   model.GroupByBudgetCategory,
 
-			expectedAmounts: func(expenditures []*budget.Expenditure) []float64 {
-				buckets := []map[string]float64{{}, {}}
-				exists := map[string]bool{}
-
-				var categories []string
-
-				for _, e := range expenditures {
-					buckets[e.Date.Month()-1][e.BudgetCategory] += e.Amount
-
-					if _, ok := exists[e.BudgetCategory]; !ok {
-						categories = append(categories, e.BudgetCategory)
-						exists[e.BudgetCategory] = true
-					}
-				}
-
-				slices.Sort(categories)
-
-				var out []float64
-
-				for _, bucket := range buckets {
-					for _, cat := range categories {
-						out = append(out, bucket[cat])
-					}
-				}
-
-				return out
-			},
+			expectedAmounts: janFebGroupBy(model.GroupByBudgetCategory),
 		}, {
 			name:          "group by reward category",
 			dataStartDate: "2024-01-01",
@@ -233,33 +207,7 @@ func TestAggregateExpenditures(t *testing.T) {
 			aggregate: model.AggregationSum,
 			groupBy:   model.GroupByRewardCategory,
 
-			expectedAmounts: func(expenditures []*budget.Expenditure) []float64 {
-				buckets := []map[string]float64{{}, {}}
-				exists := map[string]bool{}
-
-				var categories []string
-
-				for _, e := range expenditures {
-					buckets[e.Date.Month()-1][e.RewardCategory] += e.Amount
-
-					if _, ok := exists[e.RewardCategory]; !ok {
-						categories = append(categories, e.RewardCategory)
-						exists[e.RewardCategory] = true
-					}
-				}
-
-				slices.Sort(categories)
-
-				var out []float64
-
-				for _, bucket := range buckets {
-					for _, cat := range categories {
-						out = append(out, bucket[cat])
-					}
-				}
-
-				return out
-			},
+			expectedAmounts: janFebGroupBy(model.GroupByRewardCategory),
 		},
 	}
 
@@ -296,6 +244,45 @@ func TestAggregateExpenditures(t *testing.T) {
 				require.InDelta(t, expected[i], aggregate[i].Amount, .001)
 			}
 		})
+	}
+}
+
+func janFebGroupBy(groupBy model.GroupBy) func(expenditures []*budget.Expenditure) []float64 {
+	return func(expenditures []*budget.Expenditure) []float64 {
+		buckets := []map[string]float64{{}, {}}
+		exists := map[string]bool{}
+
+		var categories []string
+
+		for _, e := range expenditures {
+			var category string
+			//nolint:exhaustive
+			switch groupBy {
+			case model.GroupByBudgetCategory:
+				category = e.BudgetCategory
+			case model.GroupByRewardCategory:
+				category = e.RewardCategory
+			}
+
+			buckets[e.Date.Month()-1][category] += e.Amount
+
+			if _, ok := exists[category]; !ok {
+				categories = append(categories, category)
+				exists[category] = true
+			}
+		}
+
+		slices.Sort(categories)
+
+		var out []float64
+
+		for _, bucket := range buckets {
+			for _, cat := range categories {
+				out = append(out, bucket[cat])
+			}
+		}
+
+		return out
 	}
 }
 
