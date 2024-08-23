@@ -26,5 +26,6 @@ go.work.sum
 
 # IDE files
 .DS_Store
+.idea
 
 db_password.txt
