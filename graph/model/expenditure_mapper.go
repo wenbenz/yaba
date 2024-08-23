@@ -16,7 +16,7 @@ func ExpendituresToExpenitureResponse(expenditures []*budget.Expenditure) []*Exp
 		owner := obj.Owner.String()
 		amount := fmt.Sprintf("%.2f", obj.Amount)
 		date := obj.Date.Format(time.DateOnly)
-		cat := obj.RewardCategory.String
+		cat := obj.RewardCategory
 		created := obj.CreatedTime.Format(time.DateOnly)
 
 		ret[i] = &ExpenditureResponse{

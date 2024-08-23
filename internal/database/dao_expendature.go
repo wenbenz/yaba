@@ -27,7 +27,7 @@ LIMIT $4;
 
 const insertExpenditure = `
 INSERT INTO expenditure (owner, name, amount, date, method, budget_category, reward_category, comment, created, source)
-VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, '')::reward_category, $8, NOW(), $9)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9)
 `
 
 func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, since, until time.Time, limit int,
@@ -73,7 +73,9 @@ func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, e
 		OrderBy("date ASC")
 
 	if groupBy != model.GroupByNone {
-		sq.GroupBy(strings.ToLower(groupBy.String()))
+		gb := strings.ToLower(groupBy.String())
+		sq = sq.GroupBy(gb)
+		sq = sq.OrderBy(gb)
 	}
 
 	query, args, err := sq.ToSql()

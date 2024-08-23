@@ -3,8 +3,10 @@ package database_test
 import (
 	"context"
 	"fmt"
+	"slices"
 	"testing"
 	"time"
+	"yaba/graph/model"
 	"yaba/internal/budget"
 	"yaba/internal/ctxutil"
 	"yaba/internal/database"
@@ -56,11 +58,6 @@ func TestExpenditures(t *testing.T) {
 		require.Equal(t, expected.BudgetCategory, actual.BudgetCategory)
 		require.Equal(t, expected.Method, actual.Method)
 		require.Equal(t, expected.Comment, actual.Comment)
-		require.Equal(t, expected.RewardCategory.Valid, actual.RewardCategory.Valid)
-
-		if expected.RewardCategory.Valid {
-			require.Equal(t, expected.RewardCategory, actual.RewardCategory)
-		}
 	}
 
 	// Fetch with smaller limit
@@ -74,4 +71,247 @@ func TestExpenditures(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, expenditures[4].Name, fetched[0].Name)
 	require.Equal(t, expenditures[8].Name, fetched[4].Name)
+}
+
+func TestAggregateExpenditures(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name          string
+		dataStartDate string
+		dataEndDate   string
+
+		startDate string
+		endDate   string
+		span      model.Timespan
+		aggregate model.Aggregation
+		groupBy   model.GroupBy
+
+		expectedAmounts func(expenditures []*budget.Expenditure) []float64
+	}{
+		{
+			name:          "timespan week",
+			dataStartDate: "2024-08-05",
+			dataEndDate:   "2024-08-18",
+
+			startDate: "2024-08-05",
+			endDate:   "2024-08-18",
+			span:      model.TimespanWeek,
+			aggregate: model.AggregationSum,
+			groupBy:   model.GroupByNone,
+
+			expectedAmounts: twoWeeksInAugust(),
+		}, {
+			name:          "date range subset of data",
+			dataStartDate: "2022-08-01",
+			dataEndDate:   "2024-08-30",
+
+			startDate: "2024-08-05",
+			endDate:   "2024-08-18",
+			span:      model.TimespanWeek,
+			aggregate: model.AggregationSum,
+			groupBy:   model.GroupByNone,
+
+			expectedAmounts: twoWeeksInAugust(),
+		}, {
+			name:          "date range superset of data",
+			dataStartDate: "2024-08-05",
+			dataEndDate:   "2024-08-18",
+
+			startDate: "2024-08-01",
+			endDate:   "2024-08-30",
+			span:      model.TimespanWeek,
+			aggregate: model.AggregationSum,
+			groupBy:   model.GroupByNone,
+
+			expectedAmounts: twoWeeksInAugust(),
+		}, {
+			name:          "day span",
+			dataStartDate: "2024-08-01",
+			dataEndDate:   "2024-08-10",
+
+			startDate: "2024-08-01",
+			endDate:   "2024-08-30",
+			span:      model.TimespanDay,
+			aggregate: model.AggregationSum,
+			groupBy:   model.GroupByNone,
+
+			expectedAmounts: func(expenditures []*budget.Expenditure) []float64 {
+				out := make([]float64, 10)
+				for _, e := range expenditures {
+					out[e.Date.Day()-1] += e.Amount
+				}
+
+				return out
+			},
+		}, {
+			name:          "month span",
+			dataStartDate: "2024-01-01",
+			dataEndDate:   "2024-03-10",
+
+			startDate: "2024-01-01",
+			endDate:   "2024-02-28",
+			span:      model.TimespanMonth,
+			aggregate: model.AggregationSum,
+			groupBy:   model.GroupByNone,
+
+			expectedAmounts: func(expenditures []*budget.Expenditure) []float64 {
+				out := make([]float64, 2)
+
+				for _, e := range expenditures {
+					out[e.Date.Month()-1] += e.Amount
+				}
+
+				return out
+			},
+		}, {
+			name:          "aggregate average",
+			dataStartDate: "2024-01-01",
+			dataEndDate:   "2024-12-31",
+
+			startDate: "2024-01-01",
+			endDate:   "2024-12-31",
+			span:      model.TimespanYear,
+			aggregate: model.AggregationAvg,
+			groupBy:   model.GroupByNone,
+
+			expectedAmounts: func(expenditures []*budget.Expenditure) []float64 {
+				sum := 0.
+
+				for _, e := range expenditures {
+					sum += e.Amount
+				}
+
+				return []float64{sum / float64(len(expenditures))}
+			},
+		}, {
+			name:          "group by budget category",
+			dataStartDate: "2024-01-01",
+			dataEndDate:   "2024-02-28",
+
+			startDate: "2024-01-01",
+			endDate:   "2024-02-28",
+			span:      model.TimespanMonth,
+			aggregate: model.AggregationSum,
+			groupBy:   model.GroupByBudgetCategory,
+
+			expectedAmounts: func(expenditures []*budget.Expenditure) []float64 {
+				buckets := []map[string]float64{{}, {}}
+				exists := map[string]bool{}
+
+				var categories []string
+
+				for _, e := range expenditures {
+					buckets[e.Date.Month()-1][e.BudgetCategory] += e.Amount
+
+					if _, ok := exists[e.BudgetCategory]; !ok {
+						categories = append(categories, e.BudgetCategory)
+						exists[e.BudgetCategory] = true
+					}
+				}
+
+				slices.Sort(categories)
+
+				var out []float64
+
+				for _, bucket := range buckets {
+					for _, cat := range categories {
+						out = append(out, bucket[cat])
+					}
+				}
+
+				return out
+			},
+		}, {
+			name:          "group by reward category",
+			dataStartDate: "2024-01-01",
+			dataEndDate:   "2024-02-28",
+
+			startDate: "2024-01-01",
+			endDate:   "2024-02-28",
+			span:      model.TimespanMonth,
+			aggregate: model.AggregationSum,
+			groupBy:   model.GroupByRewardCategory,
+
+			expectedAmounts: func(expenditures []*budget.Expenditure) []float64 {
+				buckets := []map[string]float64{{}, {}}
+				exists := map[string]bool{}
+
+				var categories []string
+
+				for _, e := range expenditures {
+					buckets[e.Date.Month()-1][e.RewardCategory] += e.Amount
+
+					if _, ok := exists[e.RewardCategory]; !ok {
+						categories = append(categories, e.RewardCategory)
+						exists[e.RewardCategory] = true
+					}
+				}
+
+				slices.Sort(categories)
+
+				var out []float64
+
+				for _, bucket := range buckets {
+					for _, cat := range categories {
+						out = append(out, bucket[cat])
+					}
+				}
+
+				return out
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		tc := testCase
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Setup data
+			user := uuid.New()
+			ctx := ctxutil.WithUser(context.Background(), user)
+			pool := helper.GetTestPool()
+
+			startDate, _ := time.Parse(time.DateOnly, tc.dataStartDate)
+			endDate, _ := time.Parse(time.DateOnly, tc.dataEndDate)
+
+			err := database.PersistExpenditures(ctx, pool, helper.MockExpenditures(300, user, startDate, endDate))
+			require.NoError(t, err)
+
+			// Make the call
+			startDate, _ = time.Parse(time.DateOnly, tc.startDate)
+			endDate, _ = time.Parse(time.DateOnly, tc.endDate)
+			aggregate, err := database.AggregateExpenditures(ctx, pool, startDate, endDate, tc.span, tc.aggregate, tc.groupBy)
+			require.NoError(t, err)
+
+			// Calculate the expected and compare the amounts
+			expenditures, err := database.ListExpenditures(ctx, pool, startDate, endDate, 300)
+			require.NoError(t, err)
+
+			expected := tc.expectedAmounts(expenditures)
+			require.Len(t, aggregate, len(expected))
+
+			for i := range aggregate {
+				require.InDelta(t, expected[i], aggregate[i].Amount, .001)
+			}
+		})
+	}
+}
+
+func twoWeeksInAugust() func(expenditures []*budget.Expenditure) []float64 {
+	return func(expenditures []*budget.Expenditure) []float64 {
+		monday, _ := time.Parse(time.DateOnly, "2024-08-12")
+		out := make([]float64, 2)
+
+		for _, e := range expenditures {
+			if e.Date.Before(monday) {
+				out[0] += e.Amount
+			} else {
+				out[1] += e.Amount
+			}
+		}
+
+		return out
+	}
 }

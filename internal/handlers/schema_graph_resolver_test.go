@@ -270,12 +270,7 @@ func TestExpenditures(t *testing.T) {
 		require.Equal(t, strconv.Itoa(persistedExpenditures[i].ID), *expenditure.ID)
 		require.Equal(t, persistedExpenditures[i].Method, *expenditure.Method)
 		require.Equal(t, persistedExpenditures[i].Source, *expenditure.Source)
-
-		if persistedExpenditures[i].RewardCategory.Valid {
-			require.Equal(t, persistedExpenditures[i].RewardCategory.String, *expenditure.RewardCategory)
-		} else {
-			require.Equal(t, "", *expenditure.RewardCategory)
-		}
+		require.Equal(t, persistedExpenditures[i].RewardCategory, *expenditure.RewardCategory)
 	}
 
 	// nil range should return everything
@@ -292,37 +287,14 @@ func TestAggregateExpenditures(t *testing.T) {
 	pool := helper.GetTestPool()
 	resolver := &handlers.Resolver{Pool: pool}
 
-	startDateString, endDateString := "2020-01-01", "2020-02-28"
+	startDateString, endDateString := "2020-01-01", "2020-02-02"
 	startDate, _ := time.Parse(time.DateOnly, startDateString)
 	endDate, _ := time.Parse(time.DateOnly, endDateString)
 
 	err := database.PersistExpenditures(ctx, pool, helper.MockExpenditures(300, user, startDate, endDate))
 	require.NoError(t, err)
 
-	// Default default aggregation is sum. This should return 2 points: the sum of each month.
-	span := model.TimespanMonth
-	aggregate, err := resolver.Query().AggregatedExpenditures(ctx, nil, nil, &span, nil, nil)
+	aggregate, err := resolver.Query().AggregatedExpenditures(ctx, nil, nil, nil, nil, nil)
 	require.NoError(t, err)
-	require.Len(t, aggregate, 2)
-
-	// Calculate the expected
-	expenditures, err := database.ListExpenditures(ctx, pool, startDate, endDate, 300)
-	require.NoError(t, err)
-
-	jan, feb := 0., 0.
-
-	for _, expenditure := range expenditures {
-		//nolint:exhaustive
-		switch expenditure.Date.Month() {
-		case time.January:
-			jan += expenditure.Amount
-		case time.February:
-			feb += expenditure.Amount
-		default:
-			t.Error("Unexpected month")
-		}
-	}
-
-	require.InDelta(t, jan, *aggregate[0].Amount, 0.001)
-	require.InDelta(t, feb, *aggregate[1].Amount, 0.001)
+	require.Len(t, aggregate, 33)
 }

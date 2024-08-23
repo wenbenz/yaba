@@ -110,6 +110,6 @@ func TestCsvExpenditureReader(t *testing.T) {
 	require.Equal(t, name, expenditure.Name)
 	require.Equal(t, method, expenditure.Method)
 	require.Equal(t, budgetCategory, expenditure.BudgetCategory)
-	require.Equal(t, rewardCategory, expenditure.RewardCategory.String)
+	require.Equal(t, rewardCategory, expenditure.RewardCategory)
 	require.Equal(t, comment, expenditure.Comment)
 }
