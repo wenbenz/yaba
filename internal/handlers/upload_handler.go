@@ -7,7 +7,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"sync"
-	"yaba/internal/constants"
+	"yaba/internal/ctxutil"
 	"yaba/internal/platform"
 
 	"github.com/google/uuid"
@@ -30,7 +30,7 @@ type uploadError struct {
 }
 
 func (h UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value(constants.CTXUser).(uuid.UUID)
+	user, ok := r.Context().Value(ctxutil.CTXUser).(uuid.UUID)
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 

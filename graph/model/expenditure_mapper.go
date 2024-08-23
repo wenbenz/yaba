@@ -16,7 +16,7 @@ func ExpendituresToExpenitureResponse(expenditures []*budget.Expenditure) []*Exp
 		owner := obj.Owner.String()
 		amount := fmt.Sprintf("%.2f", obj.Amount)
 		date := obj.Date.Format(time.DateOnly)
-		cat := obj.RewardCategory.String
+		cat := obj.RewardCategory
 		created := obj.CreatedTime.Format(time.DateOnly)
 
 		ret[i] = &ExpenditureResponse{
@@ -31,6 +31,23 @@ func ExpendituresToExpenitureResponse(expenditures []*budget.Expenditure) []*Exp
 			Comment:        &obj.Comment,
 			Created:        &created,
 			Source:         &obj.Source,
+		}
+	}
+
+	return ret
+}
+
+func ExpenditureSummariesToAggregateExpenditures(expenditures []*budget.ExpenditureSummary, timespan Timespan,
+) []*AggregatedExpendituresResponse {
+	ret := make([]*AggregatedExpendituresResponse, len(expenditures))
+
+	for i, obj := range expenditures {
+		start := obj.StartDate.Format(time.DateOnly)
+		ret[i] = &AggregatedExpendituresResponse{
+			GroupByCategory: &obj.Category,
+			Amount:          &obj.Amount,
+			SpanStart:       &start,
+			Span:            &timespan,
 		}
 	}
 

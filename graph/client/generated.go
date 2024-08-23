@@ -515,7 +515,7 @@ func CreateBudget(
 
 // The query or mutation executed by GetBudget.
 const GetBudget_Operation = `
-query GetBudget ($id: ID) {
+query GetBudget ($id: ID!) {
 	budget(id: $id) {
 		id
 		name

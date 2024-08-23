@@ -3,21 +3,21 @@
 # https://gqlgen.com/getting-started/
 
 type BudgetResponse {
-    id: ID!
-    owner: String!
-    name: String!
+    id: ID
+    owner: String
+    name: String
     incomes: [IncomeResponse]
     expenses: [ExpenseResponse]
 }
 
 type IncomeResponse {
-    source: String!
-    amount: Float!
+    source: String
+    amount: Float
 }
 
 type ExpenseResponse {
-    category: String!
-    amount: Float!
+    category: String
+    amount: Float
     isFixed: Boolean
     isSlack: Boolean
 }
@@ -38,7 +38,7 @@ type ExpenditureResponse {
 
 enum Aggregation {
     SUM
-    MEAN
+    AVG
 }
 
 enum Timespan {
@@ -48,19 +48,26 @@ enum Timespan {
     YEAR
 }
 
+enum GroupBy {
+    NONE
+    BUDGET_CATEGORY
+    REWARD_CATEGORY
+}
+
 type AggregatedExpendituresResponse {
     groupByCategory: String
     amount: Float,
-    span: String
+    spanStart: String,
+    span: Timespan
 }
 
 type Query {
-    budget(id: ID): BudgetResponse
+    budget(id: ID!): BudgetResponse
     budgets(first: Int): [BudgetResponse]
 
     expenditures(since: String, until: String, count: Int): [ExpenditureResponse]
     aggregatedExpenditures(since: String, until: String, span: Timespan,
-        groupByCategory: String, aggregation: Aggregation): [AggregatedExpendituresResponse]
+        groupBy: GroupBy, aggregation: Aggregation): [AggregatedExpendituresResponse]
 }
 
 input NewBudgetInput {
@@ -84,8 +91,8 @@ input IncomeInput {
 input ExpenseInput {
   category: String!
   amount: Float!
-  isFixed: Boolean
-  isSlack: Boolean
+  isFixed: Boolean = true
+  isSlack: Boolean = false
 }
 
 type Mutation {

@@ -1,7 +1,6 @@
 package importer
 
 import (
-	"database/sql"
 	"encoding/csv"
 	"fmt"
 	"github.com/google/uuid"
@@ -70,11 +69,8 @@ func (reader *CsvExpenditureReader) ReadRow(row []string) (*budget.Expenditure, 
 		Amount:         amount,
 		Method:         reader.getString(row, "method"),
 		BudgetCategory: reader.getString(row, "budget_category"),
-		RewardCategory: sql.NullString{
-			Valid:  rewardCategory != "",
-			String: strings.ToUpper(rewardCategory),
-		},
-		Comment: reader.getString(row, "comment"),
+		RewardCategory: strings.ToUpper(rewardCategory),
+		Comment:        reader.getString(row, "comment"),
 	}, nil
 }
 

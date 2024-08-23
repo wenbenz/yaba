@@ -9,15 +9,16 @@ import (
 )
 
 type AggregatedExpendituresResponse struct {
-	GroupByCategory *string  `json:"groupByCategory,omitempty"`
-	Amount          *float64 `json:"amount,omitempty"`
-	Span            *string  `json:"span,omitempty"`
+	GroupByCategory *string   `json:"groupByCategory,omitempty"`
+	Amount          *float64  `json:"amount,omitempty"`
+	SpanStart       *string   `json:"spanStart,omitempty"`
+	Span            *Timespan `json:"span,omitempty"`
 }
 
 type BudgetResponse struct {
-	ID       string             `json:"id"`
-	Owner    string             `json:"owner"`
-	Name     string             `json:"name"`
+	ID       *string            `json:"id,omitempty"`
+	Owner    *string            `json:"owner,omitempty"`
+	Name     *string            `json:"name,omitempty"`
 	Incomes  []*IncomeResponse  `json:"incomes,omitempty"`
 	Expenses []*ExpenseResponse `json:"expenses,omitempty"`
 }
@@ -44,10 +45,10 @@ type ExpenseInput struct {
 }
 
 type ExpenseResponse struct {
-	Category string  `json:"category"`
-	Amount   float64 `json:"amount"`
-	IsFixed  *bool   `json:"isFixed,omitempty"`
-	IsSlack  *bool   `json:"isSlack,omitempty"`
+	Category *string  `json:"category,omitempty"`
+	Amount   *float64 `json:"amount,omitempty"`
+	IsFixed  *bool    `json:"isFixed,omitempty"`
+	IsSlack  *bool    `json:"isSlack,omitempty"`
 }
 
 type IncomeInput struct {
@@ -56,8 +57,8 @@ type IncomeInput struct {
 }
 
 type IncomeResponse struct {
-	Source string  `json:"source"`
-	Amount float64 `json:"amount"`
+	Source *string  `json:"source,omitempty"`
+	Amount *float64 `json:"amount,omitempty"`
 }
 
 type Mutation struct {
@@ -82,18 +83,18 @@ type UpdateBudgetInput struct {
 type Aggregation string
 
 const (
-	AggregationSum  Aggregation = "SUM"
-	AggregationMean Aggregation = "MEAN"
+	AggregationSum Aggregation = "SUM"
+	AggregationAvg Aggregation = "AVG"
 )
 
 var AllAggregation = []Aggregation{
 	AggregationSum,
-	AggregationMean,
+	AggregationAvg,
 }
 
 func (e Aggregation) IsValid() bool {
 	switch e {
-	case AggregationSum, AggregationMean:
+	case AggregationSum, AggregationAvg:
 		return true
 	}
 	return false
@@ -117,6 +118,49 @@ func (e *Aggregation) UnmarshalGQL(v interface{}) error {
 }
 
 func (e Aggregation) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type GroupBy string
+
+const (
+	GroupByNone           GroupBy = "NONE"
+	GroupByBudgetCategory GroupBy = "BUDGET_CATEGORY"
+	GroupByRewardCategory GroupBy = "REWARD_CATEGORY"
+)
+
+var AllGroupBy = []GroupBy{
+	GroupByNone,
+	GroupByBudgetCategory,
+	GroupByRewardCategory,
+}
+
+func (e GroupBy) IsValid() bool {
+	switch e {
+	case GroupByNone, GroupByBudgetCategory, GroupByRewardCategory:
+		return true
+	}
+	return false
+}
+
+func (e GroupBy) String() string {
+	return string(e)
+}
+
+func (e *GroupBy) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = GroupBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid GroupBy", str)
+	}
+	return nil
+}
+
+func (e GroupBy) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

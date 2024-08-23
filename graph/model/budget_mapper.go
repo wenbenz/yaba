@@ -28,10 +28,12 @@ func BudgetFromUpdateBudgetInput(budgetID, owner uuid.UUID, input *UpdateBudgetI
 }
 
 func BudgetToBudgetResponse(b *budget.Budget) *BudgetResponse {
+	id, owner, name := b.ID.String(), b.Owner.String(), b.Name
+
 	return &BudgetResponse{
-		ID:       b.ID.String(),
-		Owner:    b.Owner.String(),
-		Name:     b.Name,
+		ID:       &id,
+		Owner:    &owner,
+		Name:     &name,
 		Incomes:  incomesToIncomeResponse(b.Incomes),
 		Expenses: expensesToExpenseResponse(b.Expenses),
 	}
@@ -41,8 +43,8 @@ func expensesToExpenseResponse(expenses []*budget.Expense) []*ExpenseResponse {
 	ret := make([]*ExpenseResponse, len(expenses))
 	for i, expense := range expenses {
 		ret[i] = &ExpenseResponse{
-			Category: expense.Category,
-			Amount:   expense.Amount,
+			Category: &expense.Category,
+			Amount:   &expense.Amount,
 			IsFixed:  &expense.Fixed,
 			IsSlack:  &expense.Slack,
 		}
@@ -55,8 +57,8 @@ func incomesToIncomeResponse(incomes []*budget.Income) []*IncomeResponse {
 	ret := make([]*IncomeResponse, len(incomes))
 	for i, income := range incomes {
 		ret[i] = &IncomeResponse{
-			Source: income.Source,
-			Amount: income.Amount,
+			Source: &income.Source,
+			Amount: &income.Amount,
 		}
 	}
 

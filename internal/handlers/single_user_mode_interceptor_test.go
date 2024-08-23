@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"yaba/internal/constants"
+	"yaba/internal/ctxutil"
 	"yaba/internal/handlers"
 )
 
@@ -49,7 +49,7 @@ func TestSingleUserModeInterceptor(t *testing.T) {
 
 	intercepted := funcHandler{
 		handlerFunc: func(w http.ResponseWriter, r *http.Request) {
-			u, _ := r.Context().Value(constants.CTXUser).(uuid.UUID)
+			u, _ := r.Context().Value(ctxutil.CTXUser).(uuid.UUID)
 			_, _ = w.Write([]byte(u.String()))
 		},
 	}

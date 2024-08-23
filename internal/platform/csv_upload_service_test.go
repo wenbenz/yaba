@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 	"time"
+	"yaba/internal/ctxutil"
 	"yaba/internal/database"
 	"yaba/internal/platform"
 	"yaba/internal/test/helper"
@@ -24,7 +25,7 @@ func TestCSVUploadSuccess(t *testing.T) {
 	user, err := uuid.NewRandom()
 	require.NoError(t, err)
 
-	ctx := context.Background()
+	ctx := ctxutil.WithUser(context.Background(), user)
 	startTime := time.Now()
 
 	require.NoError(t, platform.UploadSpendingsCSV(ctx, pool, user, f, "spend.csv"))
@@ -33,7 +34,7 @@ func TestCSVUploadSuccess(t *testing.T) {
 	date, err := time.Parse(time.DateOnly, "2006-07-08")
 	require.NoError(t, err)
 
-	expenditures, err := database.ListExpenditures(ctx, pool, user, date, date, 10)
+	expenditures, err := database.ListExpenditures(ctx, pool, date, date, 10)
 	require.NoError(t, err)
 	require.Len(t, expenditures, 3)
 
@@ -42,7 +43,7 @@ func TestCSVUploadSuccess(t *testing.T) {
 	require.Equal(t, "walmart", expenditures[0].Name)
 	require.Equal(t, "debit", expenditures[0].Method)
 	require.Equal(t, "groceries", expenditures[0].BudgetCategory)
-	require.Equal(t, "", expenditures[0].RewardCategory.String)
+	require.Equal(t, "", expenditures[0].RewardCategory)
 	require.Equal(t, "", expenditures[0].Comment)
 	require.Equal(t, "spend.csv", expenditures[0].Source)
 	require.GreaterOrEqual(t, expenditures[0].CreatedTime, startTime)
@@ -53,7 +54,7 @@ func TestCSVUploadSuccess(t *testing.T) {
 	require.Equal(t, "lawn mowing", expenditures[2].Name)
 	require.Equal(t, "cash", expenditures[2].Method)
 	require.Equal(t, "maintenance", expenditures[2].BudgetCategory)
-	require.Equal(t, "", expenditures[2].RewardCategory.String)
+	require.Equal(t, "", expenditures[2].RewardCategory)
 	require.Equal(t, "lawn mowing kid", expenditures[2].Comment)
 	require.Equal(t, "spend.csv", expenditures[0].Source)
 	require.GreaterOrEqual(t, expenditures[2].CreatedTime, startTime)
@@ -92,7 +93,7 @@ func TestCSVUploadBadCSV(t *testing.T) {
 		date, err := time.Parse(time.DateOnly, "2006-07-08")
 		require.NoError(t, err)
 
-		expenditures, err := database.ListExpenditures(ctx, pool, user, date, date, 10)
+		expenditures, err := database.ListExpenditures(ctx, pool, date, date, 10)
 		require.Empty(t, expenditures)
 		require.NoError(t, err)
 	}

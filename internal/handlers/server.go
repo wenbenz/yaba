@@ -3,17 +3,16 @@ package handlers
 import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"log"
 	"net/http"
 	"os"
 	"strings"
 	"yaba/graph/server"
 )
 
-func BuildServerHandler(pool *pgxpool.Pool) http.Handler {
+func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 	mux := http.NewServeMux()
 
-	gqlHandler := handler.NewDefaultServer(server.NewExecutableSchema(server.Config{Resolvers: &server.Resolver{
+	gqlHandler := handler.NewDefaultServer(server.NewExecutableSchema(server.Config{Resolvers: &Resolver{
 		Pool: pool,
 	}}))
 
@@ -28,9 +27,9 @@ func BuildServerHandler(pool *pgxpool.Pool) http.Handler {
 	if strings.ToLower(singleUserMode) == "true" {
 		var err error
 		if handler, err = InterceptSingleUserMode(handler); err != nil {
-			log.Fatalln(err)
+			return nil, err
 		}
 	}
 
-	return handler
+	return handler, nil
 }
