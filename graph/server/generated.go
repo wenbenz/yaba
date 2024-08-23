@@ -55,7 +55,7 @@ type MutationResolver interface {
 type QueryResolver interface {
 	Budget(ctx context.Context, id string) (*model.BudgetResponse, error)
 	Budgets(ctx context.Context, first *int) ([]*model.BudgetResponse, error)
-	Expenditures(ctx context.Context, since *string, until *string, count *int) ([]*model.ExpenditureResponse, error)
+	Expenditures(ctx context.Context, since *string, until *string, source *string, count *int) ([]*model.ExpenditureResponse, error)
 	AggregatedExpenditures(ctx context.Context, since *string, until *string, span *model.Timespan, groupBy *model.GroupBy, aggregation *model.Aggregation) ([]*model.AggregatedExpendituresResponse, error)
 }
 
@@ -252,7 +252,7 @@ type Query {
     budget(id: ID!): BudgetResponse
     budgets(first: Int): [BudgetResponse]
 
-    expenditures(since: String, until: String, count: Int): [ExpenditureResponse]
+    expenditures(since: String, until: String, source: String, count: Int): [ExpenditureResponse]
     aggregatedExpenditures(since: String, until: String, span: Timespan,
         groupBy: GroupBy, aggregation: Aggregation): [AggregatedExpendituresResponse]
 }
@@ -441,15 +441,24 @@ func (ec *executionContext) field_Query_expenditures_args(ctx context.Context, r
 		}
 	}
 	args["until"] = arg1
-	var arg2 *int
-	if tmp, ok := rawArgs["count"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("count"))
-		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+	var arg2 *string
+	if tmp, ok := rawArgs["source"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["count"] = arg2
+	args["source"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["count"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("count"))
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["count"] = arg3
 	return args, nil
 }
 
@@ -1843,7 +1852,7 @@ func (ec *executionContext) _Query_expenditures(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Expenditures(rctx, fc.Args["since"].(*string), fc.Args["until"].(*string), fc.Args["count"].(*int))
+		return ec.resolvers.Query().Expenditures(rctx, fc.Args["since"].(*string), fc.Args["until"].(*string), fc.Args["source"].(*string), fc.Args["count"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

@@ -16,25 +16,33 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-const listExpenditures = `
-SELECT * FROM expenditure
-WHERE owner = $1
-  AND date >= $2
-  AND date <= $3
-ORDER BY date, id
-LIMIT $4;
-`
-
 const insertExpenditure = `
 INSERT INTO expenditure (owner, name, amount, date, method, budget_category, reward_category, comment, created, source)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9)
 `
 
-func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, since, until time.Time, limit int,
+func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, since, until time.Time, source *string, limit int,
 ) ([]*budget.Expenditure, error) {
-	var expenditures []*budget.Expenditure
+	sq := squirrel.Select("*").
+		From("expenditure").
+		Where(`owner = ? AND date >= ? AND date <= ?`, ctxutil.GetUser(ctx), since, until).
+		OrderBy("date, id").
+		Limit(uint64(limit)).
+		PlaceholderFormat(squirrel.Dollar)
 
-	err := pgxscan.Select(ctx, pool, &expenditures, listExpenditures, ctxutil.GetUser(ctx), since, until, limit)
+	if source != nil {
+		sq = sq.Where(squirrel.Eq{"source": *source})
+	}
+
+	var expenditures []*budget.Expenditure
+	var query string
+	var args []interface{}
+	var err error
+
+	if query, args, err = sq.ToSql(); err == nil {
+		err = pgxscan.Select(ctx, pool, &expenditures, query, args...)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get expenditures: %w", err)
 	}

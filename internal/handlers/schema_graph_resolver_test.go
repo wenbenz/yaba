@@ -250,11 +250,11 @@ func TestExpenditures(t *testing.T) {
 	err := database.PersistExpenditures(ctx, pool, helper.MockExpenditures(300, user, startDate, endDate))
 	require.NoError(t, err)
 
-	persistedExpenditures, err := database.ListExpenditures(ctx, pool, startDate, endDate, limit)
+	persistedExpenditures, err := database.ListExpenditures(ctx, pool, startDate, endDate, nil, limit)
 	require.NoError(t, err)
 	require.Len(t, persistedExpenditures, 300)
 
-	expenditures, err := resolver.Query().Expenditures(ctx, &startDateString, &endDateString, &limit)
+	expenditures, err := resolver.Query().Expenditures(ctx, &startDateString, &endDateString, nil, &limit)
 	require.NoError(t, err)
 	require.Len(t, expenditures, 300)
 
@@ -274,7 +274,7 @@ func TestExpenditures(t *testing.T) {
 	}
 
 	// nil range should return everything
-	expenditures, err = resolver.Query().Expenditures(ctx, nil, nil, nil)
+	expenditures, err = resolver.Query().Expenditures(ctx, nil, nil, nil, nil)
 	require.NoError(t, err)
 	require.Len(t, expenditures, 10)
 }
