@@ -278,7 +278,9 @@ func janFebGroupBy(groupBy model.GroupBy) func(expenditures []*budget.Expenditur
 
 		for _, bucket := range buckets {
 			for _, cat := range categories {
-				out = append(out, bucket[cat])
+				if sum, ok := bucket[cat]; ok {
+					out = append(out, sum)
+				}
 			}
 		}
 
