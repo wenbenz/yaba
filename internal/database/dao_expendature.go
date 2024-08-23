@@ -25,9 +25,10 @@ func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, since, until time
 ) ([]*budget.Expenditure, error) {
 	sq := squirrel.Select("*").
 		From("expenditure").
-		Where(`owner = $1 AND date >= $2 AND date <= $3`, ctxutil.GetUser(ctx), since, until).
+		Where(`owner = ? AND date >= ? AND date <= ?`, ctxutil.GetUser(ctx), since, until).
 		OrderBy("date, id").
-		Limit(uint64(limit))
+		Limit(uint64(limit)).
+		PlaceholderFormat(squirrel.Dollar)
 
 	if source != nil {
 		sq = sq.Where(squirrel.Eq{"source": *source})

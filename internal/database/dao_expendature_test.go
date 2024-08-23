@@ -38,6 +38,7 @@ func TestExpenditures(t *testing.T) {
 			Date:           startDate.AddDate(0, 0, i),
 			Method:         "cash",
 			BudgetCategory: "spending",
+			Source:         fmt.Sprintf("file%d.csv", i%2),
 		}
 	}
 
@@ -71,6 +72,12 @@ func TestExpenditures(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, expenditures[4].Name, fetched[0].Name)
 	require.Equal(t, expenditures[8].Name, fetched[4].Name)
+
+	// Fetch with source
+	filename := "file1.csv"
+	fetched, err = database.ListExpenditures(ctx, pool, startDate, endDate, &filename, 100)
+	require.NoError(t, err)
+	require.Len(t, fetched, numExpenditures/2)
 }
 
 func TestAggregateExpenditures(t *testing.T) {
