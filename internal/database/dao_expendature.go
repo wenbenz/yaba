@@ -27,7 +27,7 @@ func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, since, until time
 		From("expenditure").
 		Where(`owner = ? AND date >= ? AND date <= ?`, ctxutil.GetUser(ctx), since, until).
 		OrderBy("date, id").
-		Limit(uint64(limit)).
+		Limit(uint64(limit)). //nolint:gosec
 		PlaceholderFormat(squirrel.Dollar)
 
 	if source != nil {
