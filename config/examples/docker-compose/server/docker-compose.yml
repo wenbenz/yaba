@@ -1,0 +1,39 @@
+# This is an easy out-of-the-box self-hosted config and comes with everything
+# needed to run a yaba server.
+#
+# A `db_password.txt` file needs to be initialized without special characters or new lines.
+#
+# Docker compose setup that creates:
+# - Postgres instance exposed on port 5432
+# - Yaba instance exposed on port 9222 running in single user mode
+
+services:
+  web:
+    image: wenbenz/yaba
+    ports:
+      - "9222:9222"
+    env_file:
+      - ../../env/single_user_docker.env
+    environment:
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
+    secrets:
+      - db_password
+    links:
+      - db
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16.3
+    ports:
+      - "5432:5432"
+    env_file:
+      - ../../env/single_user_docker.env
+    environment:
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
+    secrets:
+      - db_password
+
+secrets:
+   db_password:
+     file: ../../../../db_password.txt

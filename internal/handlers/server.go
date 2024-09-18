@@ -20,6 +20,7 @@ func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 	mux.Handle("/upload", UploadHandler{
 		Pool: pool,
 	})
+	mux.Handle("/", http.FileServer(http.Dir(os.Getenv("UI_ROOT_DIR"))))
 
 	var handler http.Handler = mux
 
