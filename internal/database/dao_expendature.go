@@ -98,6 +98,11 @@ func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, e
 		return []*budget.ExpenditureSummary{}, fmt.Errorf("failed to get expenditures: %w", err)
 	}
 
+	// set everything to utc
+	for _, e := range expenditures {
+		e.StartDate = e.StartDate.UTC()
+	}
+
 	return expenditures, nil
 }
 

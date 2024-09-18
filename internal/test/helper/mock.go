@@ -1,8 +1,11 @@
 package helper
 
 import (
+	"encoding/csv"
+	"fmt"
 	"github.com/brianvoe/gofakeit"
 	"github.com/google/uuid"
+	"os"
 	"time"
 	"yaba/internal/budget"
 )
@@ -36,4 +39,19 @@ func MockExpenditures(n int, owner uuid.UUID, startDate, endDate time.Time) []*b
 	}
 
 	return expenditures
+}
+
+func MakeMockExpenditureCSV() {
+	user, _ := uuid.Parse("b49585ce-1ba0-4875-a99a-431b4c44c4d0")
+	start, _ := time.Parse(time.DateOnly, "2024-01-01")
+	expenditures := MockExpenditures(1000, user, start, time.Now())
+	f, _ := os.Create("generated.csv")
+	defer f.Close()
+	csvWriter := csv.NewWriter(f)
+	defer csvWriter.Flush()
+	csvWriter.Write([]string{"date", "amount", "name", "method", "budget_category", "reward_category", "comment"})
+	for _, exp := range expenditures {
+		csvWriter.Write([]string{exp.Date.Format(time.DateOnly), fmt.Sprintf("%.2f", exp.Amount),
+			exp.Name, exp.Method, exp.BudgetCategory, exp.RewardCategory, exp.Comment})
+	}
 }
