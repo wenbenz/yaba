@@ -17,6 +17,8 @@ services:
       - ../../env/single_user_docker.env
     environment:
       - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
+    volumes:
+      - ../../../../migrations:/docker-entrypoint-initdb.d
     secrets:
       - db_password
     links:
