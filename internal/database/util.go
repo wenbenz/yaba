@@ -2,17 +2,16 @@ package database
 
 import (
 	"fmt"
+	"github.com/Masterminds/squirrel"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"os"
 	"yaba/errors"
 )
 
-func getEnvTrackMissing(key string, missing *[]string) string {
-	value, ok := os.LookupEnv(key)
-	if !ok {
-		*missing = append(*missing, key)
-	}
+type PgxpoolSquirrelAddapter struct {
+	squirrel.BaseRunner
 
-	return value
+	Pool *pgxpool.Pool
 }
 
 func GetPGConnectionString() (string, error) {
@@ -37,4 +36,13 @@ func GetPGConnectionString() (string, error) {
 
 	return fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
 		pgUser, pgPassword, pgURL, pgDatabase, sslEnabled), nil
+}
+
+func getEnvTrackMissing(key string, missing *[]string) string {
+	value, ok := os.LookupEnv(key)
+	if !ok {
+		*missing = append(*missing, key)
+	}
+
+	return value
 }
