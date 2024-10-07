@@ -1,2 +1,2 @@
-DROP TYPE reward_category;
+DROP TYPE IF EXISTS reward_category;
 DROP TABLE IF EXISTS expenditure;
