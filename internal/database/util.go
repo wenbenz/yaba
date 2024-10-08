@@ -2,17 +2,9 @@ package database
 
 import (
 	"fmt"
-	"github.com/Masterminds/squirrel"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"os"
 	"yaba/errors"
 )
-
-type PgxpoolSquirrelAddapter struct {
-	squirrel.BaseRunner
-
-	Pool *pgxpool.Pool
-}
 
 func GetPGConnectionString() (string, error) {
 	missing := []string{}
