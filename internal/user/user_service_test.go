@@ -1,4 +1,4 @@
-package platform_test
+package user_test
 
 import (
 	"github.com/brianvoe/gofakeit"
@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
 	"testing"
-	"yaba/internal/platform"
 	"yaba/internal/test/helper"
+	"yaba/internal/user"
 )
 
 func TestCreateNewUserPasswordHash(t *testing.T) {
@@ -15,7 +15,7 @@ func TestCreateNewUserPasswordHash(t *testing.T) {
 	username := gofakeit.Username()
 	password := gofakeit.Password(true, true, true, true, true, 16)
 
-	id, err := platform.CreateNewUser(context.Background(), pool, username, password)
+	id, err := user.CreateNewUser(context.Background(), pool, username, password)
 	require.NoError(t, err)
 	require.NotNil(t, id)
 	require.NotEqual(t, *id, uuid.Nil)
@@ -28,12 +28,12 @@ func TestCreateNewUserPasswordHash(t *testing.T) {
 	require.NotEqual(t, password, passwordHashString)
 
 	// Make sure the hash is verifiable
-	isPasswordCorrect, err := platform.VerifyUser(context.Background(), pool, username, password)
+	isPasswordCorrect, err := user.VerifyUser(context.Background(), pool, username, password)
 	require.NoError(t, err)
 	require.True(t, isPasswordCorrect)
 
 	// Should fail with wrong password
-	isPasswordCorrect, err = platform.VerifyUser(context.Background(), pool, username, passwordHashString)
+	isPasswordCorrect, err = user.VerifyUser(context.Background(), pool, username, passwordHashString)
 	require.NoError(t, err)
 	require.False(t, isPasswordCorrect)
 }

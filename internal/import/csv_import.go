@@ -4,11 +4,14 @@ import (
 	"encoding/csv"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/net/context"
 	"io"
 	"strconv"
 	"strings"
 	"time"
 	"yaba/errors"
+	"yaba/internal/database"
 	"yaba/internal/model"
 )
 
@@ -163,4 +166,23 @@ func ImportExpendituresFromCSVReader(owner uuid.UUID, r *csv.Reader) ([]*model.E
 	}
 
 	return expenditures, err
+}
+
+func UploadSpendingsCSV(ctx context.Context, pool *pgxpool.Pool, user uuid.UUID, data io.Reader, source string) error {
+	csvReader := csv.NewReader(data)
+	expenditures, err := ImportExpendituresFromCSVReader(user, csvReader)
+
+	if err != nil {
+		return fmt.Errorf("failed to import: %w", err)
+	}
+
+	for _, e := range expenditures {
+		e.Source = source
+	}
+
+	if err = database.PersistExpenditures(ctx, pool, expenditures); err != nil {
+		return fmt.Errorf("failed to save: %w", err)
+	}
+
+	return nil
 }
