@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/google/uuid"
+	"yaba/internal/model"
 )
 
 func BudgetFromNewBudgetInput(owner uuid.UUID, input *NewBudgetInput) *model.Budget {

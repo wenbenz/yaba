@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+	"yaba/internal/model"
 )
 
 func ExpendituresToExpenitureResponse(expenditures []*model.Expenditure) []*ExpenditureResponse {

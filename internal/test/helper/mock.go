@@ -4,7 +4,7 @@ import (
 	"github.com/brianvoe/gofakeit"
 	"github.com/google/uuid"
 	"time"
-	"yaba/internal/budget"
+	"yaba/internal/model"
 )
 
 func MockExpenditures(n int, owner uuid.UUID, startDate, endDate time.Time) []*model.Expenditure {

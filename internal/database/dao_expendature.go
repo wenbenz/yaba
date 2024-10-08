@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"strings"
 	"time"
-	"yaba/graph/model"
+	graph "yaba/graph/model"
 	"yaba/internal/ctxutil"
+	"yaba/internal/model"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
@@ -49,20 +50,20 @@ func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, since, until time
 }
 
 func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, endDate time.Time,
-	timespan model.Timespan, aggregation model.Aggregation, groupBy model.GroupBy) ([]*model.ExpenditureSummary, error) {
+	timespan graph.Timespan, aggregation graph.Aggregation, groupBy graph.GroupBy) ([]*model.ExpenditureSummary, error) {
 	var category string
 
 	switch groupBy {
-	case model.GroupByNone:
+	case graph.GroupByNone:
 		category = "'Total'"
-	case model.GroupByBudgetCategory:
+	case graph.GroupByBudgetCategory:
 		category = "budget_category"
-	case model.GroupByRewardCategory:
+	case graph.GroupByRewardCategory:
 		category = "reward_category"
 	}
 
 	date := "date"
-	if timespan != model.TimespanDay {
+	if timespan != graph.TimespanDay {
 		// This group-by will cause postgres to do a sequential scan if the timespan is not "DAY".
 		// We can fix this with a functional index, but then the date column becomes immutable.
 		// We can also group by date and aggregate the month/year in code to improve performance
@@ -78,7 +79,7 @@ func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, e
 		GroupBy(date).
 		OrderBy("date ASC")
 
-	if groupBy != model.GroupByNone {
+	if groupBy != graph.GroupByNone {
 		gb := strings.ToLower(groupBy.String())
 		sq = sq.GroupBy(gb)
 		sq = sq.OrderBy(gb)

@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"yaba/errors"
 	"yaba/internal/ctxutil"
+	"yaba/internal/model"
 )
 
 const getBudget = `

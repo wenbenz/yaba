@@ -5,6 +5,7 @@ import (
 	"testing"
 	"yaba/internal/ctxutil"
 	"yaba/internal/database"
+	"yaba/internal/model"
 	"yaba/internal/test/helper"
 
 	"github.com/google/uuid"

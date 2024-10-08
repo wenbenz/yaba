@@ -40,7 +40,7 @@ func VerifyUser(ctx context.Context, pool *pgxpool.Pool, username, password stri
 func GetUserByUsername(ctx context.Context, pool *pgxpool.Pool, username string) (*model.User, error) {
 	var u *model.User
 
-	err = squirrel.
+	err := squirrel.
 		Select("id").
 		From("user").
 		Where(squirrel.Eq{"username": username}).

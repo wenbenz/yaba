@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 	"yaba/errors"
+	"yaba/internal/model"
 )
 
 type CsvExpenditureReader struct {
