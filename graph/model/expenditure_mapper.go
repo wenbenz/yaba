@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"strconv"
 	"time"
-
-	"yaba/internal/budget"
 )
 
-func ExpendituresToExpenitureResponse(expenditures []*budget.Expenditure) []*ExpenditureResponse {
+func ExpendituresToExpenitureResponse(expenditures []*model.Expenditure) []*ExpenditureResponse {
 	ret := make([]*ExpenditureResponse, len(expenditures))
 
 	for i, obj := range expenditures {
@@ -37,7 +35,7 @@ func ExpendituresToExpenitureResponse(expenditures []*budget.Expenditure) []*Exp
 	return ret
 }
 
-func ExpenditureSummariesToAggregateExpenditures(expenditures []*budget.ExpenditureSummary, timespan Timespan,
+func ExpenditureSummariesToAggregateExpenditures(expenditures []*model.ExpenditureSummary, timespan Timespan,
 ) []*AggregatedExpendituresResponse {
 	ret := make([]*AggregatedExpendituresResponse, len(expenditures))
 

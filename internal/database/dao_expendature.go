@@ -8,8 +8,6 @@ import (
 	"yaba/graph/model"
 	"yaba/internal/ctxutil"
 
-	"yaba/internal/budget"
-
 	"github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5"
@@ -22,7 +20,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9)
 `
 
 func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, since, until time.Time, source *string, limit int,
-) ([]*budget.Expenditure, error) {
+) ([]*model.Expenditure, error) {
 	sq := squirrel.Select("*").
 		From("expenditure").
 		Where(`owner = ? AND date >= ? AND date <= ?`, ctxutil.GetUser(ctx), since, until).
@@ -34,7 +32,7 @@ func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, since, until time
 		sq = sq.Where(squirrel.Eq{"source": *source})
 	}
 
-	var expenditures []*budget.Expenditure
+	var expenditures []*model.Expenditure
 	var query string
 	var args []interface{}
 	var err error
@@ -51,7 +49,7 @@ func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, since, until time
 }
 
 func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, endDate time.Time,
-	timespan model.Timespan, aggregation model.Aggregation, groupBy model.GroupBy) ([]*budget.ExpenditureSummary, error) {
+	timespan model.Timespan, aggregation model.Aggregation, groupBy model.GroupBy) ([]*model.ExpenditureSummary, error) {
 	var category string
 
 	switch groupBy {
@@ -88,14 +86,14 @@ func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, e
 
 	query, args, err := sq.ToSql()
 	if err != nil {
-		return []*budget.ExpenditureSummary{}, fmt.Errorf("failed to build query: %w", err)
+		return []*model.ExpenditureSummary{}, fmt.Errorf("failed to build query: %w", err)
 	}
 
-	var expenditures []*budget.ExpenditureSummary
+	var expenditures []*model.ExpenditureSummary
 	err = pgxscan.Select(ctx, pool, &expenditures, query, args...)
 
 	if err != nil {
-		return []*budget.ExpenditureSummary{}, fmt.Errorf("failed to get expenditures: %w", err)
+		return []*model.ExpenditureSummary{}, fmt.Errorf("failed to get expenditures: %w", err)
 	}
 
 	// set everything to utc
@@ -106,7 +104,7 @@ func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, e
 	return expenditures, nil
 }
 
-func PersistExpenditures(ctx context.Context, pool *pgxpool.Pool, expenditures []*budget.Expenditure,
+func PersistExpenditures(ctx context.Context, pool *pgxpool.Pool, expenditures []*model.Expenditure,
 ) error {
 	batch := &pgx.Batch{}
 	for _, e := range expenditures {

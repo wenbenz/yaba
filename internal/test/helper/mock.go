@@ -7,10 +7,10 @@ import (
 	"yaba/internal/budget"
 )
 
-func MockExpenditures(n int, owner uuid.UUID, startDate, endDate time.Time) []*budget.Expenditure {
-	expenditures := make([]*budget.Expenditure, n)
+func MockExpenditures(n int, owner uuid.UUID, startDate, endDate time.Time) []*model.Expenditure {
+	expenditures := make([]*model.Expenditure, n)
 	for i := range expenditures {
-		expenditures[i] = &budget.Expenditure{
+		expenditures[i] = &model.Expenditure{
 			Owner:          owner,
 			Name:           gofakeit.Company(),
 			Amount:         gofakeit.Float64Range(0, 1000), //nolint:mnd

@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-	"yaba/internal/budget"
 )
 
 func TestBasicBudgetOperations(t *testing.T) {
@@ -21,7 +20,7 @@ func TestBasicBudgetOperations(t *testing.T) {
 	ctx := ctxutil.WithUser(context.Background(), owner)
 
 	// Create and save a budget
-	b := budget.NewBudget(owner, "name")
+	b := model.NewBudget(owner, "name")
 	b.SetBudgetIncome("work", 5000)
 	b.SetBudgetIncome("gig", 1000)
 	b.SetFixedExpense("housing", 1500)

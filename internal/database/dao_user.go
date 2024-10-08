@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/argon2"
 	"golang.org/x/net/context"
-	"yaba/internal/auth"
+	"yaba/internal/model"
 )
 
 func CreateUser(ctx context.Context, pool *pgxpool.Pool, username, password string) error {
@@ -37,8 +37,8 @@ func VerifyUser(ctx context.Context, pool *pgxpool.Pool, username, password stri
 	return bytes.Equal(hash, u.PasswordHash), err
 }
 
-func GetUserByUsername(ctx context.Context, pool *pgxpool.Pool, username string) (*auth.User, error) {
-	var u *auth.User
+func GetUserByUsername(ctx context.Context, pool *pgxpool.Pool, username string) (*model.User, error) {
+	var u *model.User
 
 	err = squirrel.
 		Select("id").

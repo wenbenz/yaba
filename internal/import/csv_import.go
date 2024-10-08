@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 	"yaba/errors"
-	"yaba/internal/budget"
 )
 
 type CsvExpenditureReader struct {
@@ -49,7 +48,7 @@ func (reader *CsvExpenditureReader) getFloat64(row []string, key string) (float6
 	return dollars, nil
 }
 
-func (reader *CsvExpenditureReader) ReadRow(row []string) (*budget.Expenditure, error) {
+func (reader *CsvExpenditureReader) ReadRow(row []string) (*model.Expenditure, error) {
 	date, err := reader.getDate(row, "date")
 	if err != nil {
 		return nil, err
@@ -62,7 +61,7 @@ func (reader *CsvExpenditureReader) ReadRow(row []string) (*budget.Expenditure, 
 
 	rewardCategory := reader.getString(row, "reward_category")
 
-	return &budget.Expenditure{
+	return &model.Expenditure{
 		Owner:          reader.owner,
 		Name:           reader.getString(row, "name"),
 		Date:           date,
@@ -129,7 +128,7 @@ func validateHeaders(headers []string) error {
 	return nil
 }
 
-func ImportExpendituresFromCSVReader(owner uuid.UUID, r *csv.Reader) ([]*budget.Expenditure, error) {
+func ImportExpendituresFromCSVReader(owner uuid.UUID, r *csv.Reader) ([]*model.Expenditure, error) {
 	// First row is always headers.
 	headers, err := r.Read()
 
@@ -142,7 +141,7 @@ func ImportExpendituresFromCSVReader(owner uuid.UUID, r *csv.Reader) ([]*budget.
 		return nil, err
 	}
 
-	var expenditures []*budget.Expenditure
+	var expenditures []*model.Expenditure
 
 	for row, err := r.Read(); err != io.EOF; row, err = r.Read() {
 		if err != nil {

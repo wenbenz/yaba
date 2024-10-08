@@ -2,13 +2,12 @@ package model
 
 import (
 	"github.com/google/uuid"
-	"yaba/internal/budget"
 )
 
-func BudgetFromNewBudgetInput(owner uuid.UUID, input *NewBudgetInput) *budget.Budget {
+func BudgetFromNewBudgetInput(owner uuid.UUID, input *NewBudgetInput) *model.Budget {
 	budgetID := uuid.New()
 
-	return &budget.Budget{
+	return &model.Budget{
 		ID:       budgetID,
 		Owner:    owner,
 		Name:     input.Name,
@@ -17,8 +16,8 @@ func BudgetFromNewBudgetInput(owner uuid.UUID, input *NewBudgetInput) *budget.Bu
 	}
 }
 
-func BudgetFromUpdateBudgetInput(budgetID, owner uuid.UUID, input *UpdateBudgetInput) *budget.Budget {
-	return &budget.Budget{
+func BudgetFromUpdateBudgetInput(budgetID, owner uuid.UUID, input *UpdateBudgetInput) *model.Budget {
+	return &model.Budget{
 		ID:       budgetID,
 		Owner:    owner,
 		Name:     *input.Name,
@@ -27,7 +26,7 @@ func BudgetFromUpdateBudgetInput(budgetID, owner uuid.UUID, input *UpdateBudgetI
 	}
 }
 
-func BudgetToBudgetResponse(b *budget.Budget) *BudgetResponse {
+func BudgetToBudgetResponse(b *model.Budget) *BudgetResponse {
 	id, owner, name := b.ID.String(), b.Owner.String(), b.Name
 
 	return &BudgetResponse{
@@ -39,7 +38,7 @@ func BudgetToBudgetResponse(b *budget.Budget) *BudgetResponse {
 	}
 }
 
-func expensesToExpenseResponse(expenses []*budget.Expense) []*ExpenseResponse {
+func expensesToExpenseResponse(expenses []*model.Expense) []*ExpenseResponse {
 	ret := make([]*ExpenseResponse, len(expenses))
 	for i, expense := range expenses {
 		ret[i] = &ExpenseResponse{
@@ -53,7 +52,7 @@ func expensesToExpenseResponse(expenses []*budget.Expense) []*ExpenseResponse {
 	return ret
 }
 
-func incomesToIncomeResponse(incomes []*budget.Income) []*IncomeResponse {
+func incomesToIncomeResponse(incomes []*model.Income) []*IncomeResponse {
 	ret := make([]*IncomeResponse, len(incomes))
 	for i, income := range incomes {
 		ret[i] = &IncomeResponse{
@@ -65,11 +64,11 @@ func incomesToIncomeResponse(incomes []*budget.Income) []*IncomeResponse {
 	return ret
 }
 
-func expensesFromExpenseInput(budgetID uuid.UUID, input []*ExpenseInput) []*budget.Expense {
-	expenses := make([]*budget.Expense, len(input))
+func expensesFromExpenseInput(budgetID uuid.UUID, input []*ExpenseInput) []*model.Expense {
+	expenses := make([]*model.Expense, len(input))
 
 	for i, expense := range input {
-		expenses[i] = &budget.Expense{
+		expenses[i] = &model.Expense{
 			BudgetID: budgetID,
 			Category: expense.Category,
 			Amount:   expense.Amount,
@@ -87,11 +86,11 @@ func expensesFromExpenseInput(budgetID uuid.UUID, input []*ExpenseInput) []*budg
 	return expenses
 }
 
-func incomesFromIncomeInput(budgetID uuid.UUID, input []*IncomeInput) []*budget.Income {
-	incomes := make([]*budget.Income, len(input))
+func incomesFromIncomeInput(budgetID uuid.UUID, input []*IncomeInput) []*model.Income {
+	incomes := make([]*model.Income, len(input))
 
 	for i, income := range input {
-		incomes[i] = &budget.Income{
+		incomes[i] = &model.Income{
 			Owner:  budgetID,
 			Source: income.Source,
 			Amount: income.Amount,
