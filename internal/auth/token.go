@@ -73,10 +73,6 @@ func GetSessionToken(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) (*To
 		return nil, fmt.Errorf("failed to retrieve session token: %w", err)
 	}
 
-	if token.ID == uuid.Nil {
-		return nil, fmt.Errorf("invalid session token")
-	}
-
 	return token, nil
 }
 
