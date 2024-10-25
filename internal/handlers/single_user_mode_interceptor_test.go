@@ -8,21 +8,14 @@ import (
 	"testing"
 	"yaba/internal/ctxutil"
 	"yaba/internal/handlers"
+	"yaba/internal/test/helper"
 )
-
-type funcHandler struct {
-	handlerFunc func(http.ResponseWriter, *http.Request)
-}
-
-func (h funcHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.handlerFunc(w, r)
-}
 
 func TestSingleUserModeDisabled(t *testing.T) {
 	t.Parallel()
 
-	intercepted := funcHandler{
-		handlerFunc: func(_ http.ResponseWriter, _ *http.Request) {},
+	intercepted := helper.FuncHandler{
+		HandlerFunc: func(_ http.ResponseWriter, _ *http.Request) {},
 	}
 
 	_, err := handlers.InterceptSingleUserMode(intercepted)
@@ -32,8 +25,8 @@ func TestSingleUserModeDisabled(t *testing.T) {
 func TestSingleUserModeNoUser(t *testing.T) {
 	t.Setenv("SINGLE_USER_MODE", "true")
 
-	intercepted := funcHandler{
-		handlerFunc: func(_ http.ResponseWriter, _ *http.Request) {},
+	intercepted := helper.FuncHandler{
+		HandlerFunc: func(_ http.ResponseWriter, _ *http.Request) {},
 	}
 
 	_, err := handlers.InterceptSingleUserMode(intercepted)
@@ -47,8 +40,8 @@ func TestSingleUserModeInterceptor(t *testing.T) {
 	t.Setenv("SINGLE_USER_MODE", "true")
 	t.Setenv("SINGLE_USER_UUID", user.String())
 
-	intercepted := funcHandler{
-		handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+	intercepted := helper.FuncHandler{
+		HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 			u, _ := r.Context().Value(ctxutil.CTXUser).(uuid.UUID)
 			_, _ = w.Write([]byte(u.String()))
 		},

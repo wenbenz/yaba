@@ -42,6 +42,11 @@ func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 		if handler, err = InterceptSingleUserMode(handler); err != nil {
 			return nil, err
 		}
+	} else {
+		handler = &auth.Interceptor{
+			Pool:        pool,
+			Intercepted: handler,
+		}
 	}
 
 	return handler, nil

@@ -26,8 +26,8 @@ func (l *Interceptor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	decodedSID, err := hex.DecodeString(SID.String())
-	if err != nil {
+	decodedSID, err := hex.DecodeString(SID.Value)
+	if err != nil || len(decodedSID) != 16 {
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
