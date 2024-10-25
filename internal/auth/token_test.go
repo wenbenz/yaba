@@ -56,6 +56,5 @@ func TestTokenStorage(t *testing.T) {
 
 	// Fetch and assert it doesn't exist.
 	fetched, err = auth.GetSessionToken(context.Background(), pool, token.ID)
-	require.NoError(t, err)
-	require.Nil(t, fetched)
+	require.ErrorContains(t, err, "failed to retrieve session token")
 }

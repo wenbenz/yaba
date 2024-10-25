@@ -50,7 +50,11 @@ func SaveSessionToken(ctx context.Context, pool *pgxpool.Pool, token *Token) err
 		_, err = pool.Exec(ctx, sql, args...)
 	}
 
-	return fmt.Errorf("failed to persist session token: %w", err)
+	if err != nil {
+		return fmt.Errorf("failed to persist session token: %w", err)
+	}
+
+	return nil
 }
 
 func GetSessionToken(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) (*Token, error) {
@@ -65,17 +69,23 @@ func GetSessionToken(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) (*To
 		err = pgxscan.Get(ctx, pool, token, sql, args...)
 	}
 
-	if token.ID == uuid.Nil {
-		token = nil
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve session token: %w", err)
 	}
 
-	return token, fmt.Errorf("failed to retrieve session token: %w", err)
+	if token.ID == uuid.Nil {
+		return nil, fmt.Errorf("invalid session token")
+	}
+
+	return token, nil
 }
 
 func DeleteSessionToken(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) error {
 	sql, args, err := squirrel.Delete("token").Where(squirrel.Eq{"id": id}).PlaceholderFormat(squirrel.Dollar).ToSql()
 	if err == nil {
-		_, err = pool.Exec(ctx, sql, args...)
+		if _, err = pool.Exec(ctx, sql, args...); err == nil {
+			return nil
+		}
 	}
 
 	return fmt.Errorf("failed to delete session token: %w", err)
