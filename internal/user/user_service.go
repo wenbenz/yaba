@@ -12,18 +12,18 @@ import (
 )
 
 func CreateNewUser(ctx context.Context, pool *pgxpool.Pool, username string, password string) (*uuid.UUID, error) {
-	var err error
-	var passwordHash []byte
-
 	id := uuid.New()
+	passwordHash, err := hashPassword(id, password)
 
-	if passwordHash, err = hashPassword(id, password); err == nil {
-		err = database.CreateUser(ctx, pool, &model.User{
-			ID:           id,
-			Username:     username,
-			PasswordHash: passwordHash,
-		})
+	if err != nil {
+		return nil, err
 	}
+
+	err = database.CreateUser(ctx, pool, &model.User{
+		ID:           id,
+		Username:     username,
+		PasswordHash: passwordHash,
+	})
 
 	return &id, fmt.Errorf("failed to create user: %w", err)
 }

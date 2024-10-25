@@ -17,11 +17,15 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *model.User) error
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
 
-	if err == nil {
-		_, err = pool.Exec(ctx, sql, args...)
+	if err != nil {
+		return fmt.Errorf("failed to construct sql: %w", err)
 	}
 
-	return fmt.Errorf("failed to create user: %w", err)
+	if _, err = pool.Exec(ctx, sql, args...); err != nil {
+		return fmt.Errorf("failed to create user: %w", err)
+	}
+
+	return nil
 }
 
 func GetUserByUsername(ctx context.Context, pool *pgxpool.Pool, username string) (*model.User, error) {
