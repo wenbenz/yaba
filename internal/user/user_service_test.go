@@ -10,6 +10,41 @@ import (
 	"yaba/internal/user"
 )
 
+func TestCreateNewUserWithEmptyUsername(t *testing.T) {
+	t.Parallel()
+
+	pool := helper.GetTestPool()
+	id, err := user.CreateNewUser(context.Background(), pool, "", "notempty")
+
+	require.Nil(t, id)
+	require.ErrorContains(t, err, "cannot be empty")
+}
+
+func TestCreateNewUserWithExistingUsername(t *testing.T) {
+	t.Parallel()
+
+	pool := helper.GetTestPool()
+	username := gofakeit.Username()
+	id, err := user.CreateNewUser(context.Background(), pool, username, "notempty")
+
+	require.NoError(t, err)
+	require.NotNil(t, id)
+
+	id, err = user.CreateNewUser(context.Background(), pool, username, "notempty")
+	require.ErrorContains(t, err, "failed to create user")
+	require.Nil(t, id)
+}
+
+func TestCreateNewUserWithEmptyPassword(t *testing.T) {
+	t.Parallel()
+
+	pool := helper.GetTestPool()
+	id, err := user.CreateNewUser(context.Background(), pool, gofakeit.Username(), "")
+
+	require.Nil(t, id)
+	require.ErrorContains(t, err, "cannot be empty")
+}
+
 func TestCreateNewUserPasswordHash(t *testing.T) {
 	t.Parallel()
 

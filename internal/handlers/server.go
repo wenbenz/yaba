@@ -8,7 +8,6 @@ import (
 	"strings"
 	"yaba/graph/server"
 	"yaba/internal/auth"
-	"yaba/internal/user"
 )
 
 func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
@@ -22,16 +21,8 @@ func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 	mux.Handle("/upload", UploadHandler{
 		Pool: pool,
 	})
-	mux.Handle("/register", &auth.LoginHandler{
-		Pool:       pool,
-		LoginFunc:  user.CreateNewUser,
-		FailStatus: http.StatusInternalServerError,
-	})
-	mux.Handle("/login", &auth.LoginHandler{
-		Pool:       pool,
-		LoginFunc:  user.VerifyUser,
-		FailStatus: http.StatusUnauthorized,
-	})
+	mux.Handle("/register", auth.NewUserHandler(pool))
+	mux.Handle("/login", auth.VerifyUserHandler(pool))
 	mux.Handle("/", http.FileServer(http.Dir(os.Getenv("UI_ROOT_DIR"))))
 
 	var handler http.Handler = mux

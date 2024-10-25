@@ -6,12 +6,12 @@ import (
 	"golang.org/x/net/context"
 	"net/http"
 	"time"
+	"yaba/internal/user"
 )
 
 type LoginHandler struct {
-	Pool       *pgxpool.Pool
-	LoginFunc  func(context.Context, *pgxpool.Pool, string, string) (*uuid.UUID, error)
-	FailStatus int
+	Pool      *pgxpool.Pool
+	LoginFunc func(context.Context, *pgxpool.Pool, string, string) (*uuid.UUID, error)
 }
 
 func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +27,7 @@ func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	id, err := l.LoginFunc(r.Context(), l.Pool, username, password)
 	if err != nil || id == nil {
-		w.WriteHeader(l.FailStatus)
+		w.WriteHeader(http.StatusUnauthorized)
 
 		return
 	}
@@ -43,3 +43,17 @@ func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 var _ http.Handler = (*LoginHandler)(nil)
+
+func NewUserHandler(pool *pgxpool.Pool) *LoginHandler {
+	return &LoginHandler{
+		Pool:      pool,
+		LoginFunc: user.CreateNewUser,
+	}
+}
+
+func VerifyUserHandler(pool *pgxpool.Pool) *LoginHandler {
+	return &LoginHandler{
+		Pool:      pool,
+		LoginFunc: user.VerifyUser,
+	}
+}

@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/argon2"
 	"golang.org/x/net/context"
+	"yaba/errors"
 	"yaba/internal/database"
 	"yaba/internal/model"
 )
@@ -14,6 +15,10 @@ import (
 func CreateNewUser(ctx context.Context, pool *pgxpool.Pool, username string, password string) (*uuid.UUID, error) {
 	var passwordHash []byte
 	var err error
+
+	if username == "" || password == "" {
+		return nil, errors.InvalidInputError{Input: "username/password cannot be empty"}
+	}
 
 	id := uuid.New()
 
