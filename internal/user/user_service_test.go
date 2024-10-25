@@ -11,6 +11,8 @@ import (
 )
 
 func TestCreateNewUserPasswordHash(t *testing.T) {
+	t.Parallel()
+
 	pool := helper.GetTestPool()
 	username := gofakeit.Username()
 	password := gofakeit.Password(true, true, true, true, true, 16)
@@ -22,18 +24,23 @@ func TestCreateNewUserPasswordHash(t *testing.T) {
 
 	// Make sure the stored password is hashed
 	var fetchedPassword []byte
-	err = pool.QueryRow(context.Background(), "SELECT password_hash FROM user_profile WHERE id = $1", id).Scan(&fetchedPassword)
-	require.NoError(t, err)
+
+	require.NoError(t, pool.QueryRow(
+		context.Background(),
+		"SELECT password_hash FROM user_profile WHERE id = $1",
+		id).
+		Scan(&fetchedPassword))
+
 	passwordHashString := string(fetchedPassword)
 	require.NotEqual(t, password, passwordHashString)
 
 	// Make sure the hash is verifiable
-	isPasswordCorrect, err := user.VerifyUser(context.Background(), pool, username, password)
+	verifiedID, err := user.VerifyUser(context.Background(), pool, username, password)
 	require.NoError(t, err)
-	require.True(t, isPasswordCorrect)
+	require.Equal(t, id, verifiedID)
 
 	// Should fail with wrong password
-	isPasswordCorrect, err = user.VerifyUser(context.Background(), pool, username, passwordHashString)
+	shouldBeNil, err := user.VerifyUser(context.Background(), pool, username, passwordHashString)
 	require.NoError(t, err)
-	require.False(t, isPasswordCorrect)
+	require.Nil(t, shouldBeNil)
 }

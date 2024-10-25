@@ -2,12 +2,14 @@ package auth
 
 import (
 	"crypto/rand"
+	"fmt"
 	"github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/net/context"
 	"log"
+	"net/http"
 	"time"
 )
 
@@ -19,11 +21,13 @@ type Token struct {
 	Expires time.Time `db:"expires"`
 }
 
+const sessionTokenSize = 32
+
 func NewSessionToken(user uuid.UUID, ttl time.Duration) *Token {
-	value := make([]byte, 32)
-	_, err := rand.Read(value)
-	if err != nil {
+	value := make([]byte, sessionTokenSize)
+	if _, err := rand.Read(value); err != nil {
 		log.Println("Error generating random value:", err)
+
 		return nil
 	}
 
@@ -46,11 +50,16 @@ func SaveSessionToken(ctx context.Context, pool *pgxpool.Pool, token *Token) err
 		_, err = pool.Exec(ctx, sql, args...)
 	}
 
-	return err
+	return fmt.Errorf("failed to persist session token: %w", err)
 }
 
 func GetSessionToken(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) (*Token, error) {
-	sql, args, err := squirrel.Select("*").From("token").Where(squirrel.Eq{"id": id}).PlaceholderFormat(squirrel.Dollar).ToSql()
+	sql, args, err := squirrel.Select("*").
+		From("token").
+		Where(squirrel.Eq{"id": id}).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
+
 	token := &Token{}
 	if err == nil {
 		err = pgxscan.Get(ctx, pool, token, sql, args...)
@@ -60,7 +69,7 @@ func GetSessionToken(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) (*To
 		token = nil
 	}
 
-	return token, err
+	return token, fmt.Errorf("failed to retrieve session token: %w", err)
 }
 
 func DeleteSessionToken(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) error {
@@ -69,5 +78,17 @@ func DeleteSessionToken(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) e
 		_, err = pool.Exec(ctx, sql, args...)
 	}
 
-	return err
+	return fmt.Errorf("failed to delete session token: %w", err)
+}
+
+func bakeCookie(token *Token) *http.Cookie {
+	return &http.Cookie{
+		Name:     "sid",
+		Value:    token.ID.String(),
+		Path:     "/",
+		Domain:   "localhost",
+		Expires:  token.Expires,
+		Secure:   true,
+		HttpOnly: true,
+	}
 }

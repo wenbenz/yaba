@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 	"yaba/graph/server"
+	"yaba/internal/auth"
+	"yaba/internal/user"
 )
 
 func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
@@ -19,6 +21,16 @@ func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 	mux.Handle("/graphql", gqlHandler)
 	mux.Handle("/upload", UploadHandler{
 		Pool: pool,
+	})
+	mux.Handle("/register", &auth.LoginHandler{
+		Pool:       pool,
+		LoginFunc:  user.CreateNewUser,
+		FailStatus: http.StatusInternalServerError,
+	})
+	mux.Handle("/login", &auth.LoginHandler{
+		Pool:       pool,
+		LoginFunc:  user.VerifyUser,
+		FailStatus: http.StatusUnauthorized,
 	})
 	mux.Handle("/", http.FileServer(http.Dir(os.Getenv("UI_ROOT_DIR"))))
 

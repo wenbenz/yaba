@@ -12,13 +12,17 @@ import (
 )
 
 func TestCreateUser(t *testing.T) {
+	t.Parallel()
+
 	pool := helper.GetTestPool()
 	user := &model.User{
 		ID:           uuid.New(),
 		Username:     gofakeit.Username(),
 		PasswordHash: []byte(gofakeit.Password(true, true, true, true, true, 8)),
 	}
-	database.CreateUser(context.Background(), pool, user)
+
+	err := database.CreateUser(context.Background(), pool, user)
+	require.NoError(t, err)
 
 	fetched, err := database.GetUserByUsername(context.Background(), pool, user.Username)
 	require.NoError(t, err)

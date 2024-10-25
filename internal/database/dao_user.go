@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/google/uuid"
@@ -20,7 +21,7 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *model.User) error
 		_, err = pool.Exec(ctx, sql, args...)
 	}
 
-	return err
+	return fmt.Errorf("failed to create user: %w", err)
 }
 
 func GetUserByUsername(ctx context.Context, pool *pgxpool.Pool, username string) (*model.User, error) {
@@ -33,13 +34,17 @@ func GetUserByUsername(ctx context.Context, pool *pgxpool.Pool, username string)
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
 
-	if err == nil {
-		err = pgxscan.Get(ctx, pool, u, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to form query: %w", err)
+	}
+
+	if err = pgxscan.Get(ctx, pool, u, query, args...); err != nil {
+		return nil, fmt.Errorf("failed to fetch user: %w", err)
 	}
 
 	if u.ID == uuid.Nil {
 		u = nil
 	}
 
-	return u, err
+	return u, nil
 }

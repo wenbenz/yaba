@@ -11,6 +11,8 @@ import (
 )
 
 func TestNewToken(t *testing.T) {
+	t.Parallel()
+
 	user := uuid.New()
 
 	before := time.Now()
@@ -30,6 +32,8 @@ func TestNewToken(t *testing.T) {
 }
 
 func TestTokenStorage(t *testing.T) {
+	t.Parallel()
+
 	pool := helper.GetTestPool()
 	user := uuid.New()
 	token := auth.NewSessionToken(user, time.Hour)
@@ -52,5 +56,6 @@ func TestTokenStorage(t *testing.T) {
 
 	// Fetch and assert it doesn't exist.
 	fetched, err = auth.GetSessionToken(context.Background(), pool, token.ID)
+	require.NoError(t, err)
 	require.Nil(t, fetched)
 }
