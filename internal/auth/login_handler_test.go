@@ -48,7 +48,7 @@ func TestLoginHandler(t *testing.T) {
 			password:  "bar",
 
 			setupFn: func() {
-				user.CreateNewUser(context.Background(), pool, "username-login", "bar")
+				_, _ = user.CreateNewUser(context.Background(), pool, "username-login", "bar")
 			},
 			assertFn: assertSuccess,
 		},
@@ -65,7 +65,7 @@ func TestLoginHandler(t *testing.T) {
 			username:  "username-login",
 
 			setupFn: func() {
-				user.CreateNewUser(context.Background(), pool, "username-login", "bar")
+				_, _ = user.CreateNewUser(context.Background(), pool, "username-login", "bar")
 			},
 			assertFn: assertFail,
 		},
@@ -76,7 +76,7 @@ func TestLoginHandler(t *testing.T) {
 			password:  "baz",
 
 			setupFn: func() {
-				user.CreateNewUser(context.Background(), pool, "username-login", "bar")
+				_, _ = user.CreateNewUser(context.Background(), pool, "username-login", "bar")
 			},
 			assertFn: assertFail,
 		},
@@ -103,16 +103,19 @@ func TestLoginHandler(t *testing.T) {
 			handler.ServeHTTP(w, request)
 			tc.assertFn(t, w)
 		})
-
 	}
 }
 
 func assertSuccess(t *testing.T, w *httptest.ResponseRecorder) {
+	t.Helper()
+
 	require.Equal(t, http.StatusFound, w.Code)
 	require.NotEmpty(t, w.Header().Get("Set-Cookie"))
 }
 
 func assertFail(t *testing.T, w *httptest.ResponseRecorder) {
+	t.Helper()
+
 	require.Equal(t, http.StatusUnauthorized, w.Code)
 	require.Empty(t, w.Header().Get("Set-Cookie"))
 }
