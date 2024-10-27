@@ -25,3 +25,9 @@ type NoSuchElementError struct {
 func (e NoSuchElementError) Error() string {
 	return fmt.Sprintf("no such element: %v", e.Element)
 }
+
+type UnauthorizedError struct{}
+
+func (e UnauthorizedError) Error() string {
+	return "unauthorized"
+}

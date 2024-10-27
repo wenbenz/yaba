@@ -17,10 +17,8 @@ func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 		Pool: pool,
 	}}))
 
-	mux.Handle("/graphql", gqlHandler)
-	mux.Handle("/upload", UploadHandler{
-		Pool: pool,
-	})
+	mux.Handle("/graphql", auth.NewAuthRequired(gqlHandler))
+	mux.Handle("/upload", auth.NewAuthRequired(UploadHandler{Pool: pool}))
 	mux.Handle("/register", auth.NewUserHandler(pool))
 	mux.Handle("/login", auth.VerifyUserHandler(pool))
 	mux.Handle("/", http.FileServer(http.Dir(os.Getenv("UI_ROOT_DIR"))))
@@ -34,7 +32,7 @@ func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 			return nil, err
 		}
 	} else {
-		handler = &auth.Interceptor{
+		handler = &auth.SessionInterceptor{
 			Pool:        pool,
 			Intercepted: handler,
 		}

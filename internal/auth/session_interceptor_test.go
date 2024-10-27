@@ -14,44 +14,48 @@ import (
 	"yaba/internal/test/helper"
 )
 
-func TestInterceptorNoSID(t *testing.T) {
+func TestInvalidSIDFormat(t *testing.T) {
 	t.Parallel()
 
-	w := httptest.NewRecorder()
-	handler := auth.Interceptor{}
+	tests := []struct {
+		name  string
+		value string
+	}{
+		{
+			name:  "empty",
+			value: "",
+		},
+		{
+			name:  "not hex",
+			value: "(^_^) [o_o] (^.^) ($.$)",
+		},
+		{
+			name:  "wrong length",
+			value: "1a2b3c",
+		},
+	}
 
-	handler.ServeHTTP(w, &http.Request{})
-	require.Equal(t, http.StatusUnauthorized, w.Code)
-}
+	for _, test := range tests {
+		sid := test.value
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 
-func TestInterceptorSIDNotHex(t *testing.T) {
-	t.Parallel()
+			w := httptest.NewRecorder()
+			handler := auth.SessionInterceptor{
+				Intercepted: helper.FuncHandler{HandlerFunc: func(writer http.ResponseWriter, request *http.Request) {
+					_, _ = writer.Write([]byte(ctxutil.GetUser(request.Context()).String()))
+				}},
+			}
 
-	w := httptest.NewRecorder()
-	handler := auth.Interceptor{}
-
-	request, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "localhost", nil)
-	request.AddCookie(&http.Cookie{
-		Name:  "sid",
-		Value: "(^_^) [o_o] (^.^) ($.$)",
-	})
-	handler.ServeHTTP(w, request)
-	require.Equal(t, http.StatusBadRequest, w.Code)
-}
-
-func TestInterceptorInvalidSIDFormat(t *testing.T) {
-	t.Parallel()
-
-	w := httptest.NewRecorder()
-	handler := auth.Interceptor{}
-
-	request, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "localhost", nil)
-	request.AddCookie(&http.Cookie{
-		Name:  "sid",
-		Value: "1a2b3c",
-	})
-	handler.ServeHTTP(w, request)
-	require.Equal(t, http.StatusBadRequest, w.Code)
+			request, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "localhost", nil)
+			request.AddCookie(&http.Cookie{
+				Name:  "sid",
+				Value: sid,
+			})
+			handler.ServeHTTP(w, request)
+			require.Equal(t, "00000000-0000-0000-0000-000000000000", w.Body.String())
+		})
+	}
 }
 
 func TestInterceptorInvalidSID(t *testing.T) {
@@ -60,8 +64,9 @@ func TestInterceptorInvalidSID(t *testing.T) {
 	pool := helper.GetTestPool()
 
 	w := httptest.NewRecorder()
-	handler := auth.Interceptor{
-		Pool: pool,
+	handler := auth.SessionInterceptor{
+		Pool:        pool,
+		Intercepted: auth.NewAuthRequired(helper.FuncHandler{}),
 	}
 
 	request, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "localhost", nil)
@@ -86,7 +91,7 @@ func TestInterceptorValidSID(t *testing.T) {
 
 	// Make a handler that will write the user ID and SID to the recorder
 	w := httptest.NewRecorder()
-	handler := auth.Interceptor{
+	handler := auth.SessionInterceptor{
 		Pool: pool,
 		Intercepted: helper.FuncHandler{HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 			u, _ := r.Context().Value(ctxutil.CTXUser).(uuid.UUID)
