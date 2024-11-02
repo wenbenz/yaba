@@ -2,6 +2,7 @@ package auth
 
 import (
 	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
@@ -87,14 +88,20 @@ func DeleteSessionToken(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) e
 	return fmt.Errorf("failed to delete session token: %w", err)
 }
 
-func bakeCookie(token *Token) *http.Cookie {
+func BakeCookie(token *Token, domain string) (*http.Cookie, error) {
+	sidBin, err := token.ID.MarshalBinary()
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal session ID: %w", err)
+	}
+
 	return &http.Cookie{
 		Name:     "sid",
-		Value:    token.ID.String(),
+		Value:    hex.EncodeToString(sidBin),
 		Path:     "/",
-		Domain:   "localhost",
+		Domain:   domain,
 		Expires:  token.Expires,
 		Secure:   true,
 		HttpOnly: true,
-	}
+		SameSite: http.SameSiteStrictMode,
+	}, nil
 }

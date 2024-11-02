@@ -1,9 +1,11 @@
 package auth_test
 
 import (
+	"encoding/hex"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
+	"net/http"
 	"testing"
 	"time"
 	"yaba/internal/auth"
@@ -58,4 +60,27 @@ func TestTokenStorage(t *testing.T) {
 	fetched, err = auth.GetSessionToken(context.Background(), pool, token.ID)
 	require.ErrorContains(t, err, "failed to retrieve session token")
 	require.Nil(t, fetched)
+}
+
+func TestBakeCookie(t *testing.T) {
+	t.Parallel()
+
+	user := uuid.New()
+	token := auth.NewSessionToken(user, time.Hour)
+	cookie, err := auth.BakeCookie(token, "domain.com")
+
+	require.NoError(t, err)
+	require.Equal(t, "domain.com", cookie.Domain)
+	require.Equal(t, http.SameSiteStrictMode, cookie.SameSite)
+	require.True(t, cookie.Secure)
+	require.True(t, cookie.HttpOnly)
+	require.Equal(t, token.Expires, cookie.Expires)
+
+	decodedCookie, err := hex.DecodeString(cookie.Value)
+	require.NoError(t, err)
+
+	tokenID, err := token.ID.MarshalBinary()
+	require.NoError(t, err)
+
+	require.Equal(t, tokenID, decodedCookie)
 }

@@ -1,17 +1,15 @@
 # This image includes everything required for development: namely, it starts a postgres container.
 #
 # A `db_password.txt` file needs to be initialized without special characters or new lines.
-#
-# Docker compose setup that creates:
-# - Postgres instance exposed on port 5432
 
 services:
   db:
     image: postgres:16.3
-    ports:
-      - "5432:5432"
+    # Uncomment to expose postgres on port 5432. Disabled by default.
+#    ports:
+#      - "5432:5432"
     env_file:
-      - ../../env/single_user_docker.env
+      - ../../env/docker.env
     environment:
       - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
     volumes:

@@ -7,13 +7,17 @@
 # - Postgres instance exposed on port 5432
 # - Yaba instance exposed on port 9222 running in single user mode
 
+# Load DB from the docker compose file.
+include:
+  - ../db/docker-compose.yml
+
 services:
-  web:
+  yaba_server:
     image: wenbenz/yaba
     ports:
-      - "9222:9222"
+      - "80:80"
     env_file:
-      - ../../env/single_user_docker.env
+      - ../../env/docker.env
     environment:
       - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
     secrets:
@@ -22,20 +26,3 @@ services:
       - db
     depends_on:
       - db
-
-  db:
-    image: postgres:16.3
-    ports:
-      - "5432:5432"
-    env_file:
-      - ../../env/single_user_docker.env
-    environment:
-      - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
-    volumes:
-      - ../../../../migrations:/docker-entrypoint-initdb.d
-    secrets:
-      - db_password
-
-secrets:
-   db_password:
-     file: ../../../../db_password.txt

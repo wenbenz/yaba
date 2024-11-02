@@ -5,6 +5,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"net/http"
+	"os"
 	"time"
 	"yaba/internal/database"
 	"yaba/internal/handlers"
@@ -49,9 +50,14 @@ func main() {
 	}
 
 	// Server setup
+	port, ok := os.LookupEnv("YABA_PORT")
+	if !ok {
+		port = "80"
+	}
+
 	yabaServer := http.Server{
 		Handler:      rootHandler,
-		Addr:         ":9222",
+		Addr:         ":" + port,
 		ReadTimeout:  1 * time.Second,
 		WriteTimeout: 1 * time.Second,
 	}

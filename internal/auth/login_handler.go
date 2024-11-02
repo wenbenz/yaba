@@ -1,9 +1,12 @@
 package auth
 
 import (
+	"errors"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/net/context"
+	"log"
 	"net/http"
 	"time"
 	"yaba/internal/user"
@@ -27,19 +30,32 @@ func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	id, err := l.LoginFunc(r.Context(), l.Pool, username, password)
 	if err != nil || id == nil {
-		w.WriteHeader(http.StatusUnauthorized)
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			// duplicate key constraint violation
+			w.WriteHeader(http.StatusConflict)
+		} else {
+			w.WriteHeader(http.StatusUnauthorized)
+		}
 
 		return
 	}
 
 	// User is authenticated. Create a session
 	token := NewSessionToken(*id, time.Hour)
-	if err := SaveSessionToken(r.Context(), l.Pool, token); err != nil {
+	if err = SaveSessionToken(r.Context(), l.Pool, token); err != nil {
+		log.Println("Error saving session token:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	http.SetCookie(w, bakeCookie(token))
-	http.Redirect(w, r, "/", http.StatusFound)
+	cookie, err := BakeCookie(token, r.Host)
+	if err != nil {
+		log.Println("Error encoding session cookie:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	http.SetCookie(w, cookie)
+	http.Redirect(w, r, "http://"+r.Host, http.StatusFound)
 }
 
 var _ http.Handler = (*LoginHandler)(nil)

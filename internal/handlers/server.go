@@ -5,7 +5,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
 	"os"
-	"strings"
 	"yaba/graph/server"
 	"yaba/internal/auth"
 )
@@ -23,20 +22,32 @@ func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 	mux.Handle("/login", auth.VerifyUserHandler(pool))
 	mux.Handle("/", http.FileServer(http.Dir(os.Getenv("UI_ROOT_DIR"))))
 
-	var handler http.Handler = mux
+	var h http.Handler = mux
 
-	singleUserMode := os.Getenv("SINGLE_USER_MODE")
-	if strings.ToLower(singleUserMode) == "true" {
-		var err error
-		if handler, err = InterceptSingleUserMode(handler); err != nil {
-			return nil, err
-		}
-	} else {
-		handler = &auth.SessionInterceptor{
-			Pool:        pool,
-			Intercepted: handler,
-		}
+	h = &auth.SessionInterceptor{
+		Pool:        pool,
+		Intercepted: h,
 	}
 
-	return handler, nil
+	devMode := os.Getenv("DEV_MODE") == "true"
+	if devMode {
+		h = &corsEnabledHandler{h}
+	}
+
+	return h, nil
+}
+
+type corsEnabledHandler struct {
+	handler http.Handler
+}
+
+func (h *corsEnabledHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Credentials", "true")
+	w.Header().Add("Access-Control-Allow-Headers",
+		"Content-Type, Content-Length, Accept-Encoding,"+
+			" X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+	w.Header().Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+
+	h.handler.ServeHTTP(w, r)
 }
