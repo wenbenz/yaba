@@ -5,6 +5,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
 	"os"
+	"yaba/config"
 	"yaba/graph/server"
 	"yaba/internal/auth"
 )
@@ -29,8 +30,7 @@ func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 		Intercepted: h,
 	}
 
-	devMode := os.Getenv("DEV_MODE") == "true"
-	if devMode {
+	if config.IsDevMode() {
 		h = &corsEnabledHandler{h}
 	}
 

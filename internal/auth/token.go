@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"yaba/config"
 )
 
 type Token struct {
@@ -94,14 +95,21 @@ func BakeCookie(token *Token, domain string) (*http.Cookie, error) {
 		return nil, fmt.Errorf("failed to marshal session ID: %w", err)
 	}
 
+	secure := true
+	sameSite := http.SameSiteStrictMode
+	if config.IsDevMode() {
+		secure = false
+		sameSite = http.SameSiteNoneMode
+	}
+
 	return &http.Cookie{
 		Name:     "sid",
 		Value:    hex.EncodeToString(sidBin),
 		Path:     "/",
 		Domain:   domain,
 		Expires:  token.Expires,
-		Secure:   true,
+		Secure:   secure,
 		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: sameSite,
 	}, nil
 }
