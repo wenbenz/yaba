@@ -97,6 +97,7 @@ func BakeCookie(token *Token, domain string) (*http.Cookie, error) {
 
 	secure := true
 	sameSite := http.SameSiteStrictMode
+
 	if config.IsDevMode() {
 		secure = false
 		sameSite = http.SameSiteNoneMode
