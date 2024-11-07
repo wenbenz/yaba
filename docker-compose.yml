@@ -19,12 +19,13 @@ services:
 
   yaba_server:
     image: wenbenz/yaba
-    ports:
-      - "80:80"
     env_file:
       - docker.env
     environment:
       - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
+      - YABA_PORT=9222
+    ports:
+      - 9222:9222
     secrets:
       - db_password
     links:

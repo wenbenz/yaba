@@ -11,6 +11,7 @@ import (
 	"golang.org/x/net/context"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -94,13 +95,15 @@ func BakeCookie(token *Token, domain string) (*http.Cookie, error) {
 		return nil, fmt.Errorf("failed to marshal session ID: %w", err)
 	}
 
+	secure := os.Getenv("INSECURE_COOKIE") != "true"
+
 	return &http.Cookie{
 		Name:     "sid",
 		Value:    hex.EncodeToString(sidBin),
 		Path:     "/",
 		Domain:   domain,
 		Expires:  token.Expires,
-		Secure:   true,
+		Secure:   secure,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 	}, nil
