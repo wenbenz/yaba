@@ -55,7 +55,7 @@ func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, cookie)
-	http.Redirect(w, r, "http://"+r.Host, http.StatusFound)
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 var _ http.Handler = (*LoginHandler)(nil)

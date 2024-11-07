@@ -5,7 +5,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
 	"os"
-	"yaba/config"
 	"yaba/graph/server"
 	"yaba/internal/auth"
 )
@@ -30,24 +29,5 @@ func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 		Intercepted: h,
 	}
 
-	if config.IsDevMode() {
-		h = &corsEnabledHandler{h}
-	}
-
 	return h, nil
-}
-
-type corsEnabledHandler struct {
-	handler http.Handler
-}
-
-func (h *corsEnabledHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Access-Control-Allow-Origin", "*")
-	w.Header().Add("Access-Control-Allow-Credentials", "true")
-	w.Header().Add("Access-Control-Allow-Headers",
-		"Content-Type, Content-Length, Accept-Encoding,"+
-			" X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-	w.Header().Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-
-	h.handler.ServeHTTP(w, r)
 }
