@@ -14,6 +14,11 @@ COPY internal ./internal/
 COPY main.go ./
 RUN CGO_ENABLED=0 GOOS=linux go build -o ./yaba
 
+# Unpack the UI
+COPY dist.tar.gz ./
+RUN tar -xzvf ./dist.tar.gz
+ENV UI_ROOT_DIR /yaba/dist
+
 # Open port
 EXPOSE 80
 
