@@ -27,7 +27,7 @@ Pull docker image.
 docker pull wenbenz/yaba
 ```
 
-Choose a docker-compose from `config/examples` and run it with
+Start containers.
 ```shell
 docker compose up
 ```
