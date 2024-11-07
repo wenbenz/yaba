@@ -1,4 +1,4 @@
-package budget
+package model
 
 import (
 	"time"

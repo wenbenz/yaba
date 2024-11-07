@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"strings"
 	"time"
-	"yaba/graph/model"
+	graph "yaba/graph/model"
 	"yaba/internal/ctxutil"
-
-	"yaba/internal/budget"
+	"yaba/internal/model"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
@@ -22,7 +21,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9)
 `
 
 func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, since, until time.Time, source *string, limit int,
-) ([]*budget.Expenditure, error) {
+) ([]*model.Expenditure, error) {
 	sq := squirrel.Select("*").
 		From("expenditure").
 		Where(`owner = ? AND date >= ? AND date <= ?`, ctxutil.GetUser(ctx), since, until).
@@ -34,7 +33,7 @@ func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, since, until time
 		sq = sq.Where(squirrel.Eq{"source": *source})
 	}
 
-	var expenditures []*budget.Expenditure
+	var expenditures []*model.Expenditure
 	var query string
 	var args []interface{}
 	var err error
@@ -51,20 +50,20 @@ func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, since, until time
 }
 
 func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, endDate time.Time,
-	timespan model.Timespan, aggregation model.Aggregation, groupBy model.GroupBy) ([]*budget.ExpenditureSummary, error) {
+	timespan graph.Timespan, aggregation graph.Aggregation, groupBy graph.GroupBy) ([]*model.ExpenditureSummary, error) {
 	var category string
 
 	switch groupBy {
-	case model.GroupByNone:
+	case graph.GroupByNone:
 		category = "'Total'"
-	case model.GroupByBudgetCategory:
+	case graph.GroupByBudgetCategory:
 		category = "budget_category"
-	case model.GroupByRewardCategory:
+	case graph.GroupByRewardCategory:
 		category = "reward_category"
 	}
 
 	date := "date"
-	if timespan != model.TimespanDay {
+	if timespan != graph.TimespanDay {
 		// This group-by will cause postgres to do a sequential scan if the timespan is not "DAY".
 		// We can fix this with a functional index, but then the date column becomes immutable.
 		// We can also group by date and aggregate the month/year in code to improve performance
@@ -80,7 +79,7 @@ func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, e
 		GroupBy(date).
 		OrderBy("date ASC")
 
-	if groupBy != model.GroupByNone {
+	if groupBy != graph.GroupByNone {
 		gb := strings.ToLower(groupBy.String())
 		sq = sq.GroupBy(gb)
 		sq = sq.OrderBy(gb)
@@ -88,14 +87,14 @@ func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, e
 
 	query, args, err := sq.ToSql()
 	if err != nil {
-		return []*budget.ExpenditureSummary{}, fmt.Errorf("failed to build query: %w", err)
+		return []*model.ExpenditureSummary{}, fmt.Errorf("failed to build query: %w", err)
 	}
 
-	var expenditures []*budget.ExpenditureSummary
+	var expenditures []*model.ExpenditureSummary
 	err = pgxscan.Select(ctx, pool, &expenditures, query, args...)
 
 	if err != nil {
-		return []*budget.ExpenditureSummary{}, fmt.Errorf("failed to get expenditures: %w", err)
+		return []*model.ExpenditureSummary{}, fmt.Errorf("failed to get expenditures: %w", err)
 	}
 
 	// set everything to utc
@@ -106,7 +105,7 @@ func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, e
 	return expenditures, nil
 }
 
-func PersistExpenditures(ctx context.Context, pool *pgxpool.Pool, expenditures []*budget.Expenditure,
+func PersistExpenditures(ctx context.Context, pool *pgxpool.Pool, expenditures []*model.Expenditure,
 ) error {
 	batch := &pgx.Batch{}
 	for _, e := range expenditures {

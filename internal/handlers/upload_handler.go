@@ -3,15 +3,14 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"mime/multipart"
 	"net/http"
 	"sync"
 	"yaba/internal/ctxutil"
-	"yaba/internal/platform"
-
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"yaba/internal/import"
 )
 
 const (
@@ -116,7 +115,7 @@ func (h UploadHandler) uploadExpenditure(ctx context.Context, fh *multipart.File
 
 	defer file.Close()
 
-	if err = platform.UploadSpendingsCSV(ctx, h.Pool, user, file, filename); err != nil {
+	if err = importer.UploadSpendingsCSV(ctx, h.Pool, user, file, filename); err != nil {
 		log.Println("Error reading CSV: ", err)
 		failed <- uploadError{filename: filename, err: err.Error()}
 

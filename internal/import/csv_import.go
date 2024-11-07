@@ -4,12 +4,15 @@ import (
 	"encoding/csv"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/net/context"
 	"io"
 	"strconv"
 	"strings"
 	"time"
 	"yaba/errors"
-	"yaba/internal/budget"
+	"yaba/internal/database"
+	"yaba/internal/model"
 )
 
 type CsvExpenditureReader struct {
@@ -49,7 +52,7 @@ func (reader *CsvExpenditureReader) getFloat64(row []string, key string) (float6
 	return dollars, nil
 }
 
-func (reader *CsvExpenditureReader) ReadRow(row []string) (*budget.Expenditure, error) {
+func (reader *CsvExpenditureReader) ReadRow(row []string) (*model.Expenditure, error) {
 	date, err := reader.getDate(row, "date")
 	if err != nil {
 		return nil, err
@@ -62,7 +65,7 @@ func (reader *CsvExpenditureReader) ReadRow(row []string) (*budget.Expenditure, 
 
 	rewardCategory := reader.getString(row, "reward_category")
 
-	return &budget.Expenditure{
+	return &model.Expenditure{
 		Owner:          reader.owner,
 		Name:           reader.getString(row, "name"),
 		Date:           date,
@@ -129,7 +132,7 @@ func validateHeaders(headers []string) error {
 	return nil
 }
 
-func ImportExpendituresFromCSVReader(owner uuid.UUID, r *csv.Reader) ([]*budget.Expenditure, error) {
+func ImportExpendituresFromCSVReader(owner uuid.UUID, r *csv.Reader) ([]*model.Expenditure, error) {
 	// First row is always headers.
 	headers, err := r.Read()
 
@@ -142,7 +145,7 @@ func ImportExpendituresFromCSVReader(owner uuid.UUID, r *csv.Reader) ([]*budget.
 		return nil, err
 	}
 
-	var expenditures []*budget.Expenditure
+	var expenditures []*model.Expenditure
 
 	for row, err := r.Read(); err != io.EOF; row, err = r.Read() {
 		if err != nil {
@@ -163,4 +166,23 @@ func ImportExpendituresFromCSVReader(owner uuid.UUID, r *csv.Reader) ([]*budget.
 	}
 
 	return expenditures, err
+}
+
+func UploadSpendingsCSV(ctx context.Context, pool *pgxpool.Pool, user uuid.UUID, data io.Reader, source string) error {
+	csvReader := csv.NewReader(data)
+	expenditures, err := ImportExpendituresFromCSVReader(user, csvReader)
+
+	if err != nil {
+		return fmt.Errorf("failed to import: %w", err)
+	}
+
+	for _, e := range expenditures {
+		e.Source = source
+	}
+
+	if err = database.PersistExpenditures(ctx, pool, expenditures); err != nil {
+		return fmt.Errorf("failed to save: %w", err)
+	}
+
+	return nil
 }

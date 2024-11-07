@@ -8,8 +8,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"yaba/errors"
-	"yaba/internal/budget"
 	"yaba/internal/ctxutil"
+	"yaba/internal/model"
 )
 
 const getBudget = `
@@ -73,8 +73,8 @@ DELETE FROM expense
 WHERE budget_id = $1
 `
 
-func GetBudget(ctx context.Context, pool *pgxpool.Pool, owner, budgetID uuid.UUID) (*budget.Budget, error) {
-	var budgets []*budget.Budget
+func GetBudget(ctx context.Context, pool *pgxpool.Pool, owner, budgetID uuid.UUID) (*model.Budget, error) {
+	var budgets []*model.Budget
 
 	var err error
 
@@ -93,8 +93,8 @@ func GetBudget(ctx context.Context, pool *pgxpool.Pool, owner, budgetID uuid.UUI
 	return budgets[0], nil
 }
 
-func GetBudgets(ctx context.Context, pool *pgxpool.Pool, owner uuid.UUID, limit int) ([]*budget.Budget, error) {
-	var budgets []*budget.Budget
+func GetBudgets(ctx context.Context, pool *pgxpool.Pool, owner uuid.UUID, limit int) ([]*model.Budget, error) {
+	var budgets []*model.Budget
 
 	var err error
 
@@ -109,7 +109,7 @@ func GetBudgets(ctx context.Context, pool *pgxpool.Pool, owner uuid.UUID, limit 
 	return budgets, nil
 }
 
-func populateBudgets(ctx context.Context, pool *pgxpool.Pool, budgets []*budget.Budget) error {
+func populateBudgets(ctx context.Context, pool *pgxpool.Pool, budgets []*model.Budget) error {
 	// Batch budget loading
 	batch := &pgx.Batch{}
 	for _, b := range budgets {
@@ -139,7 +139,7 @@ func populateBudgets(ctx context.Context, pool *pgxpool.Pool, budgets []*budget.
 	return nil
 }
 
-func PersistBudget(ctx context.Context, pool *pgxpool.Pool, budget *budget.Budget) error {
+func PersistBudget(ctx context.Context, pool *pgxpool.Pool, budget *model.Budget) error {
 	batch := &pgx.Batch{}
 	batch.Queue(upsertBudget, budget.ID, budget.Owner, budget.Name)
 	batch.Queue(deleteIncomeByOwner, budget.ID)
@@ -169,7 +169,7 @@ func PersistBudget(ctx context.Context, pool *pgxpool.Pool, budget *budget.Budge
 	return nil
 }
 
-func DeleteBudget(ctx context.Context, pool *pgxpool.Pool, budget *budget.Budget) error {
+func DeleteBudget(ctx context.Context, pool *pgxpool.Pool, budget *model.Budget) error {
 	batch := &pgx.Batch{}
 	batch.Queue(deleteBudget, ctxutil.GetUser(ctx), budget.ID)
 	batch.Queue(deleteIncomeByOwner, budget.ID)

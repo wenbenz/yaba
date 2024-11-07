@@ -5,8 +5,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
 	"os"
-	"strings"
 	"yaba/graph/server"
+	"yaba/internal/auth"
 )
 
 func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
@@ -16,21 +16,18 @@ func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 		Pool: pool,
 	}}))
 
-	mux.Handle("/graphql", gqlHandler)
-	mux.Handle("/upload", UploadHandler{
-		Pool: pool,
-	})
+	mux.Handle("/graphql", auth.NewAuthRequired(gqlHandler))
+	mux.Handle("/upload", auth.NewAuthRequired(UploadHandler{Pool: pool}))
+	mux.Handle("/register", auth.NewUserHandler(pool))
+	mux.Handle("/login", auth.VerifyUserHandler(pool))
 	mux.Handle("/", http.FileServer(http.Dir(os.Getenv("UI_ROOT_DIR"))))
 
-	var handler http.Handler = mux
+	var h http.Handler = mux
 
-	singleUserMode := os.Getenv("SINGLE_USER_MODE")
-	if strings.ToLower(singleUserMode) == "true" {
-		var err error
-		if handler, err = InterceptSingleUserMode(handler); err != nil {
-			return nil, err
-		}
+	h = &auth.SessionInterceptor{
+		Pool:        pool,
+		Intercepted: h,
 	}
 
-	return handler, nil
+	return h, nil
 }

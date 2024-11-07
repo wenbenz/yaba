@@ -6,15 +6,6 @@ import (
 	"yaba/errors"
 )
 
-func getEnvTrackMissing(key string, missing *[]string) string {
-	value, ok := os.LookupEnv(key)
-	if !ok {
-		*missing = append(*missing, key)
-	}
-
-	return value
-}
-
 func GetPGConnectionString() (string, error) {
 	missing := []string{}
 
@@ -37,4 +28,13 @@ func GetPGConnectionString() (string, error) {
 
 	return fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
 		pgUser, pgPassword, pgURL, pgDatabase, sslEnabled), nil
+}
+
+func getEnvTrackMissing(key string, missing *[]string) string {
+	value, ok := os.LookupEnv(key)
+	if !ok {
+		*missing = append(*missing, key)
+	}
+
+	return value
 }

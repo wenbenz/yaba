@@ -6,10 +6,10 @@ import (
 	"slices"
 	"testing"
 	"time"
-	"yaba/graph/model"
-	"yaba/internal/budget"
+	graph "yaba/graph/model"
 	"yaba/internal/ctxutil"
 	"yaba/internal/database"
+	"yaba/internal/model"
 	"yaba/internal/test/helper"
 
 	"github.com/google/uuid"
@@ -25,13 +25,13 @@ func TestExpenditures(t *testing.T) {
 	numExpenditures := 50
 	owner := uuid.New()
 	ctx := ctxutil.WithUser(context.Background(), owner)
-	expenditures := make([]*budget.Expenditure, numExpenditures)
+	expenditures := make([]*model.Expenditure, numExpenditures)
 
 	endDate := time.Now()
 	startDate := endDate.AddDate(0, 0, -numExpenditures+1)
 
 	for i := range numExpenditures {
-		expenditures[i] = &budget.Expenditure{
+		expenditures[i] = &model.Expenditure{
 			Owner:          owner,
 			Name:           fmt.Sprintf("expenditure %d", i),
 			Amount:         float64((i * 123) % 400),
@@ -90,11 +90,11 @@ func TestAggregateExpenditures(t *testing.T) {
 
 		startDate string
 		endDate   string
-		span      model.Timespan
-		aggregate model.Aggregation
-		groupBy   model.GroupBy
+		span      graph.Timespan
+		aggregate graph.Aggregation
+		groupBy   graph.GroupBy
 
-		expectedAmounts func(expenditures []*budget.Expenditure) []float64
+		expectedAmounts func(expenditures []*model.Expenditure) []float64
 	}{
 		{
 			name:          "timespan week",
@@ -103,9 +103,9 @@ func TestAggregateExpenditures(t *testing.T) {
 
 			startDate: "2024-08-05",
 			endDate:   "2024-08-18",
-			span:      model.TimespanWeek,
-			aggregate: model.AggregationSum,
-			groupBy:   model.GroupByNone,
+			span:      graph.TimespanWeek,
+			aggregate: graph.AggregationSum,
+			groupBy:   graph.GroupByNone,
 
 			expectedAmounts: twoWeeksInAugust(),
 		}, {
@@ -115,9 +115,9 @@ func TestAggregateExpenditures(t *testing.T) {
 
 			startDate: "2024-08-05",
 			endDate:   "2024-08-18",
-			span:      model.TimespanWeek,
-			aggregate: model.AggregationSum,
-			groupBy:   model.GroupByNone,
+			span:      graph.TimespanWeek,
+			aggregate: graph.AggregationSum,
+			groupBy:   graph.GroupByNone,
 
 			expectedAmounts: twoWeeksInAugust(),
 		}, {
@@ -127,9 +127,9 @@ func TestAggregateExpenditures(t *testing.T) {
 
 			startDate: "2024-08-01",
 			endDate:   "2024-08-30",
-			span:      model.TimespanWeek,
-			aggregate: model.AggregationSum,
-			groupBy:   model.GroupByNone,
+			span:      graph.TimespanWeek,
+			aggregate: graph.AggregationSum,
+			groupBy:   graph.GroupByNone,
 
 			expectedAmounts: twoWeeksInAugust(),
 		}, {
@@ -139,11 +139,11 @@ func TestAggregateExpenditures(t *testing.T) {
 
 			startDate: "2024-08-01",
 			endDate:   "2024-08-30",
-			span:      model.TimespanDay,
-			aggregate: model.AggregationSum,
-			groupBy:   model.GroupByNone,
+			span:      graph.TimespanDay,
+			aggregate: graph.AggregationSum,
+			groupBy:   graph.GroupByNone,
 
-			expectedAmounts: func(expenditures []*budget.Expenditure) []float64 {
+			expectedAmounts: func(expenditures []*model.Expenditure) []float64 {
 				out := make([]float64, 10)
 				for _, e := range expenditures {
 					out[e.Date.Day()-1] += e.Amount
@@ -158,11 +158,11 @@ func TestAggregateExpenditures(t *testing.T) {
 
 			startDate: "2024-01-01",
 			endDate:   "2024-02-28",
-			span:      model.TimespanMonth,
-			aggregate: model.AggregationSum,
-			groupBy:   model.GroupByNone,
+			span:      graph.TimespanMonth,
+			aggregate: graph.AggregationSum,
+			groupBy:   graph.GroupByNone,
 
-			expectedAmounts: func(expenditures []*budget.Expenditure) []float64 {
+			expectedAmounts: func(expenditures []*model.Expenditure) []float64 {
 				out := make([]float64, 2)
 
 				for _, e := range expenditures {
@@ -178,11 +178,11 @@ func TestAggregateExpenditures(t *testing.T) {
 
 			startDate: "2024-01-01",
 			endDate:   "2024-12-31",
-			span:      model.TimespanYear,
-			aggregate: model.AggregationAvg,
-			groupBy:   model.GroupByNone,
+			span:      graph.TimespanYear,
+			aggregate: graph.AggregationAvg,
+			groupBy:   graph.GroupByNone,
 
-			expectedAmounts: func(expenditures []*budget.Expenditure) []float64 {
+			expectedAmounts: func(expenditures []*model.Expenditure) []float64 {
 				sum := 0.
 
 				for _, e := range expenditures {
@@ -198,11 +198,11 @@ func TestAggregateExpenditures(t *testing.T) {
 
 			startDate: "2024-01-01",
 			endDate:   "2024-02-28",
-			span:      model.TimespanMonth,
-			aggregate: model.AggregationSum,
-			groupBy:   model.GroupByBudgetCategory,
+			span:      graph.TimespanMonth,
+			aggregate: graph.AggregationSum,
+			groupBy:   graph.GroupByBudgetCategory,
 
-			expectedAmounts: janFebGroupBy(model.GroupByBudgetCategory),
+			expectedAmounts: janFebGroupBy(graph.GroupByBudgetCategory),
 		}, {
 			name:          "group by reward category",
 			dataStartDate: "2024-01-01",
@@ -210,11 +210,11 @@ func TestAggregateExpenditures(t *testing.T) {
 
 			startDate: "2024-01-01",
 			endDate:   "2024-02-28",
-			span:      model.TimespanMonth,
-			aggregate: model.AggregationSum,
-			groupBy:   model.GroupByRewardCategory,
+			span:      graph.TimespanMonth,
+			aggregate: graph.AggregationSum,
+			groupBy:   graph.GroupByRewardCategory,
 
-			expectedAmounts: janFebGroupBy(model.GroupByRewardCategory),
+			expectedAmounts: janFebGroupBy(graph.GroupByRewardCategory),
 		},
 	}
 
@@ -254,8 +254,8 @@ func TestAggregateExpenditures(t *testing.T) {
 	}
 }
 
-func janFebGroupBy(groupBy model.GroupBy) func(expenditures []*budget.Expenditure) []float64 {
-	return func(expenditures []*budget.Expenditure) []float64 {
+func janFebGroupBy(groupBy graph.GroupBy) func(expenditures []*model.Expenditure) []float64 {
+	return func(expenditures []*model.Expenditure) []float64 {
 		buckets := []map[string]float64{{}, {}}
 		exists := map[string]bool{}
 
@@ -265,9 +265,9 @@ func janFebGroupBy(groupBy model.GroupBy) func(expenditures []*budget.Expenditur
 			var category string
 			//nolint:exhaustive
 			switch groupBy {
-			case model.GroupByBudgetCategory:
+			case graph.GroupByBudgetCategory:
 				category = e.BudgetCategory
-			case model.GroupByRewardCategory:
+			case graph.GroupByRewardCategory:
 				category = e.RewardCategory
 			}
 
@@ -295,8 +295,8 @@ func janFebGroupBy(groupBy model.GroupBy) func(expenditures []*budget.Expenditur
 	}
 }
 
-func twoWeeksInAugust() func(expenditures []*budget.Expenditure) []float64 {
-	return func(expenditures []*budget.Expenditure) []float64 {
+func twoWeeksInAugust() func(expenditures []*model.Expenditure) []float64 {
+	return func(expenditures []*model.Expenditure) []float64 {
 		monday, _ := time.Parse(time.DateOnly, "2024-08-12")
 		out := make([]float64, 2)
 
