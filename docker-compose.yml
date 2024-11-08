@@ -16,7 +16,6 @@ services:
       - ./migrations:/docker-entrypoint-initdb.d
     secrets:
       - db_password
-
   yaba_server:
     image: wenbenz/yaba
     env_file:
@@ -24,6 +23,9 @@ services:
     environment:
       - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
       - YABA_PORT=9222
+      #Enabling this will prevent the 'secure' attribute from being set in cookies.
+      #Uncomment if you're not planning to use HTTPS.
+      #- INSECURE_COOKIE=true
     ports:
       - 9222:9222
     secrets:
