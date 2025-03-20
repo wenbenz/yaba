@@ -1,19 +1,23 @@
 # Docker compose file that spins up a postgres database and a server instance.
 #
 # A `db_password.txt` file needs to be initialized without special characters or new lines.
+volumes:
+  database:
+    name: yaba_database
 
 services:
   db:
     image: postgres:16.3
     # Uncomment to expose postgres on port 5432. Disabled by default.
-#    ports:
-#      - "5432:5432"
+    # ports:
+    #  - "5432:5432"
     env_file:
       - docker.env
     environment:
       - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
     volumes:
       - ./migrations:/docker-entrypoint-initdb.d
+      - database:/var/lib/postgresql/data
     secrets:
       - db_password
   yaba_server:
