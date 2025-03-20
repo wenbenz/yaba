@@ -79,7 +79,7 @@ func TestUploadNotCSV(t *testing.T) {
 
 	handler.ServeHTTP(w, request)
 	require.Equal(t, http.StatusBadRequest, w.Code)
-	require.Equal(t, `{"file.txt":"failed to import: `+
+	require.JSONEq(t, `{"file.txt":"failed to import: `+
 		`unrecognized column 'I'm a file.' in headers: `+
 		`invalid input value: [I'm a file.]"}`,
 		w.Body.String())
@@ -122,7 +122,7 @@ func TestUploadCSVPartialSuccess(t *testing.T) {
 
 	handler.ServeHTTP(w, request)
 	require.Equal(t, http.StatusBadRequest, w.Code)
-	require.Equal(t, `{"file.txt":"failed to import: `+
+	require.JSONEq(t, `{"file.txt":"failed to import: `+
 		`unrecognized column 'I'm a file.' in headers: `+
 		`invalid input value: [I'm a file.]"}`,
 		w.Body.String())
