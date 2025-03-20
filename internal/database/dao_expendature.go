@@ -77,7 +77,7 @@ func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, e
 		From("expenditure").
 		Where("owner = $1 AND date >= $2 AND date <= $3", ctxutil.GetUser(ctx), startDate, endDate).
 		GroupBy(date).
-		OrderBy("date ASC")
+		OrderBy("date DESC")
 
 	if groupBy != graph.GroupByNone {
 		gb := strings.ToLower(groupBy.String())
