@@ -25,7 +25,7 @@ func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, since, until time
 	sq := squirrel.Select("*").
 		From("expenditure").
 		Where(`owner = ? AND date >= ? AND date <= ?`, ctxutil.GetUser(ctx), since, until).
-		OrderBy("date, id").
+		OrderBy("date DESC, id").
 		Limit(uint64(limit)). //nolint:gosec
 		PlaceholderFormat(squirrel.Dollar)
 
@@ -77,7 +77,7 @@ func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, e
 		From("expenditure").
 		Where("owner = $1 AND date >= $2 AND date <= $3", ctxutil.GetUser(ctx), startDate, endDate).
 		GroupBy(date).
-		OrderBy("date DESC")
+		OrderBy("date ASC")
 
 	if groupBy != graph.GroupByNone {
 		gb := strings.ToLower(groupBy.String())
