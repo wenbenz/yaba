@@ -27,7 +27,7 @@ services:
       #Uncomment if you're not planning to use HTTPS.
       #- INSECURE_COOKIE=true
     ports:
-      - 9222:9222
+      - "9222:9222"
     secrets:
       - db_password
     links:

@@ -38,10 +38,9 @@ func MockExpenditures(n int, owner uuid.UUID, startDate, endDate time.Time) []*m
 	return expenditures
 }
 
-//
 // func MakeMockExpenditureCSV() {
 //	user, _ := uuid.Parse("b49585ce-1ba0-4875-a99a-431b4c44c4d0")
-//	start, _ := time.Parse(time.DateOnly, "2024-01-01")
+//	start, _ := time.Parse(time.DateOnly, "2025-01-01")
 //	expenditures := MockExpenditures(1000, user, start, time.Now())
 //	f, _ := os.Create("generated.csv")
 //	defer f.Close()

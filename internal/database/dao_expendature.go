@@ -25,7 +25,7 @@ func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, since, until time
 	sq := squirrel.Select("*").
 		From("expenditure").
 		Where(`owner = ? AND date >= ? AND date <= ?`, ctxutil.GetUser(ctx), since, until).
-		OrderBy("date, id").
+		OrderBy("date DESC, id").
 		Limit(uint64(limit)). //nolint:gosec
 		PlaceholderFormat(squirrel.Dollar)
 

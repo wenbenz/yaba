@@ -10,6 +10,7 @@ linters:
     - gofumpt
     - goimports
     - nolintlint
+    - ireturn
 
 issues:
   exclude-rules:

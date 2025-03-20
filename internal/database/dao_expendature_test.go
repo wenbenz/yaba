@@ -31,7 +31,7 @@ func TestExpenditures(t *testing.T) {
 	startDate := endDate.AddDate(0, 0, -numExpenditures+1)
 
 	for i := range numExpenditures {
-		expenditures[i] = &model.Expenditure{
+		expenditures[numExpenditures-i-1] = &model.Expenditure{
 			Owner:          owner,
 			Name:           fmt.Sprintf("expenditure %d", i),
 			Amount:         float64((i * 123) % 400),
@@ -62,13 +62,13 @@ func TestExpenditures(t *testing.T) {
 	}
 
 	// Fetch with smaller limit
-	fetched, err = database.ListExpenditures(ctx, pool, expenditures[0].Date, endDate, nil, 10)
+	fetched, err = database.ListExpenditures(ctx, pool, expenditures[9].Date, endDate, nil, 10)
 	require.NoError(t, err)
 	require.Equal(t, expenditures[0].Name, fetched[0].Name)
 	require.Equal(t, expenditures[9].Name, fetched[9].Name)
 
 	// Fetch with time range
-	fetched, err = database.ListExpenditures(ctx, pool, fetched[4].Date, fetched[8].Date, nil, 10)
+	fetched, err = database.ListExpenditures(ctx, pool, fetched[8].Date, fetched[4].Date, nil, 10)
 	require.NoError(t, err)
 	require.Equal(t, expenditures[4].Name, fetched[0].Name)
 	require.Equal(t, expenditures[8].Name, fetched[4].Name)
