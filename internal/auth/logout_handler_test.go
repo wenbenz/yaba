@@ -48,7 +48,8 @@ func TestLogoutHandler(t *testing.T) {
 	require.ErrorContains(t, err, "failed to retrieve session token")
 
 	// Check that the session cookie is cleared
-	cookie = rr.Result().Cookies()[0]
+	cookie = rr.Result().Cookies()[0] // nolint:bodyclose
+
 	require.Equal(t, "sid", cookie.Name)
 	require.Equal(t, "", cookie.Value)
 	require.Equal(t, -1, cookie.MaxAge)

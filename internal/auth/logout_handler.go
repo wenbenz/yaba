@@ -17,18 +17,21 @@ func (l *LogoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil || SID == nil {
 		w.WriteHeader(http.StatusUnauthorized)
+
 		return
 	}
 
 	decodedSID, err := hex.DecodeString(SID.Value)
 	if err != nil || len(decodedSID) != 16 {
 		w.WriteHeader(http.StatusUnauthorized)
+
 		return
 	}
 
 	if err = DeleteSessionToken(r.Context(), l.Pool, uuid.UUID(decodedSID)); err != nil {
 		log.Println("Error deleting session token:", err)
 		w.WriteHeader(http.StatusInternalServerError)
+
 		return
 	}
 
