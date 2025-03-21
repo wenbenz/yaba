@@ -1,4 +1,8 @@
-CREATE TYPE token_type AS ENUM ('SESSION');
+DO $$ BEGIN
+    CREATE TYPE token_type AS ENUM ('SESSION');
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS token
 (

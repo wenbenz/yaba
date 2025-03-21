@@ -16,7 +16,6 @@ services:
     environment:
       - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
     volumes:
-      - ./migrations:/docker-entrypoint-initdb.d
       - database:/var/lib/postgresql/data
     secrets:
       - db_password
