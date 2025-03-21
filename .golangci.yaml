@@ -9,20 +9,7 @@ linters:
     - goimports
     - nolintlint
     - ireturn
-    - deadcode # Deprecated
-    - execinquery # Deprecated
-    - exhaustivestruct # Deprecated
-    - exportloopref # Deprecated
-    - golint # Deprecated
-    - gomnd # Deprecated
-    - ifshort # Deprecated
-    - interfacer # Deprecated
-    - maligned # Deprecated
-    - nosnakecase # Deprecated
-    - scopelint # Deprecated
-    - structcheck # Deprecated
-    - tenv # Deprecated
-    - varcheck # Deprecated
+    - tenv # deprecated
 
 issues:
   exclude-rules:
