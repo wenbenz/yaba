@@ -16,14 +16,14 @@ func (l *LogoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	SID, err := r.Cookie("sid")
 
 	if err != nil || SID == nil {
-		w.WriteHeader(http.StatusUnauthorized)
+		http.RedirectHandler("/", http.StatusTemporaryRedirect)
 
 		return
 	}
 
 	decodedSID, err := hex.DecodeString(SID.Value)
 	if err != nil || len(decodedSID) != 16 {
-		w.WriteHeader(http.StatusUnauthorized)
+		http.RedirectHandler("/", http.StatusTemporaryRedirect)
 
 		return
 	}
@@ -43,7 +43,7 @@ func (l *LogoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		MaxAge: -1,
 	}
 	http.SetCookie(w, cookie)
-	w.WriteHeader(http.StatusOK)
+	http.RedirectHandler("/", http.StatusTemporaryRedirect)
 }
 
 var _ http.Handler = (*LogoutHandler)(nil)
