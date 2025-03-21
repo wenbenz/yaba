@@ -28,21 +28,41 @@ func TestValidCSVs(t *testing.T) {
 			filename:     "acceptable_dollars.csv",
 			expectedRows: 6,
 		},
+		{
+			filename:     "extra_column.csv",
+			expectedRows: 1,
+		},
+		{
+			filename:     "amex.csv",
+			expectedRows: 1,
+		},
+		{
+			filename:     "columns_only.csv",
+			expectedRows: 0,
+		},
+		{
+			filename:     "empty_row.csv",
+			expectedRows: 1,
+		},
 	}
 
 	for _, test := range testCases {
-		path := "testdata/" + test.filename
-		rows := test.expectedRows
-		f, err := os.Open(path)
-		require.NoError(t, err)
+		t.Run("CSV:"+test.filename, func(t *testing.T) {
+			t.Parallel()
 
-		owner, err := uuid.NewRandom()
-		require.NoError(t, err)
+			path := "testdata/" + test.filename
+			rows := test.expectedRows
+			f, err := os.Open(path)
+			require.NoError(t, err)
 
-		csvReader := csv.NewReader(f)
-		expenditures, err := importer.ImportExpendituresFromCSVReader(owner, csvReader)
-		require.NoError(t, err)
-		require.Len(t, expenditures, rows)
+			owner, err := uuid.NewRandom()
+			require.NoError(t, err)
+
+			csvReader := csv.NewReader(f)
+			expenditures, err := importer.ImportExpendituresFromCSVReader(owner, csvReader)
+			require.NoError(t, err)
+			require.Len(t, expenditures, rows)
+		})
 	}
 }
 
@@ -56,10 +76,6 @@ func TestInvalidCSVs(t *testing.T) {
 		{
 			filename: "empty.csv",
 			errorMsg: "received error reading headers: EOF",
-		},
-		{
-			filename: "extra_column.csv",
-			errorMsg: "unrecognized column 'pineapple'",
 		},
 		{
 			filename: "missing_amount.csv",
@@ -77,19 +93,27 @@ func TestInvalidCSVs(t *testing.T) {
 			filename: "unparsable_date.csv",
 			errorMsg: "date must have format YYYY-MM-DD",
 		},
+		{
+			filename: "incomplete_row.csv",
+			errorMsg: "unexpected error reading csv: record on line 2: wrong number of fields",
+		},
 	}
 
 	for _, test := range testCases {
-		path := "testdata/" + test.filename
-		f, err := os.Open(path)
-		require.NoError(t, err)
+		t.Run("CSV:"+test.filename, func(t *testing.T) {
+			t.Parallel()
 
-		owner, err := uuid.NewRandom()
-		require.NoError(t, err)
+			path := "testdata/" + test.filename
+			f, err := os.Open(path)
+			require.NoError(t, err)
 
-		csvReader := csv.NewReader(f)
-		_, err = importer.ImportExpendituresFromCSVReader(owner, csvReader)
-		require.ErrorContains(t, err, test.errorMsg, "failing test: "+test.filename)
+			owner, err := uuid.NewRandom()
+			require.NoError(t, err)
+
+			csvReader := csv.NewReader(f)
+			_, err = importer.ImportExpendituresFromCSVReader(owner, csvReader)
+			require.ErrorContains(t, err, test.errorMsg, "failing test: "+test.filename)
+		})
 	}
 }
 
@@ -185,20 +209,24 @@ func TestCSVUploadBadCSV(t *testing.T) {
 		},
 	}
 	for _, test := range testCases {
-		path := "testdata/" + test.filename
-		f, err := os.Open(path)
-		require.NoError(t, err)
+		t.Run("CSV:"+test.filename, func(t *testing.T) {
+			t.Parallel()
 
-		user, err := uuid.NewRandom()
-		require.NoError(t, err)
+			path := "testdata/" + test.filename
+			f, err := os.Open(path)
+			require.NoError(t, err)
 
-		require.ErrorContains(t, importer.UploadSpendingsCSV(ctx, pool, user, f, ""), test.errorMsg)
+			user, err := uuid.NewRandom()
+			require.NoError(t, err)
 
-		date, err := time.Parse(time.DateOnly, "2006-07-08")
-		require.NoError(t, err)
+			require.ErrorContains(t, importer.UploadSpendingsCSV(ctx, pool, user, f, ""), test.errorMsg)
 
-		expenditures, err := database.ListExpenditures(ctx, pool, date, date, nil, 10)
-		require.Empty(t, expenditures)
-		require.NoError(t, err)
+			date, err := time.Parse(time.DateOnly, "2006-07-08")
+			require.NoError(t, err)
+
+			expenditures, err := database.ListExpenditures(ctx, pool, date, date, nil, 10)
+			require.Empty(t, expenditures)
+			require.NoError(t, err)
+		})
 	}
 }

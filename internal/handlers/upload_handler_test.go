@@ -78,9 +78,8 @@ func TestUploadNotCSV(t *testing.T) {
 
 	handler.ServeHTTP(w, request)
 	require.Equal(t, http.StatusBadRequest, w.Code)
-	require.JSONEq(t, `{"file.txt":"failed to import: `+
-		`unrecognized column 'I'm a file.' in headers: `+
-		`invalid input value: [I'm a file.]"}`,
+	require.JSONEq(t,
+		`{"file.txt":"failed to import: missing required column 'date': invalid input value: [I'm a file.]"}`,
 		w.Body.String())
 }
 
@@ -121,9 +120,8 @@ func TestUploadCSVPartialSuccess(t *testing.T) {
 
 	handler.ServeHTTP(w, request)
 	require.Equal(t, http.StatusBadRequest, w.Code)
-	require.JSONEq(t, `{"file.txt":"failed to import: `+
-		`unrecognized column 'I'm a file.' in headers: `+
-		`invalid input value: [I'm a file.]"}`,
+	require.JSONEq(t,
+		`{"file.txt":"failed to import: missing required column 'date': invalid input value: [I'm a file.]"}`,
 		w.Body.String())
 
 	// Check that rows in the CSV
