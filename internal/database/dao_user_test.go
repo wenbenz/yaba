@@ -4,7 +4,6 @@ import (
 	"github.com/brianvoe/gofakeit"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 	"testing"
 	"yaba/internal/database"
 	"yaba/internal/model"
@@ -21,10 +20,10 @@ func TestCreateUser(t *testing.T) {
 		PasswordHash: []byte(gofakeit.Password(true, true, true, true, true, 8)),
 	}
 
-	err := database.CreateUser(context.Background(), pool, user)
+	err := database.CreateUser(t.Context(), pool, user)
 	require.NoError(t, err)
 
-	fetched, err := database.GetUserByUsername(context.Background(), pool, user.Username)
+	fetched, err := database.GetUserByUsername(t.Context(), pool, user.Username)
 	require.NoError(t, err)
 	require.Equal(t, user.ID, fetched.ID)
 	require.Equal(t, user.Username, fetched.Username)

@@ -2,7 +2,6 @@ package handlers_test
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -44,7 +43,7 @@ func TestUploadCSV(t *testing.T) {
 	pool := helper.GetTestPool()
 	handler := handlers.UploadHandler{Pool: pool}
 	user := uuid.New()
-	ctx := ctxutil.WithUser(context.Background(), user)
+	ctx := ctxutil.WithUser(t.Context(), user)
 	w := httptest.NewRecorder()
 
 	request, err := UploadCSVRequest([]string{"testdata/spend.csv", "testdata/spend2.csv"})
@@ -75,7 +74,7 @@ func TestUploadNotCSV(t *testing.T) {
 	request, err := UploadCSVRequest([]string{"testdata/file.txt"})
 	require.NoError(t, err)
 
-	request = request.WithContext(ctxutil.WithUser(context.Background(), user))
+	request = request.WithContext(ctxutil.WithUser(t.Context(), user))
 
 	handler.ServeHTTP(w, request)
 	require.Equal(t, http.StatusBadRequest, w.Code)
@@ -98,7 +97,7 @@ func TestUploadWrongKey(t *testing.T) {
 	request, err := UploadFileRequest([]string{"testdata/file.txt"}, "text/csv", "foobar")
 	require.NoError(t, err)
 
-	request = request.WithContext(ctxutil.WithUser(context.Background(), user))
+	request = request.WithContext(ctxutil.WithUser(t.Context(), user))
 
 	handler.ServeHTTP(w, request)
 	require.Equal(t, http.StatusUnprocessableEntity, w.Code)
@@ -112,13 +111,13 @@ func TestUploadCSVPartialSuccess(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	pool := helper.GetTestPool()
-	ctx := ctxutil.WithUser(context.Background(), user)
+	ctx := ctxutil.WithUser(t.Context(), user)
 	handler := handlers.UploadHandler{Pool: pool}
 
 	request, err := UploadCSVRequest([]string{"testdata/spend.csv", "testdata/file.txt"})
 	require.NoError(t, err)
 
-	request = request.WithContext(ctxutil.WithUser(context.Background(), user))
+	request = request.WithContext(ctxutil.WithUser(t.Context(), user))
 
 	handler.ServeHTTP(w, request)
 	require.Equal(t, http.StatusBadRequest, w.Code)

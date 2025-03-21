@@ -3,7 +3,6 @@ package auth_test
 import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -48,7 +47,7 @@ func TestLoginHandler(t *testing.T) {
 			password:  "bar",
 
 			setupFn: func() {
-				_, _ = user.CreateNewUser(context.Background(), pool, "username-login", "bar")
+				_, _ = user.CreateNewUser(t.Context(), pool, "username-login", "bar")
 			},
 			assertFn: assertSuccess,
 		},
@@ -65,7 +64,7 @@ func TestLoginHandler(t *testing.T) {
 			username:  "username-login",
 
 			setupFn: func() {
-				_, _ = user.CreateNewUser(context.Background(), pool, "username-login", "bar")
+				_, _ = user.CreateNewUser(t.Context(), pool, "username-login", "bar")
 			},
 			assertFn: assertFail,
 		},
@@ -76,7 +75,7 @@ func TestLoginHandler(t *testing.T) {
 			password:  "baz",
 
 			setupFn: func() {
-				_, _ = user.CreateNewUser(context.Background(), pool, "username-login", "bar")
+				_, _ = user.CreateNewUser(t.Context(), pool, "username-login", "bar")
 			},
 			assertFn: assertFail,
 		},
@@ -97,7 +96,7 @@ func TestLoginHandler(t *testing.T) {
 			form := url.Values{}
 			form.Add("username", tc.username)
 			form.Add("password", tc.password)
-			request, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "localhost",
+			request, _ := http.NewRequestWithContext(t.Context(), http.MethodPost, "localhost",
 				strings.NewReader(form.Encode()))
 			request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 			handler.ServeHTTP(w, request)

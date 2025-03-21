@@ -16,7 +16,7 @@ func MockExpenditures(n int, owner uuid.UUID, startDate, endDate time.Time) []*m
 			Amount:         gofakeit.Float64Range(0, 1000), //nolint:mnd
 			Date:           gofakeit.DateRange(startDate, endDate.AddDate(0, 0, 1)),
 			Method:         gofakeit.CreditCardType(),
-			BudgetCategory: gofakeit.BeerStyle(),
+			BudgetCategory: gofakeit.FuelType(),
 			RewardCategory: gofakeit.RandString([]string{
 				"DRUG_STORE",
 				"ENTERTAINMENT",

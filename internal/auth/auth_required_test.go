@@ -20,7 +20,7 @@ func TestAuthRequired(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}}
 
-	request, err := http.NewRequestWithContext(context.WithValue(context.Background(), ctxutil.CTXUser, uuid.New()),
+	request, err := http.NewRequestWithContext(context.WithValue(t.Context(), ctxutil.CTXUser, uuid.New()),
 		http.MethodGet, "/", nil)
 	require.NoError(t, err)
 
@@ -37,7 +37,7 @@ func TestAuthRequiredNoUserInContext(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}}
 
-	request, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 	require.NoError(t, err)
 
 	handler = auth.NewAuthRequired(handler)

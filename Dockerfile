@@ -14,6 +14,9 @@ COPY internal ./internal/
 COPY main.go ./
 RUN CGO_ENABLED=0 GOOS=linux go build -o ./yaba
 
+# Copy migrations
+COPY migrations ./migrations/
+
 # Unpack the UI
 COPY dist.tar.gz ./
 RUN tar -xzvf ./dist.tar.gz

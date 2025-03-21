@@ -20,6 +20,12 @@ clean:
 	rm ./graph/client/generated.go ./graph/model/models_gen.go ./graph/server/generated.go \
 		./yaba ./coverage.out
 
+lint:
+	golangci-lint run --fix 
+
+test:
+	go test ./...
+
 docker:
 	docker build --tag wenbenz/yaba:latest .
 
