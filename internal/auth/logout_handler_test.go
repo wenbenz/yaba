@@ -3,7 +3,6 @@ package auth_test
 import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -21,7 +20,7 @@ func TestLogoutHandler(t *testing.T) {
 	token := auth.NewSessionToken(user, time.Hour)
 
 	// Save the token
-	err := auth.SaveSessionToken(context.Background(), pool, token)
+	err := auth.SaveSessionToken(t.Context(), pool, token)
 	require.NoError(t, err)
 
 	// Create a request with the user context
@@ -43,7 +42,7 @@ func TestLogoutHandler(t *testing.T) {
 	require.Equal(t, http.StatusOK, rr.Code)
 
 	// Check that the session token is deleted
-	token, err = auth.GetSessionToken(context.Background(), pool, token.ID)
+	token, err = auth.GetSessionToken(t.Context(), pool, token.ID)
 	require.Nil(t, token)
 	require.ErrorContains(t, err, "failed to retrieve session token")
 

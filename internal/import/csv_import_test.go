@@ -4,7 +4,6 @@ import (
 	"encoding/csv"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 	"os"
 	"testing"
 	"time"
@@ -130,7 +129,7 @@ func TestCSVUploadSuccess(t *testing.T) {
 	user, err := uuid.NewRandom()
 	require.NoError(t, err)
 
-	ctx := ctxutil.WithUser(context.Background(), user)
+	ctx := ctxutil.WithUser(t.Context(), user)
 	startTime := time.Now()
 
 	require.NoError(t, importer.UploadSpendingsCSV(ctx, pool, user, f, "spend.csv"))
@@ -170,7 +169,7 @@ func TestCSVUploadBadCSV(t *testing.T) {
 	t.Parallel()
 
 	pool := helper.GetTestPool()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testCases := []struct {
 		filename string

@@ -1,7 +1,6 @@
 package handlers_test
 
 import (
-	"context"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"strconv"
@@ -19,7 +18,7 @@ func TestCreateEmptyBudget(t *testing.T) {
 	t.Parallel()
 
 	user := uuid.New()
-	ctx := ctxutil.WithUser(context.Background(), user)
+	ctx := ctxutil.WithUser(t.Context(), user)
 	pool := helper.GetTestPool()
 	resolver := &handlers.Resolver{Pool: pool}
 
@@ -56,7 +55,7 @@ func TestCreateFullBudget(t *testing.T) {
 	t.Parallel()
 
 	user := uuid.New()
-	ctx := ctxutil.WithUser(context.Background(), user)
+	ctx := ctxutil.WithUser(t.Context(), user)
 	pool := helper.GetTestPool()
 	resolver := &handlers.Resolver{Pool: pool}
 	limit := 10
@@ -107,7 +106,7 @@ func TestUpdateBudget(t *testing.T) {
 	t.Parallel()
 
 	user := uuid.New()
-	ctx := ctxutil.WithUser(context.Background(), user)
+	ctx := ctxutil.WithUser(t.Context(), user)
 	pool := helper.GetTestPool()
 	resolver := &handlers.Resolver{Pool: pool}
 	limit := 10
@@ -194,7 +193,7 @@ func TestUpdateFailsWrongOwner(t *testing.T) {
 	t.Parallel()
 
 	user := uuid.New()
-	ctx := ctxutil.WithUser(context.Background(), user)
+	ctx := ctxutil.WithUser(t.Context(), user)
 	pool := helper.GetTestPool()
 	resolver := &handlers.Resolver{Pool: pool}
 	limit := 10
@@ -238,7 +237,7 @@ func TestExpenditures(t *testing.T) {
 	t.Parallel()
 
 	user := uuid.New()
-	ctx := ctxutil.WithUser(context.Background(), user)
+	ctx := ctxutil.WithUser(t.Context(), user)
 	pool := helper.GetTestPool()
 	resolver := &handlers.Resolver{Pool: pool}
 
@@ -283,7 +282,7 @@ func TestAggregateExpenditures(t *testing.T) {
 	t.Parallel()
 
 	user := uuid.New()
-	ctx := ctxutil.WithUser(context.Background(), user)
+	ctx := ctxutil.WithUser(t.Context(), user)
 	pool := helper.GetTestPool()
 	resolver := &handlers.Resolver{Pool: pool}
 

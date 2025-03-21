@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 	"net/http"
 	"testing"
 	"time"
@@ -41,11 +40,11 @@ func TestTokenStorage(t *testing.T) {
 	token := auth.NewSessionToken(user, time.Hour)
 
 	// Save the token
-	err := auth.SaveSessionToken(context.Background(), pool, token)
+	err := auth.SaveSessionToken(t.Context(), pool, token)
 	require.NoError(t, err)
 
 	// Fetch and assert it's the same
-	fetched, err := auth.GetSessionToken(context.Background(), pool, token.ID)
+	fetched, err := auth.GetSessionToken(t.Context(), pool, token.ID)
 	require.NoError(t, err)
 	require.Equal(t, token.User, fetched.User)
 	require.Equal(t, token.Type, fetched.Type)
@@ -54,10 +53,10 @@ func TestTokenStorage(t *testing.T) {
 	require.Equal(t, token.Expires.Unix(), fetched.Expires.Unix())
 
 	// Delete the token
-	require.NoError(t, auth.DeleteSessionToken(context.Background(), pool, token.ID))
+	require.NoError(t, auth.DeleteSessionToken(t.Context(), pool, token.ID))
 
 	// Fetch and assert it doesn't exist.
-	fetched, err = auth.GetSessionToken(context.Background(), pool, token.ID)
+	fetched, err = auth.GetSessionToken(t.Context(), pool, token.ID)
 	require.ErrorContains(t, err, "failed to retrieve session token")
 	require.Nil(t, fetched)
 }

@@ -30,45 +30,17 @@ func main() {
 	}
 
 	// Ping postgres server to make sure things are working
-	startTime := time.Now()
-	ticker := time.NewTicker(time.Second)
-
-	for t := range ticker.C {
-		err = pool.Ping(context.Background())
-		if err == nil || t.After(startTime.Add(time.Minute)) {
-			ticker.Stop()
-			break
-		}
-
-		log.Println("failed to ping database:", err)
-	}
-
-	if err != nil {
+	if err = waitForConnection(pool); err != nil {
 		log.Fatalln("bad db connection:", err)
 	}
 
 	log.Println("Connected to db! Applying migrations...")
 
-	db := stdlib.OpenDBFromPool(pool)
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
-
-	if err != nil {
-		log.Fatalln("could not create postgres driver:", err)
+	if err = applyMigrations(pool); err != nil {
+		log.Fatalln(err)
 	}
 
-	m, err := migrate.NewWithDatabaseInstance(
-		"file://migrations",
-		"postgres", driver)
-
-	if err != nil {
-		log.Fatalln("could not create migrator:", err)
-	}
-
-	if err = m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		log.Fatalln("could not apply migrations:", err)
-	}
-
-	fmt.Println("Migrations applied successfully!")
+	log.Println("Migrations applied successfully!")
 
 	rootHandler, err := handlers.BuildServerHandler(pool)
 	if err != nil {
@@ -89,6 +61,54 @@ func main() {
 	}
 
 	log.Println("Starting server on port", port)
+
 	err = yabaServer.ListenAndServe()
 	log.Fatalln("Failed to start server", err)
+}
+
+func waitForConnection(pool *pgxpool.Pool) error {
+	startTime := time.Now()
+	ticker := time.NewTicker(time.Second)
+	var err error
+
+	for t := range ticker.C {
+		err = pool.Ping(context.Background())
+		if err == nil {
+			ticker.Stop()
+
+			break
+		}
+
+		if t.After(startTime.Add(time.Minute)) {
+			ticker.Stop()
+
+			return fmt.Errorf("failed to ping database: %w", err)
+		}
+
+		log.Println("failed to ping database:", err)
+	}
+
+	return nil
+}
+
+func applyMigrations(pool *pgxpool.Pool) error {
+	db := stdlib.OpenDBFromPool(pool)
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+
+	if err != nil {
+		return fmt.Errorf("could not create postgres driver: %w", err)
+	}
+
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://migrations",
+		"postgres", driver)
+	if err != nil {
+		return fmt.Errorf("could not create migrator: %w", err)
+	}
+
+	if err = m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return fmt.Errorf("could not apply migrations: %w", err)
+	}
+
+	return nil
 }

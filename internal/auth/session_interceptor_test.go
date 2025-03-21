@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -47,7 +46,7 @@ func TestInvalidSIDFormat(t *testing.T) {
 				}},
 			}
 
-			request, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "localhost", nil)
+			request, _ := http.NewRequestWithContext(t.Context(), http.MethodPost, "localhost", nil)
 			request.AddCookie(&http.Cookie{
 				Name:  "sid",
 				Value: sid,
@@ -69,7 +68,7 @@ func TestInterceptorInvalidSID(t *testing.T) {
 		Intercepted: auth.NewAuthRequired(helper.FuncHandler{}),
 	}
 
-	request, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "localhost", nil)
+	request, _ := http.NewRequestWithContext(t.Context(), http.MethodPost, "localhost", nil)
 	request.AddCookie(&http.Cookie{
 		Name:  "sid",
 		Value: "1a2b3c1a2b3c1a2b1a2b3c1a2b3c1a2b",
@@ -86,7 +85,7 @@ func TestInterceptorValidSID(t *testing.T) {
 	token := auth.NewSessionToken(user, time.Hour)
 
 	// Save the token
-	err := auth.SaveSessionToken(context.Background(), pool, token)
+	err := auth.SaveSessionToken(t.Context(), pool, token)
 	require.NoError(t, err)
 
 	// Make a handler that will write the user ID and SID to the recorder
@@ -104,7 +103,7 @@ func TestInterceptorValidSID(t *testing.T) {
 	tokenIDBytes, err := token.ID.MarshalBinary()
 	require.NoError(t, err)
 
-	request, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "localhost", nil)
+	request, _ := http.NewRequestWithContext(t.Context(), http.MethodPost, "localhost", nil)
 	request.AddCookie(&http.Cookie{
 		Name:  "sid",
 		Value: hex.EncodeToString(tokenIDBytes),

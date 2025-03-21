@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
 	"os"
@@ -12,9 +14,13 @@ import (
 func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 	mux := http.NewServeMux()
 
-	gqlHandler := handler.NewDefaultServer(server.NewExecutableSchema(server.Config{Resolvers: &Resolver{
+	gqlHandler := handler.New(server.NewExecutableSchema(server.Config{Resolvers: &Resolver{
 		Pool: pool,
 	}}))
+	gqlHandler.AddTransport(transport.GET{})
+	gqlHandler.AddTransport(transport.POST{})
+	gqlHandler.AddTransport(transport.MultipartForm{})
+	gqlHandler.Use(extension.Introspection{})
 
 	mux.Handle("/graphql", auth.NewAuthRequired(gqlHandler))
 	mux.Handle("/upload", auth.NewAuthRequired(UploadHandler{Pool: pool}))

@@ -1,7 +1,6 @@
 package database_test
 
 import (
-	"context"
 	"fmt"
 	"slices"
 	"testing"
@@ -24,7 +23,7 @@ func TestExpenditures(t *testing.T) {
 	// Create expenditures
 	numExpenditures := 50
 	owner := uuid.New()
-	ctx := ctxutil.WithUser(context.Background(), owner)
+	ctx := ctxutil.WithUser(t.Context(), owner)
 	expenditures := make([]*model.Expenditure, numExpenditures)
 
 	endDate := time.Now()
@@ -225,7 +224,7 @@ func TestAggregateExpenditures(t *testing.T) {
 
 			// Setup data
 			user := uuid.New()
-			ctx := ctxutil.WithUser(context.Background(), user)
+			ctx := ctxutil.WithUser(t.Context(), user)
 			pool := helper.GetTestPool()
 
 			startDate, _ := time.Parse(time.DateOnly, tc.dataStartDate)

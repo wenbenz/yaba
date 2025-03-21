@@ -1,7 +1,6 @@
 package database_test
 
 import (
-	"context"
 	"testing"
 	"yaba/internal/ctxutil"
 	"yaba/internal/database"
@@ -18,7 +17,7 @@ func TestBasicBudgetOperations(t *testing.T) {
 	pool := helper.GetTestPool()
 
 	owner := uuid.New()
-	ctx := ctxutil.WithUser(context.Background(), owner)
+	ctx := ctxutil.WithUser(t.Context(), owner)
 
 	// Create and save a budget
 	b := model.NewBudget(owner, "name")
@@ -68,7 +67,7 @@ func TestBasicBudgetOperations(t *testing.T) {
 func TestGetNonExistingBudget(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	pool := helper.GetTestPool()
 
 	// Get specific budget
