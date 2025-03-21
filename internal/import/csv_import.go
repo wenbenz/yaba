@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.uber.org/zap"
 	"golang.org/x/net/context"
 	"io"
 	"strconv"
@@ -69,6 +70,7 @@ func ImportExpendituresFromCSVReader(owner uuid.UUID, r *csv.Reader) ([]*model.E
 
 type CsvExpenditureReader struct {
 	header2index map[string]int
+	dateFormat   string
 	owner        uuid.UUID
 }
 
@@ -76,6 +78,7 @@ func NewCSVExpenditureReader(owner uuid.UUID, headers []string) (*CsvExpenditure
 	reader := CsvExpenditureReader{
 		owner:        owner,
 		header2index: make(map[string]int),
+		dateFormat:   time.DateOnly,
 	}
 
 	if err := validateHeaders(headers); err != nil {
@@ -83,6 +86,12 @@ func NewCSVExpenditureReader(owner uuid.UUID, headers []string) (*CsvExpenditure
 	}
 
 	for i, h := range headers {
+		h = strings.ToLower(h)
+
+		if h == "description" {
+			h = "name"
+		}
+
 		reader.header2index[h] = i
 	}
 
@@ -124,7 +133,18 @@ func (reader *CsvExpenditureReader) getString(row []string, key string) string {
 }
 
 func (reader *CsvExpenditureReader) getDate(row []string, key string) (time.Time, error) {
-	date, err := time.Parse(time.DateOnly, reader.getString(row, key))
+	date, err := time.Parse(reader.dateFormat, reader.getString(row, key))
+
+	// If the date is not in the default format, try all other supported formats and set dateFormat if one works
+	if err != nil {
+		for _, format := range []string{time.DateOnly, amexDateFormat} {
+			date, err = time.Parse(format, reader.getString(row, key))
+			if err == nil {
+				reader.dateFormat = format
+			}
+		}
+	}
+
 	if err != nil {
 		return time.Now(), fmt.Errorf("date must have format YYYY-MM-DD: %w", err)
 	}
@@ -147,11 +167,13 @@ func (reader *CsvExpenditureReader) getFloat64(row []string, key string) (float6
 }
 
 func validateHeaders(headers []string) error {
-	allowedHeaders := []string{"date", "amount", "name", "method", "budget_category", "reward_category", "comment"}
+	logger, _ := zap.NewProduction()
+	allowedHeaders := []string{"date", "amount", "name", "method", "budget_category", "reward_category", "comment",
+		"description"}
 	hasDate, hasAmount := false, false
 
 	for _, h := range headers {
-		switch h {
+		switch strings.ToLower(h) {
 		case "date":
 			hasDate = true
 		case "amount":
@@ -168,7 +190,7 @@ func validateHeaders(headers []string) error {
 			}
 
 			if !allowed {
-				return fmt.Errorf("unrecognized column '%s' in headers: %w", h, errors.InvalidInputError{Input: headers})
+				logger.Warn("unrecognized column in headers", zap.String("column", h))
 			}
 		}
 	}
@@ -183,3 +205,5 @@ func validateHeaders(headers []string) error {
 
 	return nil
 }
+
+const amexDateFormat = "02 Jan 2006"
