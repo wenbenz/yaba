@@ -36,6 +36,14 @@ func TestValidCSVs(t *testing.T) {
 			filename:     "amex.csv",
 			expectedRows: 1,
 		},
+		{
+			filename:     "columns_only.csv",
+			expectedRows: 0,
+		},
+		{
+			filename:     "empty_row.csv",
+			expectedRows: 1,
+		},
 	}
 
 	for _, test := range testCases {
@@ -84,6 +92,10 @@ func TestInvalidCSVs(t *testing.T) {
 		{
 			filename: "unparsable_date.csv",
 			errorMsg: "date must have format YYYY-MM-DD",
+		},
+		{
+			filename: "incomplete_row.csv",
+			errorMsg: "unexpected error reading csv: record on line 2: wrong number of fields",
 		},
 	}
 
