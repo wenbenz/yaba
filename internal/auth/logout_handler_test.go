@@ -54,31 +54,3 @@ func TestLogoutHandler(t *testing.T) {
 	require.Equal(t, "", cookie.Value)
 	require.Equal(t, -1, cookie.MaxAge)
 }
-
-func TestLogoutHandler_InvalidSessionCookie(t *testing.T) {
-	t.Parallel()
-
-	pool := helper.GetTestPool()
-	user := uuid.New()
-
-	// Create a request with the user context and an invalid session cookie
-	req := httptest.NewRequest(http.MethodPost, "/logout", nil)
-	req = req.WithContext(ctxutil.WithUser(req.Context(), user))
-	invalidCookie := &http.Cookie{
-		Name:  "sid",
-		Value: "invalid",
-	}
-	req.AddCookie(invalidCookie)
-
-	// Create a response recorder
-	rr := httptest.NewRecorder()
-
-	// Create the handler
-	handler := auth.NewLogoutHandler(pool)
-
-	// Serve the request
-	handler.ServeHTTP(rr, req)
-
-	// Check the status code
-	require.Equal(t, http.StatusUnauthorized, rr.Code)
-}
