@@ -59,7 +59,7 @@ func TestValidCSVs(t *testing.T) {
 			require.NoError(t, err)
 
 			csvReader := csv.NewReader(f)
-			expenditures, err := importer.ImportExpendituresFromCSVReader(owner, csvReader)
+			expenditures, err := importer.ImportExpendituresFromCSVReader(owner, "testSource", csvReader)
 			require.NoError(t, err)
 			require.Len(t, expenditures, rows)
 		})
@@ -111,7 +111,7 @@ func TestInvalidCSVs(t *testing.T) {
 			require.NoError(t, err)
 
 			csvReader := csv.NewReader(f)
-			_, err = importer.ImportExpendituresFromCSVReader(owner, csvReader)
+			_, err = importer.ImportExpendituresFromCSVReader(owner, "testSource", csvReader)
 			require.ErrorContains(t, err, test.errorMsg, "failing test: "+test.filename)
 		})
 	}
@@ -122,7 +122,7 @@ func TestCsvExpenditureReader(t *testing.T) {
 
 	headers := []string{"date", "amount", "name", "method", "budget_category", "reward_category", "comment"}
 	owner, _ := uuid.NewRandom()
-	reader, err := importer.NewCSVExpenditureReader(owner, headers)
+	reader, err := importer.NewCSVExpenditureReader(owner, "testSource", headers)
 	require.NoError(t, err)
 
 	date, amount, name, method, budgetCategory, rewardCategory, comment :=
@@ -162,31 +162,31 @@ func TestCSVUploadSuccess(t *testing.T) {
 	date, err := time.Parse(time.DateOnly, "2006-07-08")
 	require.NoError(t, err)
 
-	expenditures, err := database.ListExpenditures(ctx, pool, date, date, nil, 10)
+	expenditures, err := database.ListExpenditures(ctx, pool, date, date, nil, nil, nil, nil)
 	require.NoError(t, err)
 	require.Len(t, expenditures, 3)
 
+	require.Equal(t, "2006-07-08", expenditures[2].Date.UTC().Format(time.DateOnly))
+	require.InDelta(t, 123.45, expenditures[2].Amount, .0001)
+	require.Equal(t, "walmart", expenditures[2].Name)
+	require.Equal(t, "debit", expenditures[2].Method)
+	require.Equal(t, "groceries", expenditures[2].BudgetCategory)
+	require.Equal(t, "", expenditures[2].RewardCategory)
+	require.Equal(t, "", expenditures[2].Comment)
+	require.Equal(t, "spend.csv", expenditures[2].Source)
+	require.GreaterOrEqual(t, expenditures[2].CreatedTime, startTime)
+	require.LessOrEqual(t, expenditures[2].CreatedTime, endTime)
+
 	require.Equal(t, "2006-07-08", expenditures[0].Date.UTC().Format(time.DateOnly))
-	require.InDelta(t, 123.45, expenditures[0].Amount, .0001)
-	require.Equal(t, "walmart", expenditures[0].Name)
-	require.Equal(t, "debit", expenditures[0].Method)
-	require.Equal(t, "groceries", expenditures[0].BudgetCategory)
+	require.InDelta(t, 99.99, expenditures[0].Amount, .0001)
+	require.Equal(t, "lawn mowing", expenditures[0].Name)
+	require.Equal(t, "cash", expenditures[0].Method)
+	require.Equal(t, "maintenance", expenditures[0].BudgetCategory)
 	require.Equal(t, "", expenditures[0].RewardCategory)
-	require.Equal(t, "", expenditures[0].Comment)
+	require.Equal(t, "lawn mowing kid", expenditures[0].Comment)
 	require.Equal(t, "spend.csv", expenditures[0].Source)
 	require.GreaterOrEqual(t, expenditures[0].CreatedTime, startTime)
 	require.LessOrEqual(t, expenditures[0].CreatedTime, endTime)
-
-	require.Equal(t, "2006-07-08", expenditures[2].Date.UTC().Format(time.DateOnly))
-	require.InDelta(t, 99.99, expenditures[2].Amount, .0001)
-	require.Equal(t, "lawn mowing", expenditures[2].Name)
-	require.Equal(t, "cash", expenditures[2].Method)
-	require.Equal(t, "maintenance", expenditures[2].BudgetCategory)
-	require.Equal(t, "", expenditures[2].RewardCategory)
-	require.Equal(t, "lawn mowing kid", expenditures[2].Comment)
-	require.Equal(t, "spend.csv", expenditures[0].Source)
-	require.GreaterOrEqual(t, expenditures[2].CreatedTime, startTime)
-	require.LessOrEqual(t, expenditures[2].CreatedTime, endTime)
 }
 
 func TestCSVUploadBadCSV(t *testing.T) {
@@ -224,7 +224,7 @@ func TestCSVUploadBadCSV(t *testing.T) {
 			date, err := time.Parse(time.DateOnly, "2006-07-08")
 			require.NoError(t, err)
 
-			expenditures, err := database.ListExpenditures(ctx, pool, date, date, nil, 10)
+			expenditures, err := database.ListExpenditures(ctx, pool, date, date, nil, nil, nil, nil)
 			require.Empty(t, expenditures)
 			require.NoError(t, err)
 		})

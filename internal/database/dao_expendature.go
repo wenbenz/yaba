@@ -20,17 +20,37 @@ INSERT INTO expenditure (owner, name, amount, date, method, budget_category, rew
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9)
 `
 
-func ListExpenditures(ctx context.Context, pool *pgxpool.Pool, since, until time.Time, source *string, limit int,
+func ListExpenditures(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	since, until time.Time,
+	source, category *string,
+	limit, cursor *int,
 ) ([]*model.Expenditure, error) {
 	sq := squirrel.Select("*").
 		From("expenditure").
-		Where(`owner = ? AND date >= ? AND date <= ?`, ctxutil.GetUser(ctx), since, until).
-		OrderBy("date DESC, id").
-		Limit(uint64(limit)). //nolint:gosec
+		Where(`owner = ? AND date >= ? AND date <= ?`, ctxutil.GetUser(ctx), since.UTC(), until.UTC()).
+		OrderBy("date DESC, id DESC").
 		PlaceholderFormat(squirrel.Dollar)
 
 	if source != nil {
 		sq = sq.Where(squirrel.Eq{"source": *source})
+	}
+
+	if category != nil {
+		if *category == "" {
+			sq = sq.Where(squirrel.Eq{"budget_category": ""})
+		} else {
+			sq = sq.Where(squirrel.Eq{"budget_category": *category})
+		}
+	}
+
+	if limit != nil {
+		sq = sq.Limit(uint64(*limit)) //nolint:gosec
+	}
+
+	if cursor != nil {
+		sq = sq.Offset(uint64(*cursor)) //nolint:gosec
 	}
 
 	var expenditures []*model.Expenditure
@@ -105,8 +125,7 @@ func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, e
 	return expenditures, nil
 }
 
-func PersistExpenditures(ctx context.Context, pool *pgxpool.Pool, expenditures []*model.Expenditure,
-) error {
+func PersistExpenditures(ctx context.Context, pool *pgxpool.Pool, expenditures []*model.Expenditure) error {
 	batch := &pgx.Batch{}
 	for _, e := range expenditures {
 		batch.Queue(insertExpenditure, e.Owner, e.Name, e.Amount, e.Date,

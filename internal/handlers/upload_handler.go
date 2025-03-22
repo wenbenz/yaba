@@ -25,7 +25,7 @@ type UploadHandler struct {
 type uploadErrors map[string]string
 type uploadError struct {
 	filename string
-	err      string
+	err      error
 }
 
 func (h UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -58,12 +58,19 @@ func (h UploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h UploadHandler) handleExpenditureCSV(ctx context.Context,
 	fileHeaders []*multipart.FileHeader, user uuid.UUID, w http.ResponseWriter) {
 	wg := sync.WaitGroup{}
-	failed := make(chan uploadError)
+	failed := make(chan *uploadError)
 
 	// Upload expenditure for each file.
 	for _, fh := range fileHeaders {
-		go h.uploadExpenditure(ctx, fh, user, &wg, failed)
 		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			if err := h.uploadExpenditure(ctx, fh, user); err != nil {
+				failed <- err
+			}
+		}()
 	}
 
 	// Go routine to collect failures.
@@ -71,7 +78,7 @@ func (h UploadHandler) handleExpenditureCSV(ctx context.Context,
 	go func() {
 		ues := uploadErrors{}
 		for ue := range failed {
-			ues[ue.filename] = ue.err
+			ues[ue.filename] = ue.err.Error()
 		}
 
 		failures <- ues
@@ -98,27 +105,19 @@ func (h UploadHandler) handleExpenditureCSV(ctx context.Context,
 }
 
 // Reads the CSV from fh and writes it to the expenditures table.
-// Failures.
-func (h UploadHandler) uploadExpenditure(ctx context.Context, fh *multipart.FileHeader, user uuid.UUID,
-	wg *sync.WaitGroup, failed chan<- uploadError) {
-	defer wg.Done()
-
+func (h UploadHandler) uploadExpenditure(ctx context.Context, fh *multipart.FileHeader, user uuid.UUID) *uploadError {
 	filename := fh.Filename
 	file, err := fh.Open()
 
 	if err != nil {
-		log.Println("Error opening the file: ", err)
-		failed <- uploadError{filename: filename, err: err.Error()}
-
-		return
+		return &uploadError{filename: filename, err: err}
 	}
 
 	defer file.Close()
 
 	if err = importer.UploadSpendingsCSV(ctx, h.Pool, user, file, filename); err != nil {
-		log.Println("Error reading CSV: ", err)
-		failed <- uploadError{filename: filename, err: err.Error()}
-
-		return
+		return &uploadError{filename: filename, err: err}
 	}
+
+	return nil
 }

@@ -18,14 +18,10 @@ import (
 
 func UploadSpendingsCSV(ctx context.Context, pool *pgxpool.Pool, user uuid.UUID, data io.Reader, source string) error {
 	csvReader := csv.NewReader(data)
-	expenditures, err := ImportExpendituresFromCSVReader(user, csvReader)
+	expenditures, err := ImportExpendituresFromCSVReader(user, source, csvReader)
 
 	if err != nil {
 		return fmt.Errorf("failed to import: %w", err)
-	}
-
-	for _, e := range expenditures {
-		e.Source = source
 	}
 
 	if err = database.PersistExpenditures(ctx, pool, expenditures); err != nil {
@@ -35,13 +31,13 @@ func UploadSpendingsCSV(ctx context.Context, pool *pgxpool.Pool, user uuid.UUID,
 	return nil
 }
 
-func ImportExpendituresFromCSVReader(owner uuid.UUID, r *csv.Reader) ([]*model.Expenditure, error) {
+func ImportExpendituresFromCSVReader(owner uuid.UUID, source string, r *csv.Reader) ([]*model.Expenditure, error) {
 	headers, err := r.Read()
 	if err != nil {
 		return nil, fmt.Errorf("received error reading headers: %w", err)
 	}
 
-	expenditureReader, err := NewCSVExpenditureReader(owner, headers)
+	expenditureReader, err := NewCSVExpenditureReader(owner, source, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -72,11 +68,13 @@ type CsvExpenditureReader struct {
 	header2index map[string]int
 	dateFormat   string
 	owner        uuid.UUID
+	source       string
 }
 
-func NewCSVExpenditureReader(owner uuid.UUID, headers []string) (*CsvExpenditureReader, error) {
+func NewCSVExpenditureReader(owner uuid.UUID, source string, headers []string) (*CsvExpenditureReader, error) {
 	reader := CsvExpenditureReader{
 		owner:        owner,
+		source:       source,
 		header2index: make(map[string]int),
 		dateFormat:   time.DateOnly,
 	}
@@ -113,6 +111,7 @@ func (reader *CsvExpenditureReader) ReadRow(row []string) (*model.Expenditure, e
 
 	return &model.Expenditure{
 		Owner:          reader.owner,
+		Source:         reader.source,
 		Name:           reader.getString(row, "name"),
 		Date:           date,
 		Amount:         amount,

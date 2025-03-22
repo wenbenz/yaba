@@ -12,9 +12,9 @@ func MockExpenditures(n int, owner uuid.UUID, startDate, endDate time.Time) []*m
 	for i := range expenditures {
 		expenditures[i] = &model.Expenditure{
 			Owner:          owner,
-			Name:           gofakeit.Company(),
-			Amount:         gofakeit.Float64Range(0, 1000), //nolint:mnd
-			Date:           gofakeit.DateRange(startDate, endDate.AddDate(0, 0, 1)),
+			Name:           gofakeit.BeerStyle(),
+			Amount:         gofakeit.Float64Range(0.01, 100),
+			Date:           gofakeit.DateRange(startDate, endDate.AddDate(0, 0, 1)).Truncate(24 * time.Hour),
 			Method:         gofakeit.CreditCardType(),
 			BudgetCategory: gofakeit.FuelType(),
 			RewardCategory: gofakeit.RandString([]string{
@@ -30,8 +30,8 @@ func MockExpenditures(n int, owner uuid.UUID, startDate, endDate time.Time) []*m
 				"RESTAURANT",
 			}),
 			Comment:     gofakeit.HipsterSentence(5), //nolint:mnd
-			CreatedTime: gofakeit.DateRange(startDate, endDate.AddDate(0, 0, 1)),
-			Source:      gofakeit.Word() + ".csv",
+			CreatedTime: gofakeit.DateRange(startDate.UTC(), endDate.AddDate(0, 0, 1)),
+			Source:      gofakeit.CarMaker() + ".csv",
 		}
 	}
 
