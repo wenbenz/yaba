@@ -104,7 +104,7 @@ func (e Aggregation) String() string {
 	return string(e)
 }
 
-func (e *Aggregation) UnmarshalGQL(v interface{}) error {
+func (e *Aggregation) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -147,7 +147,7 @@ func (e GroupBy) String() string {
 	return string(e)
 }
 
-func (e *GroupBy) UnmarshalGQL(v interface{}) error {
+func (e *GroupBy) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -192,7 +192,7 @@ func (e Timespan) String() string {
 	return string(e)
 }
 
-func (e *Timespan) UnmarshalGQL(v interface{}) error {
+func (e *Timespan) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")

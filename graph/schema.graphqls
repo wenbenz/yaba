@@ -65,7 +65,7 @@ type Query {
     budget(id: ID!): BudgetResponse
     budgets(first: Int): [BudgetResponse]
 
-    expenditures(since: String, until: String, source: String, count: Int): [ExpenditureResponse]
+    expenditures(since: String, until: String, source: String, category: String, count: Int, offset: Int): [ExpenditureResponse]
     aggregatedExpenditures(since: String, until: String, span: Timespan,
         groupBy: GroupBy, aggregation: Aggregation): [AggregatedExpendituresResponse]
 }

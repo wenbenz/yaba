@@ -1,8 +1,9 @@
 package database_test
 
 import (
-	"fmt"
+	"github.com/brianvoe/gofakeit"
 	"slices"
+	"sort"
 	"testing"
 	"time"
 	graph "yaba/graph/model"
@@ -15,68 +16,234 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestExpenditures(t *testing.T) {
+func TestListAllExpenditures(t *testing.T) {
+	t.Parallel()
+
+	pool := helper.GetTestPool()
+	owner := uuid.New()
+	endDate := time.Now()
+	startDate := endDate.AddDate(0, 0, -30)
+	generated := helper.MockExpenditures(10, owner, startDate, endDate)
+
+	// Sort expenditures and make sure dates are unique
+	sort.Slice(generated, func(i, j int) bool {
+		return generated[i].Date.After(generated[j].Date)
+	})
+
+	expenditures := make([]*model.Expenditure, 0, len(generated))
+	lastDate := time.Time{}
+
+	for _, exp := range generated {
+		if exp.Date.Equal(lastDate) {
+			continue
+		}
+
+		expenditures = append(expenditures, exp)
+		lastDate = exp.Date
+	}
+
+	require.NotEmptyf(t, expenditures, "expenditures should not be empty")
+
+	require.NoError(t, database.PersistExpenditures(t.Context(), pool, expenditures))
+
+	fetched, err := database.ListExpenditures(
+		ctxutil.WithUser(t.Context(), owner), pool, startDate, endDate, nil, nil, nil, nil)
+	require.NoError(t, err)
+	require.Len(t, fetched, len(expenditures))
+
+	for i, exp := range fetched {
+		require.Equal(t, exp.Owner, owner)
+		require.Equal(t, exp.Name, expenditures[i].Name)
+		require.InDelta(t, exp.Amount, expenditures[i].Amount, .001)
+		require.Equal(t, expenditures[i].Date.Format(time.DateOnly), exp.Date.Format(time.DateOnly))
+		require.Equal(t, exp.BudgetCategory, expenditures[i].BudgetCategory)
+		require.Equal(t, exp.Method, expenditures[i].Method)
+		require.Equal(t, exp.Comment, expenditures[i].Comment)
+	}
+}
+
+//nolint:gocognit,cyclop
+func TestListExpenditures(t *testing.T) {
 	t.Parallel()
 
 	pool := helper.GetTestPool()
 
 	// Create expenditures
-	numExpenditures := 50
+	numExpenditures := 500
 	owner := uuid.New()
-	ctx := ctxutil.WithUser(t.Context(), owner)
-	expenditures := make([]*model.Expenditure, numExpenditures)
+	endDate := time.Now().UTC().Truncate(24 * time.Hour)
+	startDate := endDate.AddDate(0, 0, -30)
+	generated := helper.MockExpenditures(numExpenditures, owner, startDate, endDate)
 
-	endDate := time.Now()
-	startDate := endDate.AddDate(0, 0, -numExpenditures+1)
+	// Randomly make 10 of them have no categories
+	for range 10 {
+		for {
+			j := gofakeit.Number(0, numExpenditures)
+			if generated[j].BudgetCategory != "" {
+				generated[j].BudgetCategory = ""
 
-	for i := range numExpenditures {
-		expenditures[numExpenditures-i-1] = &model.Expenditure{
-			Owner:          owner,
-			Name:           fmt.Sprintf("expenditure %d", i),
-			Amount:         float64((i * 123) % 400),
-			Date:           startDate.AddDate(0, 0, i),
-			Method:         "cash",
-			BudgetCategory: "spending",
-			Source:         fmt.Sprintf("file%d.csv", i%2),
+				break
+			}
 		}
 	}
 
-	require.NoError(t, database.PersistExpenditures(ctx, pool, expenditures))
+	// Persist expenditures
+	require.NoError(t, database.PersistExpenditures(t.Context(), pool, generated))
 
-	// Fetch newly created expenditures
-	fetched, err := database.ListExpenditures(ctx, pool, startDate, endDate, nil, 100)
+	// Refetch expenditures so IDs and order is correct for other tests.
+	// TestListAllExpenditures verifies the integrity of using this.
+	expenditures, err := database.ListExpenditures(
+		ctxutil.WithUser(t.Context(), owner), pool, startDate, endDate, nil, nil, nil, nil)
 	require.NoError(t, err)
-	require.Len(t, fetched, numExpenditures)
+	require.Len(t, expenditures, numExpenditures, "Num expenditures doesn't match")
 
-	// Check that they are the same
-	for i, actual := range fetched {
-		expected := expenditures[i]
-		require.Equal(t, expected.Owner, actual.Owner)
-		require.Equal(t, expected.Name, actual.Name)
-		require.InDelta(t, expected.Amount, actual.Amount, .001)
-		require.Equal(t, expected.Date.Format(time.DateOnly), actual.Date.Format(time.DateOnly))
-		require.Equal(t, expected.BudgetCategory, actual.BudgetCategory)
-		require.Equal(t, expected.Method, actual.Method)
-		require.Equal(t, expected.Comment, actual.Comment)
+	testCases := []struct {
+		name       string
+		queryStart time.Time
+		queryEnd   time.Time
+		category   *string
+		source     *string
+		cursor     *int
+		limit      *int
+		expected   func() []*model.Expenditure
+	}{
+		{
+			name:       "fetch_with_limit",
+			queryStart: startDate,
+			queryEnd:   endDate,
+			category:   nil,
+			source:     nil,
+			cursor:     nil,
+			limit:      pointer(10),
+			expected: func() []*model.Expenditure {
+				return expenditures[:10]
+			},
+		},
+		{
+			name:       "fetch_with_cursor",
+			queryStart: startDate,
+			queryEnd:   endDate,
+			category:   nil,
+			source:     nil,
+			cursor:     pointer(10),
+			limit:      pointer(10),
+			expected: func() []*model.Expenditure {
+				return expenditures[10:20]
+			},
+		},
+		{
+			name:       "fetch_by_date_range",
+			queryStart: startDate.AddDate(0, 0, 5),
+			queryEnd:   startDate.AddDate(0, 0, 10),
+			category:   nil,
+			source:     nil,
+			cursor:     nil,
+			limit:      nil,
+			expected: func() []*model.Expenditure {
+				var result []*model.Expenditure
+				for _, e := range expenditures {
+					if !e.Date.Before(startDate.AddDate(0, 0, 5)) &&
+						!e.Date.After(startDate.AddDate(0, 0, 10)) {
+						result = append(result, e)
+					}
+				}
+				require.NotEmpty(t, result, "expenditures should not be empty")
+
+				return result
+			},
+		},
+		{
+			name:       "fetch_by_category",
+			queryStart: startDate,
+			queryEnd:   endDate,
+			category:   pointer("Electric"),
+			source:     nil,
+			cursor:     nil,
+			limit:      nil,
+			expected: func() []*model.Expenditure {
+				var result []*model.Expenditure
+				for _, e := range expenditures {
+					if e.BudgetCategory == "Electric" {
+						result = append(result, e)
+					}
+				}
+				require.NotEmpty(t, result, "expenditures should not be empty")
+
+				return result
+			},
+		},
+		{
+			name:       "fetch_by_empty_category",
+			queryStart: startDate,
+			queryEnd:   endDate,
+			category:   pointer(""),
+			source:     nil,
+			cursor:     nil,
+			limit:      nil,
+			expected: func() []*model.Expenditure {
+				var result []*model.Expenditure
+				for _, e := range expenditures {
+					if e.BudgetCategory == "" {
+						result = append(result, e)
+					}
+				}
+
+				require.Len(t, result, 10)
+
+				return result
+			},
+		}, {
+			name:       "fetch_by_source",
+			queryStart: startDate,
+			queryEnd:   endDate,
+			category:   nil,
+			source:     pointer("Nissan.csv"),
+			cursor:     nil,
+			limit:      pointer(100),
+			expected: func() []*model.Expenditure {
+				var result []*model.Expenditure
+				for _, e := range expenditures {
+					if e.Source == "Nissan.csv" {
+						result = append(result, e)
+					}
+				}
+				require.NotEmpty(t, result, "expenditures should not be empty")
+
+				return result
+			},
+		},
 	}
 
-	// Fetch with smaller limit
-	fetched, err = database.ListExpenditures(ctx, pool, expenditures[9].Date, endDate, nil, 10)
-	require.NoError(t, err)
-	require.Equal(t, expenditures[0].Name, fetched[0].Name)
-	require.Equal(t, expenditures[9].Name, fetched[9].Name)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			ctx := ctxutil.WithUser(t.Context(), owner)
 
-	// Fetch with time range
-	fetched, err = database.ListExpenditures(ctx, pool, fetched[8].Date, fetched[4].Date, nil, 10)
-	require.NoError(t, err)
-	require.Equal(t, expenditures[4].Name, fetched[0].Name)
-	require.Equal(t, expenditures[8].Name, fetched[4].Name)
+			// Run test case
+			fetched, err := database.ListExpenditures(
+				ctx, pool, tc.queryStart, tc.queryEnd, tc.source, tc.category, tc.limit, tc.cursor)
+			require.NoError(t, err)
 
-	// Fetch with source
-	filename := "file1.csv"
-	fetched, err = database.ListExpenditures(ctx, pool, startDate, endDate, &filename, 100)
-	require.NoError(t, err)
-	require.Len(t, fetched, numExpenditures/2)
+			expected := tc.expected()
+			require.Len(t, fetched, len(expected))
+
+			// Verify results
+			for i, actual := range fetched {
+				exp := expected[i]
+				require.Equal(t, exp.Owner, actual.Owner)
+				require.Equal(t, exp.Name, actual.Name)
+				require.InDelta(t, exp.Amount, actual.Amount, .001)
+				require.Equal(t, exp.Date.Format(time.DateOnly), actual.Date.Format(time.DateOnly))
+				require.Equal(t, exp.BudgetCategory, actual.BudgetCategory)
+				require.Equal(t, exp.Method, actual.Method)
+				require.Equal(t, exp.Comment, actual.Comment)
+			}
+		})
+	}
+}
+
+func pointer[T any](v T) *T {
+	return &v
 }
 
 func TestAggregateExpenditures(t *testing.T) {
@@ -240,7 +407,7 @@ func TestAggregateExpenditures(t *testing.T) {
 			require.NoError(t, err)
 
 			// Calculate the expected and compare the amounts
-			expenditures, err := database.ListExpenditures(ctx, pool, startDate, endDate, nil, 300)
+			expenditures, err := database.ListExpenditures(ctx, pool, startDate, endDate, nil, nil, pointer(300), nil)
 			require.NoError(t, err)
 
 			expected := tc.expectedAmounts(expenditures)

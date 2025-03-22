@@ -9,6 +9,7 @@ linters:
     - goimports
     - nolintlint
     - ireturn
+    - mnd
     - tenv # deprecated
 
 issues:
