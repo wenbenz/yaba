@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
+	"strings"
 	"time"
 	graph "yaba/graph/model"
 	"yaba/internal/ctxutil"
@@ -14,11 +15,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-const insertExpenditure = `
-INSERT INTO expenditure (owner, name, amount, date, method, budget_category, reward_category, comment, created, source)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9)
-`
 
 func ListExpenditures(
 	ctx context.Context,
@@ -127,13 +123,41 @@ func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, e
 }
 
 func PersistExpenditures(ctx context.Context, pool *pgxpool.Pool, expenditures []*model.Expenditure) error {
-	batch := &pgx.Batch{}
-	for _, e := range expenditures {
-		batch.Queue(insertExpenditure, e.Owner, e.Name, e.Amount, e.Date,
-			e.Method, e.BudgetCategory, e.RewardCategory, e.Comment, e.Source)
+	// If budget exists, map the expense ID to the expenditure's expense_id
+	budgets, err := GetBudgets(ctx, pool, ctxutil.GetUser(ctx), 1)
+	if err != nil {
+		return err
 	}
 
-	if err := pool.SendBatch(ctx, batch).Close(); err != nil {
+	budgetMap := make(map[string]uuid.UUID)
+	for _, budget := range budgets {
+		for _, expense := range budget.Expenses {
+			budgetMap[strings.ToLower(expense.Category)] = expense.ID
+		}
+	}
+
+	for _, expenditure := range expenditures {
+		if expenditure.BudgetCategory != "" {
+			expenditure.ExpenseID = budgetMap[strings.ToLower(expenditure.BudgetCategory)]
+		}
+	}
+
+	batch := &pgx.Batch{}
+	for _, e := range expenditures {
+		query, args, err := squirrel.Insert("expenditure").
+			Columns("owner", "name", "amount", "date",
+				"method", "budget_category", "reward_category", "comment", "source", "expense_id").
+			Values(e.Owner, e.Name, e.Amount, e.Date,
+				e.Method, e.BudgetCategory, e.RewardCategory, e.Comment, e.Source, e.ExpenseID).
+			ToSql()
+		if err != nil {
+			return fmt.Errorf("failed to build query: %w", err)
+		}
+
+		batch.Queue(query, args...)
+	}
+
+	if err = pool.SendBatch(ctx, batch).Close(); err != nil {
 		return fmt.Errorf("failed to save batch of expenditures: %w", err)
 	}
 

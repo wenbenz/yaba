@@ -61,7 +61,7 @@ func (b *Budget) SetFixedExpense(category string, amount float64) {
 	b.SetExpense(category, amount, true, false)
 }
 
-func (b *Budget) SetPercentageExpense(category string, amount float64) {
+func (b *Budget) SetBasicExpense(category string, amount float64) {
 	b.SetExpense(category, amount, false, false)
 }
 
