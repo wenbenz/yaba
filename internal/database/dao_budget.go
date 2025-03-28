@@ -134,6 +134,7 @@ func populateBudgets(ctx context.Context, pool *pgxpool.Pool, budgets []*model.B
 }
 
 func PersistBudget(ctx context.Context, pool *pgxpool.Pool, budget *model.Budget) error {
+	// Prepare statements
 	upsertBudgetQuery, upsertBudgetArgs, err := squirrel.Insert("budget").
 		Values(budget.ID, ctxutil.GetUser(ctx), budget.Name).
 		Suffix("ON CONFLICT (id, owner) DO UPDATE SET name = ?", budget.Name).
@@ -156,28 +157,14 @@ func PersistBudget(ctx context.Context, pool *pgxpool.Pool, budget *model.Budget
 		return fmt.Errorf("delete expenses SQL error: %w", err)
 	}
 
-	tx, err := pool.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("could not start transaction: %w", err)
-	}
-
-	if _, err = tx.Exec(ctx, upsertBudgetQuery, upsertBudgetArgs...); err != nil {
-		return fmt.Errorf("failed to upsert budget: %w", err)
-	}
-
-	if _, err = tx.Exec(ctx, deleteIncomes, deleteIncomesArgs...); err != nil {
-		return fmt.Errorf("failed to delete incomes: %w", err)
-	}
+	// Create batch
+	batch := &pgx.Batch{}
+	batch.Queue(upsertBudgetQuery, upsertBudgetArgs...)
+	batch.Queue(deleteIncomes, deleteIncomesArgs...)
+	batch.Queue(deleteExpenses, deleteExpensesArgs...)
 
 	for _, income := range budget.Incomes {
-		if _, err = tx.Exec(ctx, upsertIncome, income.Owner, income.Source, income.Amount); err != nil {
-			return fmt.Errorf("failed to upsert income: %w", err)
-		}
-	}
-
-	_, err = tx.Exec(ctx, deleteExpenses, deleteExpensesArgs...)
-	if err != nil {
-		return fmt.Errorf("failed to delete expenses: %w", err)
+		batch.Queue(upsertIncome, income.Owner, income.Source, income.Amount)
 	}
 
 	for _, expense := range budget.Expenses {
@@ -186,11 +173,17 @@ func PersistBudget(ctx context.Context, pool *pgxpool.Pool, budget *model.Budget
 			expenseID = uuid.New()
 		}
 
-		_, err = tx.Exec(ctx, upsertExpense,
+		batch.Queue(upsertExpense,
 			expense.BudgetID, expense.Category, expense.Amount, expense.Fixed, expense.Slack, expenseID)
-		if err != nil {
-			return fmt.Errorf("failed to upsert expense: %w", err)
-		}
+	}
+
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("could not start transaction: %w", err)
+	}
+
+	if err = tx.SendBatch(ctx, batch).Close(); err != nil {
+		return fmt.Errorf("batch operation failed while persisting budget: %w", err)
 	}
 
 	if err = tx.Commit(ctx); err != nil {
