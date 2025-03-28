@@ -401,13 +401,16 @@ func TestAggregateExpenditures(t *testing.T) {
 
 			// Create a basic budget with all the generated categories
 			budget := model.NewBudget(user, "test budget")
+
 			categories := make(map[string]bool)
 			for i, e := range mocked {
 				if e.BudgetCategory != "" && !categories[e.BudgetCategory] {
 					budget.SetBasicExpense(e.BudgetCategory, float64(i*100))
+
 					categories[e.BudgetCategory] = true
 				}
 			}
+
 			require.NoError(t, database.PersistBudget(ctx, pool, budget))
 
 			// Persist expenditures after budget so we can group by budget category

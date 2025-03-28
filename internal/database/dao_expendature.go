@@ -130,6 +130,7 @@ func PersistExpenditures(ctx context.Context, pool *pgxpool.Pool, expenditures [
 	}
 
 	budgetMap := make(map[string]uuid.UUID)
+
 	for _, budget := range budgets {
 		for _, expense := range budget.Expenses {
 			budgetMap[strings.ToLower(expense.Category)] = expense.ID
@@ -137,12 +138,13 @@ func PersistExpenditures(ctx context.Context, pool *pgxpool.Pool, expenditures [
 	}
 
 	for _, expenditure := range expenditures {
-		if expenditure.BudgetCategory != "" {
+		if expenditure.BudgetCategory != "" && expenditure.ExpenseID == uuid.Nil {
 			expenditure.ExpenseID = budgetMap[strings.ToLower(expenditure.BudgetCategory)]
 		}
 	}
 
 	batch := &pgx.Batch{}
+
 	for _, e := range expenditures {
 		query, args, err := squirrel.Insert("expenditure").
 			Columns("owner", "name", "amount", "date",
@@ -160,6 +162,26 @@ func PersistExpenditures(ctx context.Context, pool *pgxpool.Pool, expenditures [
 	if err = pool.SendBatch(ctx, batch).Close(); err != nil {
 		return fmt.Errorf("failed to save batch of expenditures: %w", err)
 	}
+
+	return nil
+}
+
+func ClassifyExpendituresWithNewCategory(ctx context.Context, batch *pgx.Batch, category string, expenseID uuid.UUID,
+) error {
+	query, args, err := squirrel.Update("expenditure").
+		Where(map[string]interface{}{
+			"owner":           ctxutil.GetUser(ctx),
+			"budget_category": category,
+			"expense_id":      uuid.Nil,
+		}).
+		Set("expense_id", expenseID).
+		ToSql()
+
+	if err != nil {
+		return fmt.Errorf("failed to build query: %w", err)
+	}
+
+	batch.Queue(query, args...)
 
 	return nil
 }
