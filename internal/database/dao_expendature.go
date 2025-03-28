@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"strings"
 	"time"
 	graph "yaba/graph/model"
@@ -14,11 +15,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-const insertExpenditure = `
-INSERT INTO expenditure (owner, name, amount, date, method, budget_category, reward_category, comment, created, source)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9)
-`
 
 func ListExpenditures(
 	ctx context.Context,
@@ -72,12 +68,14 @@ func ListExpenditures(
 func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, endDate time.Time,
 	timespan graph.Timespan, aggregation graph.Aggregation, groupBy graph.GroupBy) ([]*model.ExpenditureSummary, error) {
 	var category string
+	var categoryDefault string
 
 	switch groupBy {
 	case graph.GroupByNone:
 		category = "'Total'"
 	case graph.GroupByBudgetCategory:
-		category = "budget_category"
+		category = "expense_id"
+		categoryDefault = uuid.Nil.String()
 	case graph.GroupByRewardCategory:
 		category = "reward_category"
 	}
@@ -92,7 +90,7 @@ func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, e
 	}
 
 	sq := squirrel.Select(date+" as date",
-		category+" as category",
+		fmt.Sprintf("COALESCE(%s::text, '%s') as category", category, categoryDefault),
 		aggregation.String()+"(amount) as amount").
 		From("expenditure").
 		Where("owner = $1 AND date >= $2 AND date <= $3", ctxutil.GetUser(ctx), startDate, endDate).
@@ -100,9 +98,8 @@ func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, e
 		OrderBy("date ASC")
 
 	if groupBy != graph.GroupByNone {
-		gb := strings.ToLower(groupBy.String())
-		sq = sq.GroupBy(gb)
-		sq = sq.OrderBy(gb)
+		sq = sq.GroupBy(category)
+		sq = sq.OrderBy(category)
 	}
 
 	query, args, err := sq.ToSql()
@@ -126,15 +123,65 @@ func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, e
 }
 
 func PersistExpenditures(ctx context.Context, pool *pgxpool.Pool, expenditures []*model.Expenditure) error {
-	batch := &pgx.Batch{}
-	for _, e := range expenditures {
-		batch.Queue(insertExpenditure, e.Owner, e.Name, e.Amount, e.Date,
-			e.Method, e.BudgetCategory, e.RewardCategory, e.Comment, e.Source)
+	// If budget exists, map the expense ID to the expenditure's expense_id
+	budgets, err := GetBudgets(ctx, pool, ctxutil.GetUser(ctx), 1)
+	if err != nil {
+		return err
 	}
 
-	if err := pool.SendBatch(ctx, batch).Close(); err != nil {
+	budgetMap := make(map[string]uuid.UUID)
+
+	for _, budget := range budgets {
+		for _, expense := range budget.Expenses {
+			budgetMap[strings.ToLower(expense.Category)] = expense.ID
+		}
+	}
+
+	for _, expenditure := range expenditures {
+		if expenditure.BudgetCategory != "" && expenditure.ExpenseID == uuid.Nil {
+			expenditure.ExpenseID = budgetMap[strings.ToLower(expenditure.BudgetCategory)]
+		}
+	}
+
+	batch := &pgx.Batch{}
+
+	for _, e := range expenditures {
+		query, args, err := squirrel.Insert("expenditure").
+			Columns("owner", "name", "amount", "date",
+				"method", "budget_category", "reward_category", "comment", "source", "expense_id").
+			Values(e.Owner, e.Name, e.Amount, e.Date,
+				e.Method, e.BudgetCategory, e.RewardCategory, e.Comment, e.Source, e.ExpenseID).
+			ToSql()
+		if err != nil {
+			return fmt.Errorf("failed to build query: %w", err)
+		}
+
+		batch.Queue(query, args...)
+	}
+
+	if err = pool.SendBatch(ctx, batch).Close(); err != nil {
 		return fmt.Errorf("failed to save batch of expenditures: %w", err)
 	}
+
+	return nil
+}
+
+func ClassifyExpendituresWithNewCategory(ctx context.Context, batch *pgx.Batch, category string, expenseID uuid.UUID,
+) error {
+	query, args, err := squirrel.Update("expenditure").
+		Where(map[string]interface{}{
+			"owner":           ctxutil.GetUser(ctx),
+			"budget_category": category,
+			"expense_id":      uuid.Nil,
+		}).
+		Set("expense_id", expenseID).
+		ToSql()
+
+	if err != nil {
+		return fmt.Errorf("failed to build query: %w", err)
+	}
+
+	batch.Queue(query, args...)
 
 	return nil
 }

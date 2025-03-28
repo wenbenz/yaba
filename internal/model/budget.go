@@ -22,6 +22,7 @@ type Income struct {
 
 type Expense struct {
 	BudgetID uuid.UUID `db:"budget_id" json:"-"`
+	ID       uuid.UUID `db:"id"        json:"id"`
 	Category string    `db:"category"  json:"category"`
 	Amount   float64   `db:"amount"    json:"amount"`
 	Fixed    bool      `db:"is_fixed"  json:"isFixed"`
@@ -60,7 +61,7 @@ func (b *Budget) SetFixedExpense(category string, amount float64) {
 	b.SetExpense(category, amount, true, false)
 }
 
-func (b *Budget) SetPercentageExpense(category string, amount float64) {
+func (b *Budget) SetBasicExpense(category string, amount float64) {
 	b.SetExpense(category, amount, false, false)
 }
 

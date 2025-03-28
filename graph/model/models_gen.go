@@ -42,6 +42,7 @@ type ExpenseInput struct {
 	Amount   float64 `json:"amount"`
 	IsFixed  *bool   `json:"isFixed,omitempty"`
 	IsSlack  *bool   `json:"isSlack,omitempty"`
+	ID       *string `json:"id,omitempty"`
 }
 
 type ExpenseResponse struct {
@@ -49,6 +50,7 @@ type ExpenseResponse struct {
 	Amount   *float64 `json:"amount,omitempty"`
 	IsFixed  *bool    `json:"isFixed,omitempty"`
 	IsSlack  *bool    `json:"isSlack,omitempty"`
+	ID       *string  `json:"id,omitempty"`
 }
 
 type IncomeInput struct {

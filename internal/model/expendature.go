@@ -18,6 +18,7 @@ type Expenditure struct {
 	Comment        string    `db:"comment"`
 	CreatedTime    time.Time `db:"created"`
 	Source         string    `db:"source"`
+	ExpenseID      uuid.UUID `db:"expense_id"`
 }
 
 type ExpenditureSummary struct {

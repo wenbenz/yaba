@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -22,13 +23,6 @@ const getBudgetsByOwner = `
 SELECT * FROM budget
 WHERE owner = $1
 LIMIT $2;
-`
-
-const upsertBudget = `
-INSERT INTO budget (id, owner, name)
-VALUES ($1, $2, $3)
-ON CONFLICT (id) DO UPDATE
-SET name = $3;
 `
 
 const deleteBudget = `
@@ -60,8 +54,8 @@ WHERE budget_id = $1
 `
 
 const upsertExpense = `
-INSERT INTO expense (budget_id, category, amount, is_fixed, is_slack)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO expense (budget_id, category, amount, is_fixed, is_slack, id)
+VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT (budget_id, category) DO UPDATE
 SET amount = $3,
     is_fixed = $4,
@@ -140,19 +134,33 @@ func populateBudgets(ctx context.Context, pool *pgxpool.Pool, budgets []*model.B
 }
 
 func PersistBudget(ctx context.Context, pool *pgxpool.Pool, budget *model.Budget) error {
+	// Create batch
 	batch := &pgx.Batch{}
-	batch.Queue(upsertBudget, budget.ID, budget.Owner, budget.Name)
-	batch.Queue(deleteIncomeByOwner, budget.ID)
-	batch.Queue(deleteExpenseByBudget, budget.ID)
 
+	// Upsert budget and delete incomes/expenses
+	if err := upsertResetBudget(ctx, budget, batch); err != nil {
+		return err
+	}
+
+	// Upsert incomes
 	for _, income := range budget.Incomes {
 		batch.Queue(upsertIncome, income.Owner, income.Source, income.Amount)
 	}
 
+	// Upsert expenses
 	for _, expense := range budget.Expenses {
-		batch.Queue(upsertExpense, expense.BudgetID, expense.Category, expense.Amount, expense.Fixed, expense.Slack)
+		if expense.ID == uuid.Nil {
+			expense.ID = uuid.New()
+			if err := ClassifyExpendituresWithNewCategory(ctx, batch, expense.Category, expense.ID); err != nil {
+				return fmt.Errorf("failed to classify expenditures: %w", err)
+			}
+		}
+
+		batch.Queue(upsertExpense,
+			expense.BudgetID, expense.Category, expense.Amount, expense.Fixed, expense.Slack, expense.ID)
 	}
 
+	// Persist budget in batched transaction
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("could not start transaction: %w", err)
@@ -165,6 +173,41 @@ func PersistBudget(ctx context.Context, pool *pgxpool.Pool, budget *model.Budget
 	if err = tx.Commit(ctx); err != nil {
 		return fmt.Errorf("failed to commit transaction\n%w", err)
 	}
+
+	return nil
+}
+
+func upsertResetBudget(ctx context.Context, budget *model.Budget, batch *pgx.Batch) error {
+	// Upsert budget
+	upsertBudgetQuery, upsertBudgetArgs, err := squirrel.Insert("budget").
+		Values(budget.ID, ctxutil.GetUser(ctx), budget.Name).
+		Suffix("ON CONFLICT (id, owner) DO UPDATE SET name = ?", budget.Name).
+		ToSql()
+	if err != nil {
+		return fmt.Errorf("upsert budget SQL error: %w", err)
+	}
+
+	batch.Queue(upsertBudgetQuery, upsertBudgetArgs...)
+
+	// Delete incomes
+	deleteIncomes, deleteIncomesArgs, err := squirrel.Delete("income").
+		Where(squirrel.Eq{"owner": budget.ID}).
+		ToSql()
+	if err != nil {
+		return fmt.Errorf("delete incomes SQL error: %w", err)
+	}
+
+	batch.Queue(deleteIncomes, deleteIncomesArgs...)
+
+	// Delete expenses
+	deleteExpenses, deleteExpensesArgs, err := squirrel.Delete("expense").
+		Where(squirrel.Eq{"budget_id": budget.ID}).
+		ToSql()
+	if err != nil {
+		return fmt.Errorf("delete expenses SQL error: %w", err)
+	}
+
+	batch.Queue(deleteExpenses, deleteExpensesArgs...)
 
 	return nil
 }

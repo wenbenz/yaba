@@ -10,6 +10,7 @@ linters:
     - nolintlint
     - ireturn
     - mnd
+    - gochecknoinits
     - tenv # deprecated
 
 issues:

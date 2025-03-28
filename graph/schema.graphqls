@@ -20,6 +20,7 @@ type ExpenseResponse {
     amount: Float
     isFixed: Boolean
     isSlack: Boolean
+    id: String
 }
 
 type ExpenditureResponse {
@@ -71,28 +72,29 @@ type Query {
 }
 
 input NewBudgetInput {
-  name: String!
-  incomes: [IncomeInput]
-  expenses: [ExpenseInput]
+    name: String!
+    incomes: [IncomeInput]
+    expenses: [ExpenseInput]
 }
 
 input UpdateBudgetInput {
-  id: ID!
-  name: String
-  incomes: [IncomeInput]
-  expenses: [ExpenseInput]
+    id: ID!
+    name: String
+    incomes: [IncomeInput]
+    expenses: [ExpenseInput]
 }
 
 input IncomeInput {
-  source: String!
-  amount: Float!
+    source: String!
+    amount: Float!
 }
 
 input ExpenseInput {
-  category: String!
-  amount: Float!
-  isFixed: Boolean = true
-  isSlack: Boolean = false
+    category: String!
+    amount: Float!
+    isFixed: Boolean = true
+    isSlack: Boolean = false
+    id: String
 }
 
 type Mutation {

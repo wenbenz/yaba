@@ -397,7 +397,24 @@ func TestAggregateExpenditures(t *testing.T) {
 			startDate, _ := time.Parse(time.DateOnly, tc.dataStartDate)
 			endDate, _ := time.Parse(time.DateOnly, tc.dataEndDate)
 
-			err := database.PersistExpenditures(ctx, pool, helper.MockExpenditures(300, user, startDate, endDate))
+			mocked := helper.MockExpenditures(300, user, startDate, endDate)
+
+			// Create a basic budget with all the generated categories
+			budget := model.NewBudget(user, "test budget")
+
+			categories := make(map[string]bool)
+			for i, e := range mocked {
+				if e.BudgetCategory != "" && !categories[e.BudgetCategory] {
+					budget.SetBasicExpense(e.BudgetCategory, float64(i*100))
+
+					categories[e.BudgetCategory] = true
+				}
+			}
+
+			require.NoError(t, database.PersistBudget(ctx, pool, budget))
+
+			// Persist expenditures after budget so we can group by budget category
+			err := database.PersistExpenditures(ctx, pool, mocked)
 			require.NoError(t, err)
 
 			// Make the call
@@ -432,7 +449,7 @@ func janFebGroupBy(groupBy graph.GroupBy) func(expenditures []*model.Expenditure
 			//nolint:exhaustive
 			switch groupBy {
 			case graph.GroupByBudgetCategory:
-				category = e.BudgetCategory
+				category = e.ExpenseID.String()
 			case graph.GroupByRewardCategory:
 				category = e.RewardCategory
 			}

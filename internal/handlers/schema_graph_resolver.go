@@ -20,9 +20,12 @@ import (
 func (r *mutationResolver) CreateBudget(ctx context.Context, input model.NewBudgetInput) (*model.BudgetResponse, error) {
 	user := ctxutil.GetUser(ctx)
 
-	b := model.BudgetFromNewBudgetInput(user, &input)
+	b, err := model.BudgetFromNewBudgetInput(user, &input)
+	if err != nil {
+		return nil, err
+	}
 
-	if err := database.PersistBudget(ctx, r.Pool, b); err != nil {
+	if err = database.PersistBudget(ctx, r.Pool, b); err != nil {
 		return nil, err
 	}
 
@@ -44,7 +47,11 @@ func (r *mutationResolver) UpdateBudget(ctx context.Context, input model.UpdateB
 	}
 
 	// Persist budget
-	b := model.BudgetFromUpdateBudgetInput(budgetID, user, &input)
+	b, err := model.BudgetFromUpdateBudgetInput(budgetID, user, &input)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := database.PersistBudget(ctx, r.Pool, b); err != nil {
 		return nil, err
 	}
