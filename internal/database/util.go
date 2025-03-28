@@ -2,9 +2,14 @@ package database
 
 import (
 	"fmt"
+	"github.com/Masterminds/squirrel"
 	"os"
 	"yaba/errors"
 )
+
+func init() {
+	squirrel.StatementBuilder = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
+}
 
 func GetPGConnectionString() (string, error) {
 	missing := []string{}

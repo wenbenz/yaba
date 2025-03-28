@@ -33,6 +33,12 @@ func TestBasicBudgetOperations(t *testing.T) {
 	budgets, err := database.GetBudgets(ctx, pool, owner, 10)
 	require.NoError(t, err)
 	require.Len(t, budgets, 1)
+
+	for i, expense := range budgets[0].Expenses {
+		require.NotEqual(t, uuid.Nil, expense.ID)
+		b.Expenses[i].ID = expense.ID
+	}
+
 	require.EqualValues(t, b, budgets[0])
 	require.Len(t, budgets[0].Incomes, 2)
 	require.Len(t, budgets[0].Expenses, 4)
@@ -53,6 +59,7 @@ func TestBasicBudgetOperations(t *testing.T) {
 	budgets, err = database.GetBudgets(ctx, pool, owner, 10)
 	require.NoError(t, err)
 	require.Len(t, budgets, 1)
+	b.Expenses[3].ID = budgets[0].Expenses[3].ID
 	require.EqualValues(t, b, budgets[0])
 	require.Len(t, budgets[0].Incomes, 1)
 	require.Len(t, budgets[0].Expenses, 4)

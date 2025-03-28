@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
-	"strings"
+	"github.com/google/uuid"
 	"time"
 	graph "yaba/graph/model"
 	"yaba/internal/ctxutil"
@@ -72,12 +72,14 @@ func ListExpenditures(
 func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, endDate time.Time,
 	timespan graph.Timespan, aggregation graph.Aggregation, groupBy graph.GroupBy) ([]*model.ExpenditureSummary, error) {
 	var category string
+	var categoryDefault string
 
 	switch groupBy {
 	case graph.GroupByNone:
 		category = "'Total'"
 	case graph.GroupByBudgetCategory:
-		category = "budget_category"
+		category = "expense_id"
+		categoryDefault = uuid.Nil.String()
 	case graph.GroupByRewardCategory:
 		category = "reward_category"
 	}
@@ -92,7 +94,7 @@ func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, e
 	}
 
 	sq := squirrel.Select(date+" as date",
-		category+" as category",
+		fmt.Sprintf("COALESCE(%s::text, '%s') as category", category, categoryDefault),
 		aggregation.String()+"(amount) as amount").
 		From("expenditure").
 		Where("owner = $1 AND date >= $2 AND date <= $3", ctxutil.GetUser(ctx), startDate, endDate).
@@ -100,9 +102,8 @@ func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, e
 		OrderBy("date ASC")
 
 	if groupBy != graph.GroupByNone {
-		gb := strings.ToLower(groupBy.String())
-		sq = sq.GroupBy(gb)
-		sq = sq.OrderBy(gb)
+		sq = sq.GroupBy(category)
+		sq = sq.OrderBy(category)
 	}
 
 	query, args, err := sq.ToSql()

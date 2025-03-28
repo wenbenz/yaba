@@ -95,6 +95,7 @@ type ExpenseInput struct {
 	Amount   float64 `json:"amount"`
 	IsFixed  bool    `json:"isFixed"`
 	IsSlack  bool    `json:"isSlack"`
+	Id       string  `json:"id"`
 }
 
 // GetCategory returns ExpenseInput.Category, and is useful for accessing the field via an interface.
@@ -108,6 +109,9 @@ func (v *ExpenseInput) GetIsFixed() bool { return v.IsFixed }
 
 // GetIsSlack returns ExpenseInput.IsSlack, and is useful for accessing the field via an interface.
 func (v *ExpenseInput) GetIsSlack() bool { return v.IsSlack }
+
+// GetId returns ExpenseInput.Id, and is useful for accessing the field via an interface.
+func (v *ExpenseInput) GetId() string { return v.Id }
 
 // GetBudgetBudgetBudgetResponse includes the requested fields of the GraphQL type BudgetResponse.
 type GetBudgetBudgetBudgetResponse struct {
@@ -462,7 +466,7 @@ func (v *__UpdateBudgetInput) GetIncomes() []IncomeInput { return v.Incomes }
 // GetExpenses returns __UpdateBudgetInput.Expenses, and is useful for accessing the field via an interface.
 func (v *__UpdateBudgetInput) GetExpenses() []ExpenseInput { return v.Expenses }
 
-// The query or mutation executed by CreateBudget.
+// The mutation executed by CreateBudget.
 const CreateBudget_Operation = `
 mutation CreateBudget ($name: String!, $incomes: [IncomeInput], $expenses: [ExpenseInput]) {
 	createBudget(input: {name:$name,incomes:$incomes,expenses:$expenses}) {
@@ -489,7 +493,7 @@ func CreateBudget(
 	name string,
 	incomes []IncomeInput,
 	expenses []ExpenseInput,
-) (*CreateBudgetResponse, error) {
+) (data_ *CreateBudgetResponse, err_ error) {
 	req_ := &graphql.Request{
 		OpName: "CreateBudget",
 		Query:  CreateBudget_Operation,
@@ -499,10 +503,9 @@ func CreateBudget(
 			Expenses: expenses,
 		},
 	}
-	var err_ error
 
-	var data_ CreateBudgetResponse
-	resp_ := &graphql.Response{Data: &data_}
+	data_ = &CreateBudgetResponse{}
+	resp_ := &graphql.Response{Data: data_}
 
 	err_ = client_.MakeRequest(
 		ctx_,
@@ -510,10 +513,10 @@ func CreateBudget(
 		resp_,
 	)
 
-	return &data_, err_
+	return data_, err_
 }
 
-// The query or mutation executed by GetBudget.
+// The query executed by GetBudget.
 const GetBudget_Operation = `
 query GetBudget ($id: ID!) {
 	budget(id: $id) {
@@ -537,7 +540,7 @@ func GetBudget(
 	ctx_ context.Context,
 	client_ graphql.Client,
 	id string,
-) (*GetBudgetResponse, error) {
+) (data_ *GetBudgetResponse, err_ error) {
 	req_ := &graphql.Request{
 		OpName: "GetBudget",
 		Query:  GetBudget_Operation,
@@ -545,10 +548,9 @@ func GetBudget(
 			Id: id,
 		},
 	}
-	var err_ error
 
-	var data_ GetBudgetResponse
-	resp_ := &graphql.Response{Data: &data_}
+	data_ = &GetBudgetResponse{}
+	resp_ := &graphql.Response{Data: data_}
 
 	err_ = client_.MakeRequest(
 		ctx_,
@@ -556,10 +558,10 @@ func GetBudget(
 		resp_,
 	)
 
-	return &data_, err_
+	return data_, err_
 }
 
-// The query or mutation executed by ListBudgets.
+// The query executed by ListBudgets.
 const ListBudgets_Operation = `
 query ListBudgets ($first: Int) {
 	budgets(first: $first) {
@@ -583,7 +585,7 @@ func ListBudgets(
 	ctx_ context.Context,
 	client_ graphql.Client,
 	first int,
-) (*ListBudgetsResponse, error) {
+) (data_ *ListBudgetsResponse, err_ error) {
 	req_ := &graphql.Request{
 		OpName: "ListBudgets",
 		Query:  ListBudgets_Operation,
@@ -591,10 +593,9 @@ func ListBudgets(
 			First: first,
 		},
 	}
-	var err_ error
 
-	var data_ ListBudgetsResponse
-	resp_ := &graphql.Response{Data: &data_}
+	data_ = &ListBudgetsResponse{}
+	resp_ := &graphql.Response{Data: data_}
 
 	err_ = client_.MakeRequest(
 		ctx_,
@@ -602,10 +603,10 @@ func ListBudgets(
 		resp_,
 	)
 
-	return &data_, err_
+	return data_, err_
 }
 
-// The query or mutation executed by ListExpenditures.
+// The query executed by ListExpenditures.
 const ListExpenditures_Operation = `
 query ListExpenditures ($since: String, $until: String, $first: Int) {
 	expenditures(since: $since, until: $until, count: $first) {
@@ -629,7 +630,7 @@ func ListExpenditures(
 	since string,
 	until string,
 	first int,
-) (*ListExpendituresResponse, error) {
+) (data_ *ListExpendituresResponse, err_ error) {
 	req_ := &graphql.Request{
 		OpName: "ListExpenditures",
 		Query:  ListExpenditures_Operation,
@@ -639,10 +640,9 @@ func ListExpenditures(
 			First: first,
 		},
 	}
-	var err_ error
 
-	var data_ ListExpendituresResponse
-	resp_ := &graphql.Response{Data: &data_}
+	data_ = &ListExpendituresResponse{}
+	resp_ := &graphql.Response{Data: data_}
 
 	err_ = client_.MakeRequest(
 		ctx_,
@@ -650,10 +650,10 @@ func ListExpenditures(
 		resp_,
 	)
 
-	return &data_, err_
+	return data_, err_
 }
 
-// The query or mutation executed by UpdateBudget.
+// The mutation executed by UpdateBudget.
 const UpdateBudget_Operation = `
 mutation UpdateBudget ($id: ID!, $name: String, $incomes: [IncomeInput], $expenses: [ExpenseInput]) {
 	updateBudget(input: {id:$id,name:$name,incomes:$incomes,expenses:$expenses}) {
@@ -681,7 +681,7 @@ func UpdateBudget(
 	name string,
 	incomes []IncomeInput,
 	expenses []ExpenseInput,
-) (*UpdateBudgetResponse, error) {
+) (data_ *UpdateBudgetResponse, err_ error) {
 	req_ := &graphql.Request{
 		OpName: "UpdateBudget",
 		Query:  UpdateBudget_Operation,
@@ -692,10 +692,9 @@ func UpdateBudget(
 			Expenses: expenses,
 		},
 	}
-	var err_ error
 
-	var data_ UpdateBudgetResponse
-	resp_ := &graphql.Response{Data: &data_}
+	data_ = &UpdateBudgetResponse{}
+	resp_ := &graphql.Response{Data: data_}
 
 	err_ = client_.MakeRequest(
 		ctx_,
@@ -703,5 +702,5 @@ func UpdateBudget(
 		resp_,
 	)
 
-	return &data_, err_
+	return data_, err_
 }

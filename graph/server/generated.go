@@ -207,6 +207,7 @@ type ExpenseResponse {
     amount: Float
     isFixed: Boolean
     isSlack: Boolean
+    id: String
 }
 
 type ExpenditureResponse {
@@ -258,28 +259,29 @@ type Query {
 }
 
 input NewBudgetInput {
-  name: String!
-  incomes: [IncomeInput]
-  expenses: [ExpenseInput]
+    name: String!
+    incomes: [IncomeInput]
+    expenses: [ExpenseInput]
 }
 
 input UpdateBudgetInput {
-  id: ID!
-  name: String
-  incomes: [IncomeInput]
-  expenses: [ExpenseInput]
+    id: ID!
+    name: String
+    incomes: [IncomeInput]
+    expenses: [ExpenseInput]
 }
 
 input IncomeInput {
-  source: String!
-  amount: Float!
+    source: String!
+    amount: Float!
 }
 
 input ExpenseInput {
-  category: String!
-  amount: Float!
-  isFixed: Boolean = true
-  isSlack: Boolean = false
+    category: String!
+    amount: Float!
+    isFixed: Boolean = true
+    isSlack: Boolean = false
+    id: String
 }
 
 type Mutation {
@@ -1195,6 +1197,8 @@ func (ec *executionContext) fieldContext_BudgetResponse_expenses(_ context.Conte
 				return ec.fieldContext_ExpenseResponse_isFixed(ctx, field)
 			case "isSlack":
 				return ec.fieldContext_ExpenseResponse_isSlack(ctx, field)
+			case "id":
+				return ec.fieldContext_ExpenseResponse_id(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ExpenseResponse", field.Name)
 		},
@@ -1812,6 +1816,47 @@ func (ec *executionContext) fieldContext_ExpenseResponse_isSlack(_ context.Conte
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ExpenseResponse_id(ctx context.Context, field graphql.CollectedField, obj *model.ExpenseResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ExpenseResponse_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ExpenseResponse_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ExpenseResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4389,7 +4434,7 @@ func (ec *executionContext) unmarshalInputExpenseInput(ctx context.Context, obj 
 		asMap["isSlack"] = false
 	}
 
-	fieldsInOrder := [...]string{"category", "amount", "isFixed", "isSlack"}
+	fieldsInOrder := [...]string{"category", "amount", "isFixed", "isSlack", "id"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4424,6 +4469,13 @@ func (ec *executionContext) unmarshalInputExpenseInput(ctx context.Context, obj 
 				return it, err
 			}
 			it.IsSlack = data
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
 		}
 	}
 
@@ -4722,6 +4774,8 @@ func (ec *executionContext) _ExpenseResponse(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._ExpenseResponse_isFixed(ctx, field, obj)
 		case "isSlack":
 			out.Values[i] = ec._ExpenseResponse_isSlack(ctx, field, obj)
+		case "id":
+			out.Values[i] = ec._ExpenseResponse_id(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
