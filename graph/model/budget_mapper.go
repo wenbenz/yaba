@@ -80,6 +80,7 @@ func dereferenceOrEmpty(ptr *string) string {
 	if ptr != nil {
 		return *ptr
 	}
+
 	return ""
 }
 
