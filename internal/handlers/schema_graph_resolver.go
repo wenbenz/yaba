@@ -60,8 +60,22 @@ func (r *mutationResolver) UpdateBudget(ctx context.Context, input model.UpdateB
 }
 
 // CreateExpenditures is the resolver for the createExpenditures field.
-func (r *mutationResolver) CreateExpenditures(ctx context.Context, input []*model.ExpenditureInput) ([]*model.ExpenditureResponse, error) {
-	panic(fmt.Errorf("not implemented: CreateExpenditures - createExpenditures"))
+func (r *mutationResolver) CreateExpenditures(ctx context.Context, input []*model.ExpenditureInput) (*bool, error) {
+	user := ctxutil.GetUser(ctx)
+	expenditures, err := model.ExpendituresFromExpenditureInput(user, input)
+
+	var success bool
+
+	if err != nil {
+		return &success, err
+	}
+
+	if err = database.PersistExpenditures(ctx, r.Pool, expenditures); err != nil {
+		return &success, err
+	}
+
+	success = true
+	return &success, nil
 }
 
 // Budget is the resolver for the budget field.

@@ -51,7 +51,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	CreateBudget(ctx context.Context, input model.NewBudgetInput) (*model.BudgetResponse, error)
 	UpdateBudget(ctx context.Context, input model.UpdateBudgetInput) (*model.BudgetResponse, error)
-	CreateExpenditures(ctx context.Context, input []*model.ExpenditureInput) ([]*model.ExpenditureResponse, error)
+	CreateExpenditures(ctx context.Context, input []*model.ExpenditureInput) (*bool, error)
 }
 type QueryResolver interface {
 	Budget(ctx context.Context, id string) (*model.BudgetResponse, error)
@@ -288,7 +288,7 @@ input ExpenseInput {
 
 input ExpenditureInput {
     date: String!
-    amount: String!
+    amount: Float!
     name: String
     method: String
     budget_category: String
@@ -301,7 +301,7 @@ type Mutation {
     createBudget(input: NewBudgetInput!): BudgetResponse
     updateBudget(input: UpdateBudgetInput!): BudgetResponse
 
-    createExpenditures(input: [ExpenditureInput]!): [ExpenditureResponse]
+    createExpenditures(input: [ExpenditureInput]!): Boolean
 }
 `, BuiltIn: false},
 }
@@ -2138,9 +2138,9 @@ func (ec *executionContext) _Mutation_createExpenditures(ctx context.Context, fi
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.ExpenditureResponse)
+	res := resTmp.(*bool)
 	fc.Result = res
-	return ec.marshalOExpenditureResponse2ᚕᚖyabaᚋgraphᚋmodelᚐExpenditureResponse(ctx, field.Selections, res)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_createExpenditures(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2150,31 +2150,7 @@ func (ec *executionContext) fieldContext_Mutation_createExpenditures(ctx context
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_ExpenditureResponse_id(ctx, field)
-			case "owner":
-				return ec.fieldContext_ExpenditureResponse_owner(ctx, field)
-			case "name":
-				return ec.fieldContext_ExpenditureResponse_name(ctx, field)
-			case "amount":
-				return ec.fieldContext_ExpenditureResponse_amount(ctx, field)
-			case "date":
-				return ec.fieldContext_ExpenditureResponse_date(ctx, field)
-			case "method":
-				return ec.fieldContext_ExpenditureResponse_method(ctx, field)
-			case "budget_category":
-				return ec.fieldContext_ExpenditureResponse_budget_category(ctx, field)
-			case "reward_category":
-				return ec.fieldContext_ExpenditureResponse_reward_category(ctx, field)
-			case "comment":
-				return ec.fieldContext_ExpenditureResponse_comment(ctx, field)
-			case "created":
-				return ec.fieldContext_ExpenditureResponse_created(ctx, field)
-			case "source":
-				return ec.fieldContext_ExpenditureResponse_source(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ExpenditureResponse", field.Name)
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	defer func() {
@@ -4562,7 +4538,7 @@ func (ec *executionContext) unmarshalInputExpenditureInput(ctx context.Context, 
 			it.Date = data
 		case "amount":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("amount"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
 			if err != nil {
 				return it, err
 			}

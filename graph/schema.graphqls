@@ -99,7 +99,7 @@ input ExpenseInput {
 
 input ExpenditureInput {
     date: String!
-    amount: String!
+    amount: Float!
     name: String
     method: String
     budget_category: String
@@ -112,5 +112,5 @@ type Mutation {
     createBudget(input: NewBudgetInput!): BudgetResponse
     updateBudget(input: UpdateBudgetInput!): BudgetResponse
 
-    createExpenditures(input: [ExpenditureInput]!): [ExpenditureResponse]
+    createExpenditures(input: [ExpenditureInput]!): Boolean
 }

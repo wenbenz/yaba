@@ -25,7 +25,7 @@ type BudgetResponse struct {
 
 type ExpenditureInput struct {
 	Date           string  `json:"date"`
-	Amount         string  `json:"amount"`
+	Amount         float64 `json:"amount"`
 	Name           *string `json:"name,omitempty"`
 	Method         *string `json:"method,omitempty"`
 	BudgetCategory *string `json:"budget_category,omitempty"`

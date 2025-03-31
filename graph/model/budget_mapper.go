@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"time"
 	"yaba/internal/model"
 )
 
@@ -48,6 +49,38 @@ func BudgetToBudgetResponse(b *model.Budget) *BudgetResponse {
 		Incomes:  incomesToIncomeResponse(b.Incomes),
 		Expenses: expensesToExpenseResponse(b.Expenses),
 	}
+}
+
+func ExpendituresFromExpenditureInput(user uuid.UUID, input []*ExpenditureInput) ([]*model.Expenditure, error) {
+	expenditures := make([]*model.Expenditure, len(input))
+
+	for i, expenditure := range input {
+		date, err := time.Parse(time.DateOnly, expenditure.Date)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse date: %w", err)
+		}
+
+		expenditures[i] = &model.Expenditure{
+			Owner:          user,
+			Date:           date,
+			Amount:         expenditure.Amount,
+			Name:           dereferenceOrEmpty(expenditure.Name),
+			Method:         dereferenceOrEmpty(expenditure.Method),
+			BudgetCategory: dereferenceOrEmpty(expenditure.BudgetCategory),
+			RewardCategory: dereferenceOrEmpty(expenditure.RewardCategory),
+			Comment:        dereferenceOrEmpty(expenditure.Comment),
+			Source:         dereferenceOrEmpty(expenditure.Source),
+		}
+	}
+
+	return expenditures, nil
+}
+
+func dereferenceOrEmpty(ptr *string) string {
+	if ptr != nil {
+		return *ptr
+	}
+	return ""
 }
 
 func expensesToExpenseResponse(expenses []*model.Expense) []*ExpenseResponse {
