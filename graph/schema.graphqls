@@ -97,7 +97,20 @@ input ExpenseInput {
     id: String
 }
 
+input ExpenditureInput {
+    date: String!
+    amount: Float!
+    name: String
+    method: String
+    budget_category: String
+    reward_category: String
+    comment: String
+    source: String
+}
+
 type Mutation {
     createBudget(input: NewBudgetInput!): BudgetResponse
     updateBudget(input: UpdateBudgetInput!): BudgetResponse
+
+    createExpenditures(input: [ExpenditureInput]!): Boolean
 }

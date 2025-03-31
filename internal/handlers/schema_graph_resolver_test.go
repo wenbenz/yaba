@@ -48,7 +48,7 @@ func TestCreateEmptyBudget(t *testing.T) {
 
 	budget2, err := resolver.Query().Budget(ctx, *budget1.ID)
 	require.NoError(t, err)
-	require.EqualValues(t, budget1, budget2)
+	require.Equal(t, budget1, budget2)
 }
 
 func TestCreateFullBudget(t *testing.T) {
@@ -296,4 +296,106 @@ func TestAggregateExpenditures(t *testing.T) {
 	aggregate, err := resolver.Query().AggregatedExpenditures(ctx, nil, nil, nil, nil, nil)
 	require.NoError(t, err)
 	require.Len(t, aggregate, 33)
+}
+
+func TestCreateExpenditures(t *testing.T) {
+	t.Parallel()
+
+	user := uuid.New()
+	ctx := ctxutil.WithUser(t.Context(), user)
+	pool := helper.GetTestPool()
+	resolver := &handlers.Resolver{Pool: pool}
+
+	t.Run("successful creation", func(t *testing.T) {
+		t.Parallel()
+
+		inputs := []*model.ExpenditureInput{
+			{
+				Name:           ptr("Expense 1"),
+				Amount:         100.50,
+				Date:           "2024-03-20",
+				Method:         ptr("credit"),
+				BudgetCategory: ptr("groceries"),
+				Comment:        ptr("Test expense 1"),
+			},
+			{
+				Name:           ptr("Expense 2"),
+				Amount:         50.25,
+				Date:           "2024-03-21",
+				Method:         ptr("debit"),
+				BudgetCategory: ptr("entertainment"),
+				Comment:        ptr("Test expense 2"),
+			},
+		}
+
+		success, err := resolver.Mutation().CreateExpenditures(ctx, inputs)
+		require.NoError(t, err)
+		require.True(t, *success)
+
+		startDate, _ := time.Parse(time.DateOnly, "2024-03-20")
+		endDate, _ := time.Parse(time.DateOnly, "2024-03-21")
+		limit := 10
+
+		expenditures, err := database.ListExpenditures(ctx, pool, startDate, endDate, nil, nil, &limit, nil)
+		require.NoError(t, err)
+		require.Len(t, expenditures, 2)
+
+		// Verify second expenditure (comes first due to descending order)
+		require.Equal(t, *inputs[1].Name, expenditures[0].Name)
+		require.InDelta(t, inputs[1].Amount, expenditures[0].Amount, 0.001)
+		require.Equal(t, *inputs[1].BudgetCategory, expenditures[0].BudgetCategory)
+		require.Equal(t, *inputs[1].Method, expenditures[0].Method)
+		require.Equal(t, *inputs[1].Comment, expenditures[0].Comment)
+
+		// Verify first expenditure (comes second due to descending order)
+		require.Equal(t, *inputs[0].Name, expenditures[1].Name)
+		require.InDelta(t, inputs[0].Amount, expenditures[1].Amount, 0.001)
+		require.Equal(t, *inputs[0].BudgetCategory, expenditures[1].BudgetCategory)
+		require.Equal(t, *inputs[0].Method, expenditures[1].Method)
+		require.Equal(t, *inputs[0].Comment, expenditures[1].Comment)
+	})
+
+	t.Run("invalid date format", func(t *testing.T) {
+		t.Parallel()
+
+		inputs := []*model.ExpenditureInput{{
+			Name:           ptr("Invalid Date"),
+			Amount:         100.50,
+			Date:           "03-20-2024", // Wrong format
+			Method:         ptr("credit"),
+			BudgetCategory: ptr("groceries"),
+		}}
+
+		success, err := resolver.Mutation().CreateExpenditures(ctx, inputs)
+		require.Error(t, err)
+		require.False(t, *success)
+	})
+
+	t.Run("empty input array", func(t *testing.T) {
+		t.Parallel()
+
+		success, err := resolver.Mutation().CreateExpenditures(ctx, []*model.ExpenditureInput{})
+		require.NoError(t, err)
+		require.True(t, *success)
+	})
+
+	t.Run("missing required fields", func(t *testing.T) {
+		t.Parallel()
+
+		inputs := []*model.ExpenditureInput{{
+			Name:   ptr("Missing Fields"),
+			Amount: 100.50,
+			// Missing Date
+			Method:         ptr("credit"),
+			BudgetCategory: ptr("groceries"),
+		}}
+
+		success, err := resolver.Mutation().CreateExpenditures(ctx, inputs)
+		require.Error(t, err)
+		require.False(t, *success)
+	})
+}
+
+func ptr(s string) *string {
+	return &s
 }

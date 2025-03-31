@@ -51,6 +51,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	CreateBudget(ctx context.Context, input model.NewBudgetInput) (*model.BudgetResponse, error)
 	UpdateBudget(ctx context.Context, input model.UpdateBudgetInput) (*model.BudgetResponse, error)
+	CreateExpenditures(ctx context.Context, input []*model.ExpenditureInput) (*bool, error)
 }
 type QueryResolver interface {
 	Budget(ctx context.Context, id string) (*model.BudgetResponse, error)
@@ -84,6 +85,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
 	ec := executionContext{opCtx, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputExpenditureInput,
 		ec.unmarshalInputExpenseInput,
 		ec.unmarshalInputIncomeInput,
 		ec.unmarshalInputNewBudgetInput,
@@ -284,9 +286,22 @@ input ExpenseInput {
     id: String
 }
 
+input ExpenditureInput {
+    date: String!
+    amount: Float!
+    name: String
+    method: String
+    budget_category: String
+    reward_category: String
+    comment: String
+    source: String
+}
+
 type Mutation {
     createBudget(input: NewBudgetInput!): BudgetResponse
     updateBudget(input: UpdateBudgetInput!): BudgetResponse
+
+    createExpenditures(input: [ExpenditureInput]!): Boolean
 }
 `, BuiltIn: false},
 }
@@ -321,6 +336,34 @@ func (ec *executionContext) field_Mutation_createBudget_argsInput(
 	}
 
 	var zeroVal model.NewBudgetInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_createExpenditures_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_createExpenditures_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_createExpenditures_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]*model.ExpenditureInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal []*model.ExpenditureInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNExpenditureInput2ᚕᚖyabaᚋgraphᚋmodelᚐExpenditureInput(ctx, tmp)
+	}
+
+	var zeroVal []*model.ExpenditureInput
 	return zeroVal, nil
 }
 
@@ -2066,6 +2109,58 @@ func (ec *executionContext) fieldContext_Mutation_updateBudget(ctx context.Conte
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_updateBudget_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createExpenditures(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createExpenditures(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateExpenditures(rctx, fc.Args["input"].([]*model.ExpenditureInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createExpenditures(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createExpenditures_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -4420,6 +4515,82 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputExpenditureInput(ctx context.Context, obj any) (model.ExpenditureInput, error) {
+	var it model.ExpenditureInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"date", "amount", "name", "method", "budget_category", "reward_category", "comment", "source"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "date":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("date"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Date = data
+		case "amount":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("amount"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Amount = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "method":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("method"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Method = data
+		case "budget_category":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("budget_category"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BudgetCategory = data
+		case "reward_category":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reward_category"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RewardCategory = data
+		case "comment":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comment"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Comment = data
+		case "source":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Source = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputExpenseInput(ctx context.Context, obj any) (model.ExpenseInput, error) {
 	var it model.ExpenseInput
 	asMap := map[string]any{}
@@ -4863,6 +5034,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "updateBudget":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateBudget(ctx, field)
+			})
+		case "createExpenditures":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createExpenditures(ctx, field)
 			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -5363,6 +5538,21 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalNExpenditureInput2ᚕᚖyabaᚋgraphᚋmodelᚐExpenditureInput(ctx context.Context, v any) ([]*model.ExpenditureInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.ExpenditureInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOExpenditureInput2ᚖyabaᚋgraphᚋmodelᚐExpenditureInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v any) (float64, error) {
 	res, err := graphql.UnmarshalFloatContext(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -5805,6 +5995,14 @@ func (ec *executionContext) marshalOBudgetResponse2ᚖyabaᚋgraphᚋmodelᚐBud
 		return graphql.Null
 	}
 	return ec._BudgetResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOExpenditureInput2ᚖyabaᚋgraphᚋmodelᚐExpenditureInput(ctx context.Context, v any) (*model.ExpenditureInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputExpenditureInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOExpenditureResponse2ᚕᚖyabaᚋgraphᚋmodelᚐExpenditureResponse(ctx context.Context, sel ast.SelectionSet, v []*model.ExpenditureResponse) graphql.Marshaler {

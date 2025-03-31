@@ -40,20 +40,20 @@ func TestBasicBudgetOperations(t *testing.T) {
 		b.Expenses[i].ID = expense.ID
 	}
 
-	require.EqualValues(t, b, budgets[0])
+	require.Equal(t, b, budgets[0])
 	require.Len(t, budgets[0].Incomes, 2)
 	require.Len(t, budgets[0].Expenses, 4)
 
 	// Get specific budget
 	fetched, err := database.GetBudget(ctx, pool, owner, b.ID)
 	require.NoError(t, err)
-	require.EqualValues(t, b, fetched)
+	require.Equal(t, b, fetched)
 
 	// Change the budget and save it
 	b.RemoveExpense("savings")
 	b.SetFixedExpense("dance", 200)
 	b.RemoveBudgetIncome("gig")
-	require.NotEqualValues(t, budgets[0], b)
+	require.NotEqual(t, budgets[0], b)
 	require.NoError(t, database.PersistBudget(ctx, pool, b))
 
 	// Get the updated budget
@@ -61,7 +61,7 @@ func TestBasicBudgetOperations(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, budgets, 1)
 	b.Expenses[3].ID = budgets[0].Expenses[3].ID
-	require.EqualValues(t, b, budgets[0])
+	require.Equal(t, b, budgets[0])
 	require.Len(t, budgets[0].Incomes, 1)
 	require.Len(t, budgets[0].Expenses, 4)
 

@@ -23,6 +23,17 @@ type BudgetResponse struct {
 	Expenses []*ExpenseResponse `json:"expenses,omitempty"`
 }
 
+type ExpenditureInput struct {
+	Date           string  `json:"date"`
+	Amount         float64 `json:"amount"`
+	Name           *string `json:"name,omitempty"`
+	Method         *string `json:"method,omitempty"`
+	BudgetCategory *string `json:"budget_category,omitempty"`
+	RewardCategory *string `json:"reward_category,omitempty"`
+	Comment        *string `json:"comment,omitempty"`
+	Source         *string `json:"source,omitempty"`
+}
+
 type ExpenditureResponse struct {
 	ID             *string `json:"id,omitempty"`
 	Owner          *string `json:"owner,omitempty"`

@@ -50,6 +50,6 @@ func TestLogoutHandler(t *testing.T) {
 	cookie = rr.Result().Cookies()[0] // nolint:bodyclose
 
 	require.Equal(t, "sid", cookie.Name)
-	require.Equal(t, "", cookie.Value)
+	require.Empty(t, cookie.Value)
 	require.Equal(t, -1, cookie.MaxAge)
 }

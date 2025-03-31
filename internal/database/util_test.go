@@ -26,7 +26,7 @@ func TestGetPGConnectionStringBadPasswordFile(t *testing.T) {
 	t.Setenv("POSTGRES_SSL_MODE", "disable")
 
 	connectionString, err := database.GetPGConnectionString()
-	require.Equal(t, "", connectionString)
+	require.Empty(t, connectionString)
 	require.ErrorContains(t, err, "failed to read postgres password")
 }
 
@@ -34,6 +34,6 @@ func TestGetPGConnectionStringMissigVariable(t *testing.T) {
 	t.Parallel()
 
 	connectionString, err := database.GetPGConnectionString()
-	require.Equal(t, "", connectionString)
+	require.Empty(t, connectionString)
 	require.ErrorContains(t, err, "missing postgres env variables: ")
 }
