@@ -29,6 +29,8 @@ func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 	mux.Handle("/api/login", auth.VerifyUserHandler(pool))
 	mux.Handle("/api/logout", auth.NewLogoutHandler(pool))
 
+	routeReactPages(mux)
+
 	mux.Handle("/", http.FileServer(http.Dir(os.Getenv("UI_ROOT_DIR"))))
 
 	var h http.Handler = mux
@@ -39,4 +41,22 @@ func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 	}
 
 	return h, nil
+}
+
+func routeReactPages(mux *http.ServeMux) {
+	for _, path := range []string{
+		"/dashboard",
+		"/login",
+		"/budget",
+		"/expenditure",
+		"/register",
+	} {
+		routeReactPage(mux, path)
+	}
+}
+
+func routeReactPage(mux *http.ServeMux, path string) {
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, os.Getenv("UI_ROOT_DIR")+"/index.html")
+	})
 }
