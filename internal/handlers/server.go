@@ -43,16 +43,14 @@ func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 	return h, nil
 }
 
-var reactPaths = []string{
-	"/dashboard",
-	"/login",
-	"/budget",
-	"/expenditure",
-	"/register",
-}
-
 func routeReactPages(mux *http.ServeMux) {
-	for _, path := range reactPaths {
+	for _, path := range []string{
+		"/dashboard",
+		"/login",
+		"/budget",
+		"/expenditure",
+		"/register",
+	} {
 		routeReactPage(mux, path)
 	}
 }
