@@ -1,0 +1,114 @@
+package database
+
+import (
+	"errors"
+	"fmt"
+	"github.com/Masterminds/squirrel"
+	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/net/context"
+	"yaba/internal/model"
+)
+
+var (
+	ErrNilRewardCard     = errors.New("reward card is nil")
+	ErrMissingID         = errors.New("reward card ID is required")
+	ErrMissingName       = errors.New("reward card name is required")
+	ErrMissingIssuer     = errors.New("reward card issuer is required")
+	ErrMissingRewardType = errors.New("reward type is required")
+	ErrMissingRewardRate = errors.New("reward rate is required")
+	ErrMissingCashValue  = errors.New("reward cash value is required")
+)
+
+func GetRewardCard(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) (*model.RewardCard, error) {
+	query, args, err := squirrel.Select("*").
+		From("rewards_card").
+		Where(squirrel.Eq{"id": id}).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build query: %w", err)
+	}
+
+	var card model.RewardCard
+	if err = pgxscan.Get(ctx, pool, &card, query, args...); err != nil {
+		return nil, fmt.Errorf("failed to get reward card: %w", err)
+	}
+
+	return &card, nil
+}
+
+func GetLatestRewardCardByName(ctx context.Context, pool *pgxpool.Pool, name string) (*model.RewardCard, error) {
+	query, args, err := squirrel.Select("*").
+		From("rewards_card").
+		Where(squirrel.Eq{"name": name}).
+		OrderBy("version DESC").
+		Limit(1).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build query: %w", err)
+	}
+
+	var card model.RewardCard
+	if err = pgxscan.Get(ctx, pool, &card, query, args...); err != nil {
+		return nil, fmt.Errorf("failed to get latest reward card: %w", err)
+	}
+
+	return &card, nil
+}
+
+func CreateRewardCard(ctx context.Context, pool *pgxpool.Pool, reward *model.RewardCard) error {
+	if err := validateRewardCard(reward); err != nil {
+		return err
+	}
+
+	query, args, err := squirrel.Insert("rewards_card").
+		Columns("id", "name", "version", "issuer", "reward_type", "reward_rate", "reward_cash_value").
+		Values(reward.ID, reward.Name, reward.Version, reward.Issuer,
+			reward.RewardType, reward.RewardRate, reward.RewardCashValue).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
+	if err != nil {
+		return fmt.Errorf("failed to build rewards card query: %w", err)
+	}
+
+	if _, err = pool.Exec(ctx, query, args...); err != nil {
+		return fmt.Errorf("failed to create rewards card: %w", err)
+	}
+
+	return nil
+}
+
+func validateRewardCard(reward *model.RewardCard) error {
+	if reward == nil {
+		return ErrNilRewardCard
+	}
+
+	if reward.ID == uuid.Nil {
+		return ErrMissingID
+	}
+
+	if reward.Name == "" {
+		return ErrMissingName
+	}
+
+	if reward.Issuer == "" {
+		return ErrMissingIssuer
+	}
+
+	if reward.RewardType == "" {
+		return ErrMissingRewardType
+	}
+
+	if reward.RewardRate == 0 {
+		return ErrMissingRewardRate
+	}
+
+	if reward.RewardCashValue == 0 {
+		return ErrMissingCashValue
+	}
+
+	return nil
+}
