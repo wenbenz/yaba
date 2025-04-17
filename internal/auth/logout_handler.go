@@ -2,7 +2,6 @@ package auth
 
 import (
 	"encoding/hex"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"net/http"
@@ -22,13 +21,13 @@ func (l *LogoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	decodedSID, err := hex.DecodeString(SID.Value)
-	if err != nil || len(decodedSID) != 16 {
+	if err != nil || len(decodedSID) != sessionTokenSize {
 		http.RedirectHandler("/", http.StatusTemporaryRedirect)
 
 		return
 	}
 
-	if err = DeleteSessionToken(r.Context(), l.Pool, uuid.UUID(decodedSID)); err != nil {
+	if err = DeleteSessionToken(r.Context(), l.Pool, decodedSID); err != nil {
 		log.Println("Error deleting session token:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 
