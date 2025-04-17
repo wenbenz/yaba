@@ -29,14 +29,14 @@ func TestLoginHandler(t *testing.T) {
 	}{
 		{
 			name:      "new user",
-			handlerFn: auth.NewUserHandler,
+			handlerFn: auth.CreateNewUserHandler,
 			username:  "foo",
 			password:  "bar",
 			assertFn:  assertSuccess,
 		},
 		{
 			name:      "new user no password",
-			handlerFn: auth.NewUserHandler,
+			handlerFn: auth.CreateNewUserHandler,
 			username:  "foo",
 			assertFn:  assertFail,
 		},

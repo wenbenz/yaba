@@ -94,20 +94,19 @@ func TestInterceptorValidSID(t *testing.T) {
 		Pool: pool,
 		Intercepted: helper.FuncHandler{HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 			u, _ := r.Context().Value(ctxutil.CTXUser).(uuid.UUID)
-			sid, _ := r.Context().Value(ctxutil.CTXSID).(uuid.UUID)
+			sid, _ := r.Context().Value(ctxutil.CTXSID).([]byte)
 
-			_, _ = w.Write([]byte(u.String() + sid.String()))
+			_, _ = w.Write([]byte(u.String() + hex.EncodeToString(sid)))
 		}},
 	}
 
-	tokenIDBytes, err := token.ID.MarshalBinary()
 	require.NoError(t, err)
 
 	request, _ := http.NewRequestWithContext(t.Context(), http.MethodPost, "localhost", nil)
 	request.AddCookie(&http.Cookie{
 		Name:  "sid",
-		Value: hex.EncodeToString(tokenIDBytes),
+		Value: hex.EncodeToString(token.ID),
 	})
 	handler.ServeHTTP(w, request)
-	require.Equal(t, user.String()+token.ID.String(), w.Body.String())
+	require.Equal(t, user.String()+hex.EncodeToString(token.ID), w.Body.String())
 }

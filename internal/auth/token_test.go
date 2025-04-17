@@ -78,8 +78,5 @@ func TestBakeCookie(t *testing.T) {
 	decodedCookie, err := hex.DecodeString(cookie.Value)
 	require.NoError(t, err)
 
-	tokenID, err := token.ID.MarshalBinary()
-	require.NoError(t, err)
-
-	require.Equal(t, tokenID, decodedCookie)
+	require.Equal(t, token.ID, decodedCookie)
 }
