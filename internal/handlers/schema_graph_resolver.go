@@ -78,6 +78,80 @@ func (r *mutationResolver) CreateExpenditures(ctx context.Context, input []*mode
 	return &success, nil
 }
 
+// CreatePaymentMethod is the resolver for the createPaymentMethod field.
+func (r *mutationResolver) CreatePaymentMethod(ctx context.Context, input model.PaymentMethodInput) (*model.PaymentMethod, error) {
+	if input.CardType == nil {
+		return nil, fmt.Errorf("missing card type")
+	}
+	paymentMethod, err := model.PaymentMethodFromPaymentMethodInput(input)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = database.CreatePaymentMethod(ctx, r.Pool, paymentMethod); err != nil {
+		return nil, err
+	}
+
+	created, err := database.GetPaymentMethod(ctx, r.Pool, paymentMethod.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return model.PaymentMethodToPaymentMethodResponse(created), nil
+}
+
+// UpdatePaymentMethod is the resolver for the updatePaymentMethod field.
+func (r *mutationResolver) UpdatePaymentMethod(ctx context.Context, id string, input model.PaymentMethodInput) (*model.PaymentMethod, error) {
+	paymentMethod, err := model.PaymentMethodFromPaymentMethodInput(input)
+	if err != nil {
+		return nil, err
+	}
+
+	paymentMethodID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid payment method ID: %w", err)
+	}
+	paymentMethod.ID = paymentMethodID
+
+	if err = database.UpdatePaymentMethod(ctx, r.Pool, paymentMethod); err != nil {
+		return nil, err
+	}
+
+	updated, err := database.GetPaymentMethod(ctx, r.Pool, paymentMethod.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return model.PaymentMethodToPaymentMethodResponse(updated), nil
+}
+
+// DeletePaymentMethod is the resolver for the deletePaymentMethod field.
+func (r *mutationResolver) DeletePaymentMethod(ctx context.Context, id string) (bool, error) {
+	paymentMethodID, err := uuid.Parse(id)
+	if err != nil {
+		return false, fmt.Errorf("invalid payment method ID: %w", err)
+	}
+
+	return database.DeletePaymentMethod(ctx, r.Pool, paymentMethodID)
+}
+
+// CreateRewardCard is the resolver for the createRewardCard field.
+func (r *mutationResolver) CreateRewardCard(ctx context.Context, input model.RewardCardInput) (*model.RewardCard, error) {
+	rewardCard := model.RewardCardFromRewardCardInput(input)
+	rewardCard.ID = uuid.New()
+
+	if err := database.CreateRewardCard(ctx, r.Pool, rewardCard); err != nil {
+		return nil, err
+	}
+
+	created, err := database.GetRewardCard(ctx, r.Pool, rewardCard.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return model.RewardCardToRewardCardResponse(created), nil
+}
+
 // Budget is the resolver for the budget field.
 func (r *queryResolver) Budget(ctx context.Context, id string) (*model.BudgetResponse, error) {
 	user := ctxutil.GetUser(ctx)
@@ -191,6 +265,36 @@ func (r *queryResolver) AggregatedExpenditures(ctx context.Context, since *strin
 	}
 
 	return model.ExpenditureSummariesToAggregateExpenditures(aggregateExpenditures, timespan), nil
+}
+
+// PaymentMethods is the resolver for the paymentMethods field.
+func (r *queryResolver) PaymentMethods(ctx context.Context) ([]*model.PaymentMethod, error) {
+	paymentMethods, err := database.ListPaymentMethods(ctx, r.Pool)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]*model.PaymentMethod, len(paymentMethods))
+	for i := range paymentMethods {
+		out[i] = model.PaymentMethodToPaymentMethodResponse(paymentMethods[i])
+	}
+
+	return out, nil
+}
+
+// RewardCards is the resolver for the rewardCards field.
+func (r *queryResolver) RewardCards(ctx context.Context, issuer *string, name *string, region *string) ([]*model.RewardCard, error) {
+	cards, err := database.ListRewardCards(ctx, r.Pool, issuer, name, region)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]*model.RewardCard, len(cards))
+	for i := range cards {
+		out[i] = model.RewardCardToRewardCardResponse(cards[i])
+	}
+
+	return out, nil
 }
 
 // Mutation returns server.MutationResolver implementation.

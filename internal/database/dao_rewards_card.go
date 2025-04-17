@@ -40,24 +40,32 @@ func GetRewardCard(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) (*mode
 	return &card, nil
 }
 
-func GetLatestRewardCardByName(ctx context.Context, pool *pgxpool.Pool, name string) (*model.RewardCard, error) {
-	query, args, err := squirrel.Select("*").
+func ListRewardCards(ctx context.Context, pool *pgxpool.Pool, issuer, name, region *string) ([]*model.RewardCard, error) {
+	query := squirrel.Select("*").
 		From("rewards_card").
-		Where(squirrel.Eq{"name": name}).
-		OrderBy("version DESC").
-		Limit(1).
-		PlaceholderFormat(squirrel.Dollar).
-		ToSql()
+		OrderBy("name", "version DESC")
+
+	if issuer != nil && *issuer != "" {
+		query = query.Where(squirrel.Eq{"issuer": *issuer})
+	}
+	if name != nil && *name != "" {
+		query = query.Where(squirrel.Eq{"name": *name})
+	}
+	if region != nil && *region != "" {
+		query = query.Where(squirrel.Eq{"region": *region})
+	}
+
+	sql, args, err := query.PlaceholderFormat(squirrel.Dollar).ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build query: %w", err)
 	}
 
-	var card model.RewardCard
-	if err = pgxscan.Get(ctx, pool, &card, query, args...); err != nil {
-		return nil, fmt.Errorf("failed to get latest reward card: %w", err)
+	var cards []*model.RewardCard
+	if err = pgxscan.Select(ctx, pool, &cards, sql, args...); err != nil {
+		return nil, fmt.Errorf("failed to list reward cards: %w", err)
 	}
 
-	return &card, nil
+	return cards, nil
 }
 
 func CreateRewardCard(ctx context.Context, pool *pgxpool.Pool, reward *model.RewardCard) error {

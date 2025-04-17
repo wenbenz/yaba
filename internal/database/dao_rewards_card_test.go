@@ -205,10 +205,204 @@ func TestCreateRewardCardVersioning(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, card2.Name, stored2.Name)
 	require.Equal(t, 2, stored2.Version)
+}
 
-	// Verify latest by name returns the newer version
-	latest, err := database.GetLatestRewardCardByName(ctx, pool, card1.Name)
-	require.NoError(t, err)
-	require.Equal(t, card2.ID, latest.ID)
-	require.Equal(t, 2, latest.Version)
+func TestListRewardCards(t *testing.T) {
+	pool := helper.GetTestPool()
+	ctx := t.Context()
+
+	chase := "Chase"
+	amex := "Amex"
+	td := "TD"
+	cashBackPlus := "Cash Back Plus"
+	travelPoints := "Travel Points"
+	canada := "Canada"
+	usa := "USA"
+
+	// Create test data with more varied combinations
+	cards := []*model.RewardCard{
+		{
+			ID:              uuid.New(),
+			Name:            cashBackPlus,
+			Region:          canada,
+			Version:         1,
+			Issuer:          chase,
+			RewardRate:      0.025,
+			RewardType:      "cash",
+			RewardCashValue: 0.025,
+		},
+		{
+			ID:              uuid.New(),
+			Name:            travelPoints,
+			Region:          usa,
+			Version:         1,
+			Issuer:          amex,
+			RewardRate:      0.03,
+			RewardType:      "points",
+			RewardCashValue: 0.01,
+		},
+		{
+			ID:              uuid.New(),
+			Name:            "Cash Back Basic",
+			Region:          canada,
+			Version:         1,
+			Issuer:          td,
+			RewardRate:      0.01,
+			RewardType:      "cash",
+			RewardCashValue: 0.01,
+		},
+		{
+			ID:              uuid.New(),
+			Name:            "Premium Card",
+			Region:          usa,
+			Version:         1,
+			Issuer:          chase,
+			RewardRate:      0.02,
+			RewardType:      "cash",
+			RewardCashValue: 0.02,
+		},
+	}
+
+	// Insert test data
+	_, _ = pool.Exec(t.Context(), "TRUNCATE TABLE rewards_card")
+	for _, card := range cards {
+		err := database.CreateRewardCard(ctx, pool, card)
+		require.NoError(t, err)
+	}
+
+	tests := []struct {
+		name         string
+		issuer       *string
+		cardName     *string
+		region       *string
+		expectedLen  int
+		checkResults func([]*model.RewardCard) bool
+	}{
+		{
+			name:         "no filters",
+			expectedLen:  4,
+			checkResults: func(cards []*model.RewardCard) bool { return true },
+		},
+		{
+			name:        "issuer only - Chase",
+			issuer:      &chase,
+			expectedLen: 2,
+			checkResults: func(cards []*model.RewardCard) bool {
+				for _, c := range cards {
+					if c.Issuer != chase {
+						return false
+					}
+				}
+				return true
+			},
+		},
+		{
+			name:        "name only",
+			cardName:    &cashBackPlus,
+			expectedLen: 1,
+			checkResults: func(cards []*model.RewardCard) bool {
+				return len(cards) == 1 && cards[0].Name == cashBackPlus
+			},
+		},
+		{
+			name:        "region only - Canada",
+			region:      &canada,
+			expectedLen: 2,
+			checkResults: func(cards []*model.RewardCard) bool {
+				for _, c := range cards {
+					if c.Region != canada {
+						return false
+					}
+				}
+				return true
+			},
+		},
+		{
+			name:        "issuer only - TD",
+			issuer:      &td,
+			expectedLen: 1,
+			checkResults: func(cards []*model.RewardCard) bool {
+				return len(cards) == 1 && cards[0].Issuer == td
+			},
+		},
+		{
+			name:        "region only - USA",
+			region:      &usa,
+			expectedLen: 2,
+			checkResults: func(cards []*model.RewardCard) bool {
+				for _, c := range cards {
+					if c.Region != usa {
+						return false
+					}
+				}
+				return true
+			},
+		},
+		{
+			name:        "issuer and name",
+			issuer:      &amex,
+			cardName:    &travelPoints,
+			expectedLen: 1,
+			checkResults: func(cards []*model.RewardCard) bool {
+				return len(cards) == 1 && cards[0].Issuer == amex && cards[0].Name == travelPoints
+			},
+		},
+		{
+			name:        "issuer and region",
+			issuer:      &chase,
+			region:      &usa,
+			expectedLen: 1,
+			checkResults: func(cards []*model.RewardCard) bool {
+				return len(cards) == 1 && cards[0].Issuer == chase && cards[0].Region == usa
+			},
+		},
+		{
+			name:        "name and region",
+			cardName:    &travelPoints,
+			region:      &usa,
+			expectedLen: 1,
+			checkResults: func(cards []*model.RewardCard) bool {
+				return len(cards) == 1 && cards[0].Name == travelPoints && cards[0].Region == usa
+			},
+		},
+		{
+			name:        "all filters",
+			issuer:      &chase,
+			cardName:    &cashBackPlus,
+			region:      &canada,
+			expectedLen: 1,
+			checkResults: func(cards []*model.RewardCard) bool {
+				return len(cards) == 1 &&
+					cards[0].Issuer == chase &&
+					cards[0].Name == cashBackPlus &&
+					cards[0].Region == canada
+			},
+		},
+		{
+			name:         "no matches - wrong issuer",
+			issuer:       ptr("NonExistent"),
+			expectedLen:  0,
+			checkResults: func(cards []*model.RewardCard) bool { return len(cards) == 0 },
+		},
+		{
+			name:         "no matches - wrong combination",
+			issuer:       &amex,
+			region:       &canada,
+			expectedLen:  0,
+			checkResults: func(cards []*model.RewardCard) bool { return len(cards) == 0 },
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cards, err := database.ListRewardCards(ctx, pool, tt.issuer, tt.cardName, tt.region)
+			require.NoError(t, err)
+			require.Len(t, cards, tt.expectedLen)
+			require.True(t, tt.checkResults(cards))
+		})
+	}
+}
+
+func ptr(s string) *string {
+	return &s
 }

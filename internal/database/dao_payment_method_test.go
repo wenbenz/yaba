@@ -383,8 +383,9 @@ func TestDeletePaymentMethod(t *testing.T) {
 				deleteCtx = context.WithValue(t.Context(), ctxutil.CTXUser, uuid.New())
 			}
 
-			err = database.DeletePaymentMethod(deleteCtx, pool, method.ID)
+			anyDeleted, err := database.DeletePaymentMethod(deleteCtx, pool, method.ID)
 			require.NoError(t, err) // SQL succeeds but may affect 0 rows
+			require.Equal(t, tt.deleterIsOwner, anyDeleted)
 
 			// Verify if payment method still exists
 			stored, err := database.GetPaymentMethod(ctx, pool, method.ID)

@@ -83,7 +83,43 @@ type NewBudgetInput struct {
 	Expenses []*ExpenseInput `json:"expenses,omitempty"`
 }
 
+type PaymentMethod struct {
+	ID           string      `json:"id"`
+	DisplayName  string      `json:"displayName"`
+	AcquiredDate *string     `json:"acquiredDate,omitempty"`
+	CancelByDate *string     `json:"cancelByDate,omitempty"`
+	CardType     string      `json:"cardType"`
+	Rewards      *RewardCard `json:"rewards,omitempty"`
+}
+
+type PaymentMethodInput struct {
+	DisplayName  *string `json:"displayName,omitempty"`
+	AcquiredDate *string `json:"acquiredDate,omitempty"`
+	CancelByDate *string `json:"cancelByDate,omitempty"`
+	CardType     *string `json:"cardType,omitempty"`
+}
+
 type Query struct {
+}
+
+type RewardCard struct {
+	ID              string  `json:"id"`
+	Name            string  `json:"name"`
+	Issuer          string  `json:"issuer"`
+	Region          string  `json:"region"`
+	Version         int     `json:"version"`
+	RewardRate      float64 `json:"rewardRate"`
+	RewardType      string  `json:"rewardType"`
+	RewardCashValue float64 `json:"rewardCashValue"`
+}
+
+type RewardCardInput struct {
+	Name            string  `json:"name"`
+	Issuer          string  `json:"issuer"`
+	Region          string  `json:"region"`
+	RewardRate      float64 `json:"rewardRate"`
+	RewardType      string  `json:"rewardType"`
+	RewardCashValue float64 `json:"rewardCashValue"`
 }
 
 type UpdateBudgetInput struct {

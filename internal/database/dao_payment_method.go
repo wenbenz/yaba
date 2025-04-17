@@ -94,6 +94,7 @@ func UpdatePaymentMethod(ctx context.Context, pool *pgxpool.Pool, method *model.
 		Set("display_name", method.DisplayName).
 		Set("acquired_date", method.AcquiredDate).
 		Set("cancel_by_date", method.CancelByDate).
+		Set("card_type", method.CardType).
 		Where(squirrel.Eq{
 			"id":    method.ID,
 			"owner": ctxutil.GetUser(ctx),
@@ -111,7 +112,7 @@ func UpdatePaymentMethod(ctx context.Context, pool *pgxpool.Pool, method *model.
 	return nil
 }
 
-func DeletePaymentMethod(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) error {
+func DeletePaymentMethod(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) (bool, error) {
 	query, args, err := squirrel.Delete("payment_method").
 		Where(squirrel.Eq{
 			"id":    id,
@@ -120,12 +121,13 @@ func DeletePaymentMethod(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) 
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
 	if err != nil {
-		return fmt.Errorf("failed to build query: %w", err)
+		return false, fmt.Errorf("failed to build query: %w", err)
 	}
 
-	if _, err = pool.Exec(ctx, query, args...); err != nil {
-		return fmt.Errorf("failed to delete payment method: %w", err)
+	tag, err := pool.Exec(ctx, query, args...)
+	if err != nil {
+		return false, fmt.Errorf("failed to delete payment method: %w", err)
 	}
 
-	return nil
+	return tag.RowsAffected() > 0, nil
 }
