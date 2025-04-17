@@ -11,6 +11,12 @@ type LogoutHandler struct {
 	Pool *pgxpool.Pool
 }
 
+func NewLogoutHandler(pool *pgxpool.Pool) *LogoutHandler {
+	return &LogoutHandler{
+		Pool: pool,
+	}
+}
+
 func (l *LogoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	SID, err := r.Cookie("sid")
 
@@ -46,9 +52,3 @@ func (l *LogoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 var _ http.Handler = (*LogoutHandler)(nil)
-
-func NewLogoutHandler(pool *pgxpool.Pool) *LogoutHandler {
-	return &LogoutHandler{
-		Pool: pool,
-	}
-}
