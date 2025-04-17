@@ -4,11 +4,12 @@ import (
 	"yaba/internal/model"
 )
 
-// RewardCardToRewardCardResponse converts an internal reward card to a GraphQL response
+// RewardCardToRewardCardResponse converts an internal reward card to a GraphQL response.
 func RewardCardToRewardCardResponse(rc *model.RewardCard) *RewardCard {
 	if rc == nil {
 		return nil
 	}
+
 	return &RewardCard{
 		ID:              rc.ID.String(),
 		Name:            rc.Name,
@@ -21,7 +22,7 @@ func RewardCardToRewardCardResponse(rc *model.RewardCard) *RewardCard {
 	}
 }
 
-// RewardCardFromRewardCardInput converts a GraphQL input to an internal reward card
+// RewardCardFromRewardCardInput converts a GraphQL input to an internal reward card.
 func RewardCardFromRewardCardInput(input RewardCardInput) *model.RewardCard {
 	return &model.RewardCard{
 		Name:            input.Name,

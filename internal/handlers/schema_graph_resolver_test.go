@@ -396,6 +396,7 @@ func TestCreateExpenditures(t *testing.T) {
 	})
 }
 
+//nolint:paralleltest
 func TestCreateRewardCard(t *testing.T) {
 	user := uuid.New()
 	ctx := ctxutil.WithUser(t.Context(), user)
@@ -421,9 +422,9 @@ func TestCreateRewardCard(t *testing.T) {
 	require.Equal(t, input.Name, result.Name)
 	require.Equal(t, input.Issuer, result.Issuer)
 	require.Equal(t, input.Region, result.Region)
-	require.Equal(t, input.RewardRate, result.RewardRate)
+	require.InDelta(t, input.RewardRate, result.RewardRate, .0001)
 	require.Equal(t, input.RewardType, result.RewardType)
-	require.Equal(t, input.RewardCashValue, result.RewardCashValue)
+	require.InDelta(t, input.RewardCashValue, result.RewardCashValue, .0001)
 
 	// Verify persistence using RewardCards query
 	cards, err := resolver.Query().RewardCards(ctx, &input.Issuer, &input.Name, &input.Region)
@@ -435,9 +436,9 @@ func TestCreateRewardCard(t *testing.T) {
 	require.Equal(t, result.Name, cards[0].Name)
 	require.Equal(t, result.Issuer, cards[0].Issuer)
 	require.Equal(t, result.Region, cards[0].Region)
-	require.Equal(t, result.RewardRate, cards[0].RewardRate)
+	require.InDelta(t, result.RewardRate, cards[0].RewardRate, .0001)
 	require.Equal(t, result.RewardType, cards[0].RewardType)
-	require.Equal(t, result.RewardCashValue, cards[0].RewardCashValue)
+	require.InDelta(t, result.RewardCashValue, cards[0].RewardCashValue, .0001)
 }
 
 func TestCreatePaymentMethodSuccess(t *testing.T) {
@@ -642,6 +643,7 @@ func TestPaymentMethods(t *testing.T) {
 
 	t.Run("empty payment methods", func(t *testing.T) {
 		t.Parallel()
+
 		methods, err := resolver.Query().PaymentMethods(ctx)
 		require.NoError(t, err)
 		require.Empty(t, methods)
@@ -701,6 +703,7 @@ func TestPaymentMethods(t *testing.T) {
 	})
 }
 
+//nolint:paralleltest
 func TestRewardCards(t *testing.T) {
 	user := uuid.New()
 	ctx := ctxutil.WithUser(t.Context(), user)
@@ -762,6 +765,7 @@ func TestRewardCards(t *testing.T) {
 		cards, err = resolver.Query().RewardCards(ctx, &issuer, nil, nil)
 		require.NoError(t, err)
 		require.Len(t, cards, 2)
+
 		for _, card := range cards {
 			require.Equal(t, "Chase", card.Issuer)
 		}
@@ -778,6 +782,7 @@ func TestRewardCards(t *testing.T) {
 		cards, err = resolver.Query().RewardCards(ctx, nil, nil, &region)
 		require.NoError(t, err)
 		require.Len(t, cards, 3)
+
 		for _, card := range cards {
 			require.Equal(t, "US", card.Region)
 		}
@@ -786,6 +791,7 @@ func TestRewardCards(t *testing.T) {
 		cards, err = resolver.Query().RewardCards(ctx, &issuer, nil, &region)
 		require.NoError(t, err)
 		require.Len(t, cards, 2)
+
 		for _, card := range cards {
 			require.Equal(t, "Chase", card.Issuer)
 			require.Equal(t, "US", card.Region)

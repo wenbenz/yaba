@@ -207,6 +207,7 @@ func TestCreateRewardCardVersioning(t *testing.T) {
 	require.Equal(t, 2, stored2.Version)
 }
 
+//nolint:cyclop,paralleltest,tparallel
 func TestListRewardCards(t *testing.T) {
 	pool := helper.GetTestPool()
 	ctx := t.Context()
@@ -263,8 +264,10 @@ func TestListRewardCards(t *testing.T) {
 		},
 	}
 
-	// Insert test data
+	// Clear the table before inserting test data
 	_, _ = pool.Exec(t.Context(), "TRUNCATE TABLE rewards_card")
+
+	// Insert test data
 	for _, card := range cards {
 		err := database.CreateRewardCard(ctx, pool, card)
 		require.NoError(t, err)
@@ -281,7 +284,7 @@ func TestListRewardCards(t *testing.T) {
 		{
 			name:         "no filters",
 			expectedLen:  4,
-			checkResults: func(cards []*model.RewardCard) bool { return true },
+			checkResults: func(_ []*model.RewardCard) bool { return true },
 		},
 		{
 			name:        "issuer only - Chase",
@@ -293,6 +296,7 @@ func TestListRewardCards(t *testing.T) {
 						return false
 					}
 				}
+
 				return true
 			},
 		},
@@ -314,6 +318,7 @@ func TestListRewardCards(t *testing.T) {
 						return false
 					}
 				}
+
 				return true
 			},
 		},
@@ -335,6 +340,7 @@ func TestListRewardCards(t *testing.T) {
 						return false
 					}
 				}
+
 				return true
 			},
 		},
@@ -395,6 +401,8 @@ func TestListRewardCards(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			cards, err := database.ListRewardCards(ctx, pool, tt.issuer, tt.cardName, tt.region)
 			require.NoError(t, err)
 			require.Len(t, cards, tt.expectedLen)

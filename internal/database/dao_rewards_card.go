@@ -40,7 +40,8 @@ func GetRewardCard(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) (*mode
 	return &card, nil
 }
 
-func ListRewardCards(ctx context.Context, pool *pgxpool.Pool, issuer, name, region *string) ([]*model.RewardCard, error) {
+func ListRewardCards(ctx context.Context, pool *pgxpool.Pool,
+	issuer, name, region *string) ([]*model.RewardCard, error) {
 	query := squirrel.Select("*").
 		From("rewards_card").
 		OrderBy("name", "version DESC")
@@ -48,9 +49,11 @@ func ListRewardCards(ctx context.Context, pool *pgxpool.Pool, issuer, name, regi
 	if issuer != nil && *issuer != "" {
 		query = query.Where(squirrel.Eq{"issuer": *issuer})
 	}
+
 	if name != nil && *name != "" {
 		query = query.Where(squirrel.Eq{"name": *name})
 	}
+
 	if region != nil && *region != "" {
 		query = query.Where(squirrel.Eq{"region": *region})
 	}
