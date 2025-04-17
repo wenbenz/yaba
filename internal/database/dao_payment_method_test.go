@@ -25,6 +25,7 @@ func TestCreateAndGetPaymentMethod(t *testing.T) {
 		Name:            "Freedom Flex",
 		Version:         1,
 		Issuer:          "Chase",
+		Region:          "USA",
 		RewardRate:      0.05,
 		RewardType:      "cash",
 		RewardCashValue: 0.05,
@@ -147,6 +148,7 @@ func TestListPaymentMethods(t *testing.T) {
 		Name:            "Freedom Flex",
 		Version:         1,
 		Issuer:          "Chase",
+		Region:          "USA",
 		RewardRate:      0.05,
 		RewardType:      "cash",
 		RewardCashValue: 0.05,
@@ -287,7 +289,7 @@ func TestUpdatePaymentMethod(t *testing.T) {
 	}
 }
 
-func TestUpdatePaymentMethodDifferentOwner(t *testing.T) {
+func TestUpdatePaymentMethodDifferentUser(t *testing.T) {
 	t.Parallel()
 
 	pool := helper.GetTestPool()

@@ -1,4 +1,4 @@
-.PHONY: clean deps docker graphql
+.PHONY: clean build test docker
 
 build: deps graphql
 	go build
@@ -26,8 +26,8 @@ lint:
 test:
 	go test ./...
 
-docker:
-	docker build --tag wenbenz/yaba:latest .
-
 cover:
 	go test -v -race -covermode=atomic -coverprofile=coverage.out yaba/internal/...
+
+docker:
+	docker build --tag wenbenz/yaba:latest .

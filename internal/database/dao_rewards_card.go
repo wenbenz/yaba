@@ -15,6 +15,7 @@ var (
 	ErrNilRewardCard     = errors.New("reward card is nil")
 	ErrMissingID         = errors.New("reward card ID is required")
 	ErrMissingName       = errors.New("reward card name is required")
+	ErrMissingRegion     = errors.New("reward card region is required")
 	ErrMissingIssuer     = errors.New("reward card issuer is required")
 	ErrMissingRewardType = errors.New("reward type is required")
 	ErrMissingRewardRate = errors.New("reward rate is required")
@@ -65,8 +66,8 @@ func CreateRewardCard(ctx context.Context, pool *pgxpool.Pool, reward *model.Rew
 	}
 
 	query, args, err := squirrel.Insert("rewards_card").
-		Columns("id", "name", "version", "issuer", "reward_type", "reward_rate", "reward_cash_value").
-		Values(reward.ID, reward.Name, reward.Version, reward.Issuer,
+		Columns("id", "name", "region", "version", "issuer", "reward_type", "reward_rate", "reward_cash_value").
+		Values(reward.ID, reward.Name, reward.Region, reward.Version, reward.Issuer,
 			reward.RewardType, reward.RewardRate, reward.RewardCashValue).
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
@@ -92,6 +93,10 @@ func validateRewardCard(reward *model.RewardCard) error {
 
 	if reward.Name == "" {
 		return ErrMissingName
+	}
+
+	if reward.Region == "" {
+		return ErrMissingRegion
 	}
 
 	if reward.Issuer == "" {

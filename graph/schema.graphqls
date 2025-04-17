@@ -62,6 +62,25 @@ type AggregatedExpendituresResponse {
     span: Timespan
 }
 
+type RewardCard {
+    id: ID!
+    name: String!
+    issuer: String!
+    version: Int!
+    rewardRate: Float!
+    rewardType: String!
+    rewardCashValue: Float!
+}
+
+type PaymentMethod {
+    id: ID!
+    displayName: String!
+    acquiredDate: String
+    cancelByDate: String
+    cardType: ID!
+    rewards: RewardCard
+}
+
 type Query {
     budget(id: ID!): BudgetResponse
     budgets(first: Int): [BudgetResponse]
@@ -69,6 +88,9 @@ type Query {
     expenditures(since: String, until: String, source: String, category: String, count: Int, offset: Int): [ExpenditureResponse]
     aggregatedExpenditures(since: String, until: String, span: Timespan,
         groupBy: GroupBy, aggregation: Aggregation): [AggregatedExpendituresResponse]
+
+    paymentMethods: [PaymentMethod!]!
+    rewardCards: [RewardCard!]!
 }
 
 input NewBudgetInput {
@@ -108,9 +130,30 @@ input ExpenditureInput {
     source: String
 }
 
+input PaymentMethodInput {
+    displayName: String
+    acquiredDate: String
+    cancelByDate: String
+    cardType: ID
+}
+
+input RewardCardInput {
+    name: String!
+    issuer: String!
+    rewardRate: Float!
+    rewardType: String!
+    rewardCashValue: Float!
+}
+
 type Mutation {
     createBudget(input: NewBudgetInput!): BudgetResponse
     updateBudget(input: UpdateBudgetInput!): BudgetResponse
 
     createExpenditures(input: [ExpenditureInput]!): Boolean
+
+    createPaymentMethod(input: PaymentMethodInput!): PaymentMethod!
+    updatePaymentMethod(id: ID!, input: PaymentMethodInput!): PaymentMethod!
+    deletePaymentMethod(id: ID!): Boolean
+
+    createRewardCard(input: RewardCardInput!): RewardCard!
 }

@@ -18,6 +18,7 @@ type PaymentMethod struct {
 type RewardCard struct {
 	ID              uuid.UUID `db:"id"`
 	Name            string    `db:"name"`
+	Region          string    `db:"region"`
 	Issuer          string    `db:"issuer"`
 	Version         int       `db:"version"`
 	RewardRate      float64   `db:"reward_rate"`

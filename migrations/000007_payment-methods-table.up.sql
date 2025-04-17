@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS rewards_card
 (
     id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name              TEXT           NOT NULL,
+    region            TEXT           NOT NULL,
     issuer            TEXT           NOT NULL,
     version           SERIAL         NOT NULL,
     reward_type       TEXT           NOT NULL,

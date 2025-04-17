@@ -1,2 +1,2 @@
-DROP TABLE IF EXISTS payment_method;
-DROP TABLE IF EXISTS rewards_card;
+DROP TABLE IF EXISTS payment_method CASCADE;
+DROP TABLE IF EXISTS rewards_card CASCADE;
