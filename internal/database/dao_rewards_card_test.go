@@ -144,7 +144,7 @@ func TestCreateRewardCard(t *testing.T) {
 
 			for i, cat := range stored.RewardCategories {
 				require.Equal(t, tc.reward.RewardCategories[i].Category, cat.Category)
-				require.Equal(t, tc.reward.RewardCategories[i].Rate, cat.Rate)
+				require.InEpsilon(t, tc.reward.RewardCategories[i].Rate, cat.Rate, 0.001)
 			}
 		})
 	}

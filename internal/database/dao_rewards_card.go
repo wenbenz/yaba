@@ -156,6 +156,7 @@ func CreateRewardCard(ctx context.Context, pool *pgxpool.Pool, card *model.Rewar
 	}
 
 	batch.Queue(query, args...)
+
 	if len(card.RewardCategories) > 0 {
 		for _, cat := range card.RewardCategories {
 			query, args, err := squirrel.Insert("card_rewards").
