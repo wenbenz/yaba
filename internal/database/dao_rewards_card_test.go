@@ -370,13 +370,11 @@ func TestListRewardCards(t *testing.T) {
 	}
 }
 
-//nolint:paralleltest
 func TestListRewardCardsPagination(t *testing.T) {
-	pool := helper.GetTestPool()
-	ctx := t.Context()
+	t.Parallel()
 
-	// Clear the table before testing
-	_, _ = pool.Exec(ctx, "TRUNCATE TABLE rewards_card")
+	pool := helper.NewIsolatedTestPool()
+	ctx := t.Context()
 
 	// Create 15 test cards
 	cards := make([]*model.RewardCard, 15)

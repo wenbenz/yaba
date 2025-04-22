@@ -396,11 +396,11 @@ func TestCreateExpenditures(t *testing.T) {
 	})
 }
 
-//nolint:paralleltest
 func TestCreateRewardCard(t *testing.T) {
+	t.Parallel()
 	user := uuid.New()
 	ctx := ctxutil.WithUser(t.Context(), user)
-	pool := helper.GetTestPool()
+	pool := helper.NewIsolatedTestPool()
 	resolver := &handlers.Resolver{Pool: pool}
 
 	input := model.RewardCardInput{
@@ -412,7 +412,6 @@ func TestCreateRewardCard(t *testing.T) {
 	}
 
 	// Create the reward card
-	_, _ = pool.Exec(ctx, "TRUNCATE TABLE rewards_card;")
 	result, err := resolver.Mutation().CreateRewardCard(ctx, input)
 	require.NoError(t, err)
 	require.NotNil(t, result)
@@ -703,26 +702,26 @@ func TestPaymentMethods_WithCards(t *testing.T) {
 	}
 }
 
-//nolint:paralleltest
 func TestRewardCards_empty(t *testing.T) {
+	t.Parallel()
+
 	user := uuid.New()
 	ctx := ctxutil.WithUser(t.Context(), user)
-	pool := helper.GetTestPool()
+	pool := helper.NewIsolatedTestPool()
 	resolver := &handlers.Resolver{Pool: pool}
 
-	_, _ = pool.Exec(ctx, "TRUNCATE TABLE rewards_card;")
 	cards, err := resolver.Query().RewardCards(ctx, nil, nil, nil, nil, nil)
 	require.NoError(t, err)
 	require.Empty(t, cards)
 }
 
-//nolint:paralleltest
 func TestRewardCards(t *testing.T) {
+	t.Parallel()
+
 	user := uuid.New()
 	ctx := ctxutil.WithUser(t.Context(), user)
-	pool := helper.GetTestPool()
+	pool := helper.NewIsolatedTestPool()
 	resolver := &handlers.Resolver{Pool: pool}
-	_, _ = pool.Exec(ctx, "TRUNCATE TABLE rewards_card;")
 	// Create multiple reward cards
 	inputs := []model.RewardCardInput{
 		{
