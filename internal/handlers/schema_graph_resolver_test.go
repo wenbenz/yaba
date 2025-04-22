@@ -396,9 +396,8 @@ func TestCreateExpenditures(t *testing.T) {
 	})
 }
 
+//nolint:paralleltest
 func TestCreateRewardCard(t *testing.T) {
-	t.Parallel()
-
 	user := uuid.New()
 	ctx := ctxutil.WithUser(t.Context(), user)
 	pool := helper.NewIsolatedTestPool()
@@ -703,9 +702,8 @@ func TestPaymentMethods_WithCards(t *testing.T) {
 	}
 }
 
+//nolint:paralleltest
 func TestRewardCards_empty(t *testing.T) {
-	t.Parallel()
-
 	user := uuid.New()
 	ctx := ctxutil.WithUser(t.Context(), user)
 	pool := helper.NewIsolatedTestPool()
@@ -716,9 +714,8 @@ func TestRewardCards_empty(t *testing.T) {
 	require.Empty(t, cards)
 }
 
+//nolint:paralleltest
 func TestRewardCards(t *testing.T) {
-	t.Parallel()
-
 	user := uuid.New()
 	ctx := ctxutil.WithUser(t.Context(), user)
 	pool := helper.NewIsolatedTestPool()

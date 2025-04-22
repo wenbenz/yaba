@@ -370,9 +370,8 @@ func TestListRewardCards(t *testing.T) {
 	}
 }
 
+//nolint:paralleltest
 func TestListRewardCardsPagination(t *testing.T) {
-	t.Parallel()
-
 	pool := helper.NewIsolatedTestPool()
 	ctx := t.Context()
 
