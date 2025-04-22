@@ -19,6 +19,27 @@ func TestCreateRewardCard(t *testing.T) {
 		expectError bool
 	}{
 		{
+			name: "valid reward card with categories",
+			reward: &model.RewardCard{
+				ID:         uuid.New(),
+				Name:       "Cash Back",
+				Region:     "Canada",
+				Version:    1,
+				Issuer:     "Chase",
+				RewardType: "cash",
+				RewardCategories: []*model.RewardCategory{
+					{
+						Category: "Dining",
+						Rate:     0.03,
+					},
+					{
+						Category: "Travel",
+						Rate:     0.05,
+					},
+				},
+			},
+		},
+		{
 			name: "valid reward card",
 			reward: &model.RewardCard{
 				ID:         uuid.New(),
@@ -119,6 +140,12 @@ func TestCreateRewardCard(t *testing.T) {
 			require.Equal(t, tc.reward.Version, stored.Version)
 			require.Equal(t, tc.reward.Issuer, stored.Issuer)
 			require.Equal(t, tc.reward.RewardType, stored.RewardType)
+			require.Len(t, stored.RewardCategories, len(tc.reward.RewardCategories))
+
+			for i, cat := range stored.RewardCategories {
+				require.Equal(t, tc.reward.RewardCategories[i].Category, cat.Category)
+				require.Equal(t, tc.reward.RewardCategories[i].Rate, cat.Rate)
+			}
 		})
 	}
 }

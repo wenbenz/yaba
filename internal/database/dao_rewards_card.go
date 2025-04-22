@@ -6,6 +6,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/net/context"
 	"yaba/internal/model"
@@ -137,22 +138,40 @@ func setRewardCardCategories(ctx context.Context, pool *pgxpool.Pool, cards []*m
 	return nil
 }
 
-func CreateRewardCard(ctx context.Context, pool *pgxpool.Pool, reward *model.RewardCard) error {
-	if err := validateRewardCard(reward); err != nil {
+func CreateRewardCard(ctx context.Context, pool *pgxpool.Pool, card *model.RewardCard) error {
+	if err := validateRewardCard(card); err != nil {
 		return err
 	}
 
+	batch := &pgx.Batch{}
+
 	query, args, err := squirrel.Insert("rewards_card").
 		Columns("id", "name", "region", "version", "issuer", "reward_type").
-		Values(reward.ID, reward.Name, reward.Region, reward.Version, reward.Issuer,
-			reward.RewardType).
+		Values(card.ID, card.Name, card.Region, card.Version, card.Issuer,
+			card.RewardType).
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
 	if err != nil {
 		return fmt.Errorf("failed to build rewards card query: %w", err)
 	}
 
-	if _, err = pool.Exec(ctx, query, args...); err != nil {
+	batch.Queue(query, args...)
+	if len(card.RewardCategories) > 0 {
+		for _, cat := range card.RewardCategories {
+			query, args, err := squirrel.Insert("card_rewards").
+				Columns("card_id", "category", "reward_rate").
+				Values(card.ID, cat.Category, cat.Rate).
+				PlaceholderFormat(squirrel.Dollar).
+				ToSql()
+			if err != nil {
+				return fmt.Errorf("failed to build reward category query: %w", err)
+			}
+
+			batch.Queue(query, args...)
+		}
+	}
+
+	if err = pool.SendBatch(ctx, batch).Close(); err != nil {
 		return fmt.Errorf("failed to create rewards card: %w", err)
 	}
 
