@@ -392,5 +392,6 @@ func newTestRewardCard(ctx context.Context, pool *pgxpool.Pool) uuid.UUID {
 		RewardType: "cash",
 	}
 	_ = database.CreateRewardCard(ctx, pool, rewardCard)
+
 	return rewardCard.ID
 }
