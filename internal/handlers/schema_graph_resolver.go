@@ -83,7 +83,7 @@ func (r *mutationResolver) CreatePaymentMethod(ctx context.Context, input model.
 	if input.CardType == nil {
 		return nil, fmt.Errorf("missing card type")
 	}
-	paymentMethod, err := model.PaymentMethodFromPaymentMethodInput(input)
+	paymentMethod, err := model.PaymentMethodFromPaymentMethodInput(ctx, r.Pool, input)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (r *mutationResolver) CreatePaymentMethod(ctx context.Context, input model.
 
 // UpdatePaymentMethod is the resolver for the updatePaymentMethod field.
 func (r *mutationResolver) UpdatePaymentMethod(ctx context.Context, id string, input model.PaymentMethodInput) (*model.PaymentMethod, error) {
-	paymentMethod, err := model.PaymentMethodFromPaymentMethodInput(input)
+	paymentMethod, err := model.PaymentMethodFromPaymentMethodInput(ctx, r.Pool, input)
 	if err != nil {
 		return nil, err
 	}
@@ -259,7 +259,8 @@ func (r *queryResolver) AggregatedExpenditures(ctx context.Context, since *strin
 		agg = *aggregation
 	}
 
-	aggregateExpenditures, err := database.AggregateExpenditures(ctx, r.Pool, start, end, timespan, agg, gb)
+	aggregateExpenditures, err := database.AggregateExpenditures(ctx, r.Pool, start, end,
+		model.ConvertTimespan(timespan), model.ConvertAggregation(agg), model.ConvertGroupBy(gb))
 	if err != nil {
 		return nil, fmt.Errorf("aggregatedExpenditures: %w", err)
 	}

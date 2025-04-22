@@ -633,7 +633,7 @@ func TestDeletePaymentMethod(t *testing.T) {
 	require.False(t, success)
 }
 
-func TestPaymentMethods(t *testing.T) {
+func TestPaymentMethods_Empty(t *testing.T) {
 	t.Parallel()
 
 	user := uuid.New()
@@ -641,66 +641,75 @@ func TestPaymentMethods(t *testing.T) {
 	pool := helper.GetTestPool()
 	resolver := &handlers.Resolver{Pool: pool}
 
-	t.Run("empty payment methods", func(t *testing.T) {
-		t.Parallel()
+	methods, err := resolver.Query().PaymentMethods(ctx)
+	require.NoError(t, err)
+	require.Empty(t, methods)
+}
 
-		methods, err := resolver.Query().PaymentMethods(ctx)
-		require.NoError(t, err)
-		require.Empty(t, methods)
+func TestPaymentMethods_WithCards(t *testing.T) {
+	t.Parallel()
+
+	user := uuid.New()
+	ctx := ctxutil.WithUser(t.Context(), user)
+	pool := helper.GetTestPool()
+	resolver := &handlers.Resolver{Pool: pool}
+
+	// Create a reward card first
+	rewardCard, err := resolver.Mutation().CreateRewardCard(ctx, model.RewardCardInput{
+		Name:            "Chase Sapphire Reserve",
+		Issuer:          "Chase",
+		Region:          "US",
+		RewardRate:      3.0,
+		RewardType:      "points",
+		RewardCashValue: 0.015,
 	})
+	require.NoError(t, err)
+	require.NotNil(t, rewardCard)
 
-	t.Run("with payment methods", func(t *testing.T) {
-		t.Parallel()
+	// Create multiple payment methods
+	inputs := []model.PaymentMethodInput{
+		{
+			DisplayName:  ptr("Card 1"),
+			CardType:     ptr(rewardCard.ID),
+			AcquiredDate: ptr("2024-03-20"),
+			CancelByDate: ptr("2025-03-20"),
+		},
+		{
+			DisplayName:  ptr("Card 2"),
+			CardType:     ptr(rewardCard.ID),
+			AcquiredDate: ptr("2024-03-21"),
+			CancelByDate: ptr("2025-03-21"),
+		},
+	}
 
-		// Create a reward card first
-		rewardCard, err := resolver.Mutation().CreateRewardCard(ctx, model.RewardCardInput{
-			Name:            "Chase Sapphire Reserve",
-			Issuer:          "Chase",
-			Region:          "US",
-			RewardRate:      3.0,
-			RewardType:      "points",
-			RewardCashValue: 0.015,
-		})
+	for _, input := range inputs {
+		result, err := resolver.Mutation().CreatePaymentMethod(ctx, input)
 		require.NoError(t, err)
-		require.NotNil(t, rewardCard)
+		require.NotNil(t, result)
+		require.Equal(t, *input.DisplayName, result.DisplayName)
+	}
 
-		// Create multiple payment methods
-		inputs := []model.PaymentMethodInput{
-			{
-				DisplayName:  ptr("Card 1"),
-				CardType:     ptr(rewardCard.ID),
-				AcquiredDate: ptr("2024-03-20"),
-				CancelByDate: ptr("2025-03-20"),
-			},
-			{
-				DisplayName:  ptr("Card 2"),
-				CardType:     ptr(rewardCard.ID),
-				AcquiredDate: ptr("2024-03-21"),
-				CancelByDate: ptr("2025-03-21"),
-			},
-		}
+	// Create a payment method under a different user
+	otherUser := uuid.New()
+	otherCtx := ctxutil.WithUser(t.Context(), otherUser)
+	result, err := resolver.Mutation().CreatePaymentMethod(otherCtx,
+		model.PaymentMethodInput{CardType: ptr(rewardCard.ID)})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.NotEqual(t, result.ID, uuid.Nil)
 
-		// Create payment methods
-		for _, input := range inputs {
-			result, err := resolver.Mutation().CreatePaymentMethod(ctx, input)
-			require.NoError(t, err)
-			require.NotNil(t, result)
-			require.Equal(t, *input.DisplayName, result.DisplayName)
-		}
+	// Query all payment methods
+	methods, err := resolver.Query().PaymentMethods(ctx)
+	require.NoError(t, err)
+	require.Len(t, methods, 2)
 
-		// Query all payment methods
-		methods, err := resolver.Query().PaymentMethods(ctx)
-		require.NoError(t, err)
-		require.Len(t, methods, 2)
-
-		// Verify the payment methods match the inputs
-		for i, method := range methods {
-			require.Equal(t, *inputs[i].DisplayName, method.DisplayName)
-			require.Equal(t, *inputs[i].CardType, method.CardType)
-			require.Equal(t, *inputs[i].AcquiredDate, *method.AcquiredDate)
-			require.Equal(t, *inputs[i].CancelByDate, *method.CancelByDate)
-		}
-	})
+	// Verify the payment methods match the inputs
+	for i, method := range methods {
+		require.Equal(t, *inputs[i].DisplayName, method.DisplayName)
+		require.Equal(t, *inputs[i].CardType, method.CardType)
+		require.Equal(t, *inputs[i].AcquiredDate, *method.AcquiredDate)
+		require.Equal(t, *inputs[i].CancelByDate, *method.CancelByDate)
+	}
 }
 
 //nolint:paralleltest

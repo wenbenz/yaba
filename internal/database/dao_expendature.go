@@ -6,7 +6,6 @@ import (
 	"github.com/google/uuid"
 	"strings"
 	"time"
-	graph "yaba/graph/model"
 	"yaba/internal/ctxutil"
 	"yaba/internal/model"
 
@@ -66,38 +65,38 @@ func ListExpenditures(
 }
 
 func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, endDate time.Time,
-	timespan graph.Timespan, aggregation graph.Aggregation, groupBy graph.GroupBy) ([]*model.ExpenditureSummary, error) {
+	timespan model.Timespan, aggregation model.Aggregation, groupBy model.GroupBy) ([]*model.ExpenditureSummary, error) {
 	var category string
 	var categoryDefault string
 
 	switch groupBy {
-	case graph.GroupByNone:
+	case model.GroupByNone:
 		category = "'Total'"
-	case graph.GroupByBudgetCategory:
+	case model.GroupByBudgetCategory:
 		category = "expense_id"
 		categoryDefault = uuid.Nil.String()
-	case graph.GroupByRewardCategory:
+	case model.GroupByRewardCategory:
 		category = "reward_category"
 	}
 
 	date := "date"
-	if timespan != graph.TimespanDay {
+	if timespan != model.TimespanDay {
 		// This group-by will cause postgres to do a sequential scan if the timespan is not "DAY".
 		// We can fix this with a functional index, but then the date column becomes immutable.
 		// We can also group by date and aggregate the month/year in code to improve performance
 		// the selectivity becomes low (due to more/older data).
-		date = fmt.Sprintf("date_trunc('%s', date)", timespan.String())
+		date = fmt.Sprintf("date_trunc('%s', date)", timespan)
 	}
 
 	sq := squirrel.Select(date+" as date",
 		fmt.Sprintf("COALESCE(%s::text, '%s') as category", category, categoryDefault),
-		aggregation.String()+"(amount) as amount").
+		string(aggregation)+"(amount) as amount").
 		From("expenditure").
 		Where("owner = $1 AND date >= $2 AND date <= $3", ctxutil.GetUser(ctx), startDate, endDate).
 		GroupBy(date).
 		OrderBy("date ASC")
 
-	if groupBy != graph.GroupByNone {
+	if groupBy != model.GroupByNone {
 		sq = sq.GroupBy(category)
 		sq = sq.OrderBy(category)
 	}

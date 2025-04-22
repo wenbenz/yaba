@@ -3,7 +3,10 @@ package model
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/net/context"
 	"time"
+	"yaba/internal/database"
 	"yaba/internal/model"
 )
 
@@ -35,7 +38,8 @@ func PaymentMethodToPaymentMethodResponse(pm *model.PaymentMethod) *PaymentMetho
 }
 
 // PaymentMethodFromPaymentMethodInput converts a GraphQL input to an internal payment method.
-func PaymentMethodFromPaymentMethodInput(input PaymentMethodInput) (*model.PaymentMethod, error) {
+func PaymentMethodFromPaymentMethodInput(ctx context.Context, pool *pgxpool.Pool, input PaymentMethodInput,
+) (*model.PaymentMethod, error) {
 	var acquired, cancel time.Time
 
 	var err error
@@ -56,9 +60,19 @@ func PaymentMethodFromPaymentMethodInput(input PaymentMethodInput) (*model.Payme
 		return nil, fmt.Errorf("invalid card type: %w", err)
 	}
 
+	rewardCard, err := database.GetRewardCard(ctx, pool, cardType)
+	if err != nil {
+		return nil, fmt.Errorf("invalid card type: %w", err)
+	}
+
+	displayName := rewardCard.Name
+	if input.DisplayName != nil {
+		displayName = *input.DisplayName
+	}
+
 	return &model.PaymentMethod{
 		ID:           uuid.New(),
-		DisplayName:  *input.DisplayName,
+		DisplayName:  displayName,
 		AcquiredDate: acquired,
 		CancelByDate: cancel,
 		CardType:     cardType,

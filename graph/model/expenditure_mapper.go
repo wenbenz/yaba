@@ -52,3 +52,41 @@ func ExpenditureSummariesToAggregateExpenditures(expenditures []*model.Expenditu
 
 	return ret
 }
+func ConvertAggregation(agg Aggregation) model.Aggregation {
+	switch agg {
+	case AggregationSum:
+		return model.AggregationSum
+	case AggregationAvg:
+		return model.AggregationAverage
+	default:
+		return model.AggregationSum
+	}
+}
+
+func ConvertTimespan(span Timespan) model.Timespan {
+	switch span {
+	case TimespanDay:
+		return model.TimespanDay
+	case TimespanWeek:
+		return model.TimespanWeek
+	case TimespanMonth:
+		return model.TimespanMonth
+	case TimespanYear:
+		return model.TimespanYear
+	default:
+		return model.TimespanDay
+	}
+}
+
+func ConvertGroupBy(groupBy GroupBy) model.GroupBy {
+	switch groupBy {
+	case GroupByNone:
+		return model.GroupByNone
+	case GroupByBudgetCategory:
+		return model.GroupByBudgetCategory
+	case GroupByRewardCategory:
+		return model.GroupByRewardCategory
+	default:
+		return model.GroupByNone
+	}
+}
