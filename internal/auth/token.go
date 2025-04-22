@@ -16,7 +16,7 @@ import (
 )
 
 type Token struct {
-	ID      uuid.UUID `db:"id"`
+	ID      []byte    `db:"id"`
 	User    uuid.UUID `db:"user_id"`
 	Type    string    `db:"type"`
 	Created time.Time `db:"created"`
@@ -34,7 +34,7 @@ func NewSessionToken(user uuid.UUID, ttl time.Duration) *Token {
 	}
 
 	return &Token{
-		ID:      uuid.New(),
+		ID:      value,
 		User:    user,
 		Type:    "SESSION",
 		Created: time.Now(),
@@ -59,7 +59,7 @@ func SaveSessionToken(ctx context.Context, pool *pgxpool.Pool, token *Token) err
 	return nil
 }
 
-func GetSessionToken(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) (*Token, error) {
+func GetSessionToken(ctx context.Context, pool *pgxpool.Pool, id []byte) (*Token, error) {
 	sql, args, err := squirrel.Select("*").
 		From("token").
 		Where(squirrel.Eq{"id": id}).
@@ -78,7 +78,7 @@ func GetSessionToken(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) (*To
 	return token, nil
 }
 
-func DeleteSessionToken(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) error {
+func DeleteSessionToken(ctx context.Context, pool *pgxpool.Pool, id []byte) error {
 	sql, args, err := squirrel.Delete("token").Where(squirrel.Eq{"id": id}).PlaceholderFormat(squirrel.Dollar).ToSql()
 	if err == nil {
 		if _, err = pool.Exec(ctx, sql, args...); err == nil {
@@ -90,16 +90,11 @@ func DeleteSessionToken(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) e
 }
 
 func BakeCookie(token *Token, domain string) (*http.Cookie, error) {
-	sidBin, err := token.ID.MarshalBinary()
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal session ID: %w", err)
-	}
-
 	secure := os.Getenv("INSECURE_COOKIE") != "true"
 
 	return &http.Cookie{
 		Name:     "sid",
-		Value:    hex.EncodeToString(sidBin),
+		Value:    hex.EncodeToString(token.ID),
 		Path:     "/",
 		Domain:   domain,
 		Expires:  token.Expires,

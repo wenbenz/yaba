@@ -2,7 +2,6 @@ package auth
 
 import (
 	"encoding/hex"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/net/context"
 	"net/http"
@@ -27,11 +26,11 @@ func (si *SessionInterceptor) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 func (si *SessionInterceptor) setContext(ctx context.Context, sid string) context.Context {
 	decodedSID, err := hex.DecodeString(sid)
-	if err != nil || len(decodedSID) != 16 {
+	if err != nil || len(decodedSID) != sessionTokenSize {
 		return ctx
 	}
 
-	token, err := GetSessionToken(ctx, si.Pool, uuid.UUID(decodedSID))
+	token, err := GetSessionToken(ctx, si.Pool, decodedSID)
 	if err != nil {
 		return ctx
 	}

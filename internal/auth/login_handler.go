@@ -17,6 +17,20 @@ type LoginHandler struct {
 	LoginFunc func(context.Context, *pgxpool.Pool, string, string) (*uuid.UUID, error)
 }
 
+func CreateNewUserHandler(pool *pgxpool.Pool) *LoginHandler {
+	return &LoginHandler{
+		Pool:      pool,
+		LoginFunc: user.CreateNewUser,
+	}
+}
+
+func VerifyUserHandler(pool *pgxpool.Pool) *LoginHandler {
+	return &LoginHandler{
+		Pool:      pool,
+		LoginFunc: user.VerifyUser,
+	}
+}
+
 func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
@@ -59,17 +73,3 @@ func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 var _ http.Handler = (*LoginHandler)(nil)
-
-func NewUserHandler(pool *pgxpool.Pool) *LoginHandler {
-	return &LoginHandler{
-		Pool:      pool,
-		LoginFunc: user.CreateNewUser,
-	}
-}
-
-func VerifyUserHandler(pool *pgxpool.Pool) *LoginHandler {
-	return &LoginHandler{
-		Pool:      pool,
-		LoginFunc: user.VerifyUser,
-	}
-}

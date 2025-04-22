@@ -396,6 +396,418 @@ func TestCreateExpenditures(t *testing.T) {
 	})
 }
 
+//nolint:paralleltest
+func TestCreateRewardCard(t *testing.T) {
+	user := uuid.New()
+	ctx := ctxutil.WithUser(t.Context(), user)
+	pool := helper.GetTestPool()
+	resolver := &handlers.Resolver{Pool: pool}
+
+	input := model.RewardCardInput{
+		Name:            "Chase Freedom Flex",
+		Issuer:          "Chase",
+		Region:          "US",
+		RewardRate:      5.0,
+		RewardType:      "points",
+		RewardCashValue: 0.01,
+	}
+
+	// Create the reward card
+	_, _ = pool.Exec(ctx, "TRUNCATE TABLE rewards_card;")
+	result, err := resolver.Mutation().CreateRewardCard(ctx, input)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	// Verify the created reward card fields
+	require.Equal(t, input.Name, result.Name)
+	require.Equal(t, input.Issuer, result.Issuer)
+	require.Equal(t, input.Region, result.Region)
+	require.InDelta(t, input.RewardRate, result.RewardRate, .0001)
+	require.Equal(t, input.RewardType, result.RewardType)
+	require.InDelta(t, input.RewardCashValue, result.RewardCashValue, .0001)
+
+	// Verify persistence using RewardCards query
+	cards, err := resolver.Query().RewardCards(ctx, &input.Issuer, &input.Name, &input.Region)
+	require.NoError(t, err)
+	require.Len(t, cards, 1)
+
+	// Verify the queried card matches the created one
+	require.Equal(t, result.ID, cards[0].ID)
+	require.Equal(t, result.Name, cards[0].Name)
+	require.Equal(t, result.Issuer, cards[0].Issuer)
+	require.Equal(t, result.Region, cards[0].Region)
+	require.InDelta(t, result.RewardRate, cards[0].RewardRate, .0001)
+	require.Equal(t, result.RewardType, cards[0].RewardType)
+	require.InDelta(t, result.RewardCashValue, cards[0].RewardCashValue, .0001)
+}
+
+func TestCreatePaymentMethodSuccess(t *testing.T) {
+	t.Parallel()
+
+	user := uuid.New()
+	ctx := ctxutil.WithUser(t.Context(), user)
+	pool := helper.GetTestPool()
+	resolver := &handlers.Resolver{Pool: pool}
+
+	// Create a reward card first
+	rewardCard, err := resolver.Mutation().CreateRewardCard(ctx, model.RewardCardInput{
+		Name:            "Chase Sapphire Reserve",
+		Issuer:          "Chase",
+		Region:          "US",
+		RewardRate:      3.0,
+		RewardType:      "points",
+		RewardCashValue: 0.015,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, rewardCard)
+
+	// Create the payment method
+	input := model.PaymentMethodInput{
+		DisplayName:  ptr("Test Credit Card"),
+		CardType:     ptr(rewardCard.ID),
+		AcquiredDate: ptr("2024-03-20"),
+		CancelByDate: ptr("2025-03-20"),
+	}
+
+	result, err := resolver.Mutation().CreatePaymentMethod(ctx, input)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	// Verify the created payment method
+	require.Equal(t, *input.DisplayName, result.DisplayName)
+	require.Equal(t, *input.CardType, result.CardType)
+	require.Equal(t, *input.AcquiredDate, *result.AcquiredDate)
+	require.Equal(t, *input.CancelByDate, *result.CancelByDate)
+
+	// Verify it was persisted
+	persisted, err := database.GetPaymentMethod(ctx, pool, uuid.MustParse(result.ID))
+	require.NoError(t, err)
+	require.Equal(t, *input.DisplayName, persisted.DisplayName)
+	require.Equal(t, *input.CardType, persisted.CardType.String())
+}
+
+func TestCreatePaymentMethodMissingFields(t *testing.T) {
+	t.Parallel()
+
+	user := uuid.New()
+	ctx := ctxutil.WithUser(t.Context(), user)
+	pool := helper.GetTestPool()
+	resolver := &handlers.Resolver{Pool: pool}
+
+	input := model.PaymentMethodInput{
+		DisplayName: ptr("Test Card"),
+		// Missing other required fields
+	}
+
+	result, err := resolver.Mutation().CreatePaymentMethod(ctx, input)
+	require.Error(t, err)
+	require.Nil(t, result)
+}
+
+func TestUpdatePaymentMethod(t *testing.T) {
+	t.Parallel()
+
+	user := uuid.New()
+	ctx := ctxutil.WithUser(t.Context(), user)
+	pool := helper.GetTestPool()
+	resolver := &handlers.Resolver{Pool: pool}
+
+	// Create a reward card first
+	rewardCard, err := resolver.Mutation().CreateRewardCard(ctx, model.RewardCardInput{
+		Name:            "Chase Sapphire Reserve",
+		Issuer:          "Chase",
+		Region:          "US",
+		RewardRate:      3.0,
+		RewardType:      "points",
+		RewardCashValue: 0.015,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, rewardCard)
+
+	// Create another reward card for updating
+	newRewardCard, err := resolver.Mutation().CreateRewardCard(ctx, model.RewardCardInput{
+		Name:            "Amex Gold",
+		Issuer:          "American Express",
+		Region:          "US",
+		RewardRate:      4.0,
+		RewardType:      "points",
+		RewardCashValue: 0.01,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, newRewardCard)
+
+	// Create initial payment method
+	createInput := model.PaymentMethodInput{
+		DisplayName:  ptr("Original Card"),
+		CardType:     ptr(rewardCard.ID),
+		AcquiredDate: ptr("2024-03-20"),
+		CancelByDate: ptr("2025-03-20"),
+	}
+
+	created, err := resolver.Mutation().CreatePaymentMethod(ctx, createInput)
+	require.NoError(t, err)
+	require.NotNil(t, created)
+
+	// Update the payment method
+	updateInput := model.PaymentMethodInput{
+		DisplayName:  ptr("Updated Card"),
+		CardType:     ptr(newRewardCard.ID),
+		AcquiredDate: ptr("2024-03-21"),
+		CancelByDate: ptr("2025-03-21"),
+	}
+
+	updated, err := resolver.Mutation().UpdatePaymentMethod(ctx, created.ID, updateInput)
+	require.NoError(t, err)
+	require.NotNil(t, updated)
+
+	// Verify the updated fields
+	require.Equal(t, *updateInput.DisplayName, updated.DisplayName)
+	require.Equal(t, *updateInput.CardType, updated.CardType)
+	require.Equal(t, *updateInput.AcquiredDate, *updated.AcquiredDate)
+	require.Equal(t, *updateInput.CancelByDate, *updated.CancelByDate)
+
+	// Verify persistence
+	persisted, err := database.GetPaymentMethod(ctx, pool, uuid.MustParse(updated.ID))
+	require.NoError(t, err)
+	require.Equal(t, *updateInput.DisplayName, persisted.DisplayName)
+	require.Equal(t, *updateInput.CardType, persisted.CardType.String())
+
+	// Verify using the query resolver
+	methods, err := resolver.Query().PaymentMethods(ctx)
+	require.NoError(t, err)
+	require.Len(t, methods, 1)
+	require.Equal(t, updated.ID, methods[0].ID)
+	require.Equal(t, updated.DisplayName, methods[0].DisplayName)
+}
+
+func TestDeletePaymentMethod(t *testing.T) {
+	t.Parallel()
+
+	user := uuid.New()
+	ctx := ctxutil.WithUser(t.Context(), user)
+	pool := helper.GetTestPool()
+	resolver := &handlers.Resolver{Pool: pool}
+
+	// Create a reward card first
+	rewardCard, err := resolver.Mutation().CreateRewardCard(ctx, model.RewardCardInput{
+		Name:            "Chase Sapphire Reserve",
+		Issuer:          "Chase",
+		Region:          "US",
+		RewardRate:      3.0,
+		RewardType:      "points",
+		RewardCashValue: 0.015,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, rewardCard)
+
+	// Create a payment method to delete
+	input := model.PaymentMethodInput{
+		DisplayName:  ptr("Test Credit Card"),
+		CardType:     ptr(rewardCard.ID),
+		AcquiredDate: ptr("2024-03-20"),
+		CancelByDate: ptr("2025-03-20"),
+	}
+
+	created, err := resolver.Mutation().CreatePaymentMethod(ctx, input)
+	require.NoError(t, err)
+	require.NotNil(t, created)
+
+	// Verify payment method exists
+	methods, err := resolver.Query().PaymentMethods(ctx)
+	require.NoError(t, err)
+	require.Len(t, methods, 1)
+
+	// Delete the payment method
+	success, err := resolver.Mutation().DeletePaymentMethod(ctx, created.ID)
+	require.NoError(t, err)
+	require.True(t, success)
+
+	// Verify payment method was deleted
+	methods, err = resolver.Query().PaymentMethods(ctx)
+	require.NoError(t, err)
+	require.Empty(t, methods)
+
+	// Try to delete non-existent payment method
+	success, err = resolver.Mutation().DeletePaymentMethod(ctx, created.ID)
+	require.NoError(t, err)
+	require.False(t, success)
+}
+
+func TestPaymentMethods_Empty(t *testing.T) {
+	t.Parallel()
+
+	user := uuid.New()
+	ctx := ctxutil.WithUser(t.Context(), user)
+	pool := helper.GetTestPool()
+	resolver := &handlers.Resolver{Pool: pool}
+
+	methods, err := resolver.Query().PaymentMethods(ctx)
+	require.NoError(t, err)
+	require.Empty(t, methods)
+}
+
+func TestPaymentMethods_WithCards(t *testing.T) {
+	t.Parallel()
+
+	user := uuid.New()
+	ctx := ctxutil.WithUser(t.Context(), user)
+	pool := helper.GetTestPool()
+	resolver := &handlers.Resolver{Pool: pool}
+
+	// Create a reward card first
+	rewardCard, err := resolver.Mutation().CreateRewardCard(ctx, model.RewardCardInput{
+		Name:            "Chase Sapphire Reserve",
+		Issuer:          "Chase",
+		Region:          "US",
+		RewardRate:      3.0,
+		RewardType:      "points",
+		RewardCashValue: 0.015,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, rewardCard)
+
+	// Create multiple payment methods
+	inputs := []model.PaymentMethodInput{
+		{
+			DisplayName:  ptr("Card 1"),
+			CardType:     ptr(rewardCard.ID),
+			AcquiredDate: ptr("2024-03-20"),
+			CancelByDate: ptr("2025-03-20"),
+		},
+		{
+			DisplayName:  ptr("Card 2"),
+			CardType:     ptr(rewardCard.ID),
+			AcquiredDate: ptr("2024-03-21"),
+			CancelByDate: ptr("2025-03-21"),
+		},
+	}
+
+	for _, input := range inputs {
+		result, err := resolver.Mutation().CreatePaymentMethod(ctx, input)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, *input.DisplayName, result.DisplayName)
+	}
+
+	// Create a payment method under a different user
+	otherUser := uuid.New()
+	otherCtx := ctxutil.WithUser(t.Context(), otherUser)
+	result, err := resolver.Mutation().CreatePaymentMethod(otherCtx,
+		model.PaymentMethodInput{CardType: ptr(rewardCard.ID)})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.NotEqual(t, result.ID, uuid.Nil)
+
+	// Query all payment methods
+	methods, err := resolver.Query().PaymentMethods(ctx)
+	require.NoError(t, err)
+	require.Len(t, methods, 2)
+
+	// Verify the payment methods match the inputs
+	for i, method := range methods {
+		require.Equal(t, *inputs[i].DisplayName, method.DisplayName)
+		require.Equal(t, *inputs[i].CardType, method.CardType)
+		require.Equal(t, *inputs[i].AcquiredDate, *method.AcquiredDate)
+		require.Equal(t, *inputs[i].CancelByDate, *method.CancelByDate)
+	}
+}
+
+//nolint:paralleltest
+func TestRewardCards(t *testing.T) {
+	user := uuid.New()
+	ctx := ctxutil.WithUser(t.Context(), user)
+	pool := helper.GetTestPool()
+	resolver := &handlers.Resolver{Pool: pool}
+
+	t.Run("empty rewards cards", func(t *testing.T) {
+		_, _ = pool.Exec(ctx, "TRUNCATE TABLE rewards_card;")
+		cards, err := resolver.Query().RewardCards(ctx, nil, nil, nil)
+		require.NoError(t, err)
+		require.Empty(t, cards)
+	})
+
+	t.Run("with reward cards and filters", func(t *testing.T) {
+		_, _ = pool.Exec(ctx, "TRUNCATE TABLE rewards_card;")
+		// Create multiple reward cards
+		inputs := []model.RewardCardInput{
+			{
+				Name:            "Chase Sapphire Reserve",
+				Issuer:          "Chase",
+				Region:          "US",
+				RewardRate:      3.0,
+				RewardType:      "points",
+				RewardCashValue: 0.015,
+			},
+			{
+				Name:            "Amex Gold",
+				Issuer:          "American Express",
+				Region:          "US",
+				RewardRate:      4.0,
+				RewardType:      "points",
+				RewardCashValue: 0.01,
+			},
+			{
+				Name:            "Chase Freedom Flex",
+				Issuer:          "Chase",
+				Region:          "US",
+				RewardRate:      5.0,
+				RewardType:      "points",
+				RewardCashValue: 0.01,
+			},
+		}
+
+		// Create reward cards
+		for _, input := range inputs {
+			result, err := resolver.Mutation().CreateRewardCard(ctx, input)
+			require.NoError(t, err)
+			require.NotNil(t, result)
+			require.Equal(t, input.Name, result.Name)
+		}
+
+		// Test no filters
+		cards, err := resolver.Query().RewardCards(ctx, nil, nil, nil)
+		require.NoError(t, err)
+		require.Len(t, cards, 3)
+
+		// Test issuer filter
+		issuer := "Chase"
+		cards, err = resolver.Query().RewardCards(ctx, &issuer, nil, nil)
+		require.NoError(t, err)
+		require.Len(t, cards, 2)
+
+		for _, card := range cards {
+			require.Equal(t, "Chase", card.Issuer)
+		}
+
+		// Test name filter
+		name := "Amex Gold"
+		cards, err = resolver.Query().RewardCards(ctx, nil, &name, nil)
+		require.NoError(t, err)
+		require.Len(t, cards, 1)
+		require.Equal(t, "Amex Gold", cards[0].Name)
+
+		// Test region filter
+		region := "US"
+		cards, err = resolver.Query().RewardCards(ctx, nil, nil, &region)
+		require.NoError(t, err)
+		require.Len(t, cards, 3)
+
+		for _, card := range cards {
+			require.Equal(t, "US", card.Region)
+		}
+
+		// Test combined filters
+		cards, err = resolver.Query().RewardCards(ctx, &issuer, nil, &region)
+		require.NoError(t, err)
+		require.Len(t, cards, 2)
+
+		for _, card := range cards {
+			require.Equal(t, "Chase", card.Issuer)
+			require.Equal(t, "US", card.Region)
+		}
+	})
+}
+
 func ptr(s string) *string {
 	return &s
 }

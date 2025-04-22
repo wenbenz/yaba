@@ -26,3 +26,27 @@ type ExpenditureSummary struct {
 	Amount    float64   `db:"amount"`
 	StartDate time.Time `db:"date"`
 }
+
+type Aggregation string
+
+const (
+	AggregationSum     Aggregation = "SUM"
+	AggregationAverage Aggregation = "AVG"
+)
+
+type Timespan string
+
+const (
+	TimespanDay   Timespan = "DAY"
+	TimespanWeek  Timespan = "WEEK"
+	TimespanMonth Timespan = "MONTH"
+	TimespanYear  Timespan = "YEAR"
+)
+
+type GroupBy string
+
+const (
+	GroupByNone           GroupBy = "NONE"
+	GroupByBudgetCategory GroupBy = "BUDGET_CATEGORY"
+	GroupByRewardCategory GroupBy = "REWARD_CATEGORY"
+)
