@@ -103,23 +103,31 @@ type Query struct {
 }
 
 type RewardCard struct {
-	ID              string  `json:"id"`
-	Name            string  `json:"name"`
-	Issuer          string  `json:"issuer"`
-	Region          string  `json:"region"`
-	Version         int     `json:"version"`
-	RewardRate      float64 `json:"rewardRate"`
-	RewardType      string  `json:"rewardType"`
-	RewardCashValue float64 `json:"rewardCashValue"`
+	ID         string            `json:"id"`
+	Name       string            `json:"name"`
+	Issuer     string            `json:"issuer"`
+	Region     string            `json:"region"`
+	Version    int               `json:"version"`
+	RewardType string            `json:"rewardType"`
+	Categories []*RewardCategory `json:"categories,omitempty"`
 }
 
 type RewardCardInput struct {
-	Name            string  `json:"name"`
-	Issuer          string  `json:"issuer"`
-	Region          string  `json:"region"`
-	RewardRate      float64 `json:"rewardRate"`
-	RewardType      string  `json:"rewardType"`
-	RewardCashValue float64 `json:"rewardCashValue"`
+	Name             string                 `json:"name"`
+	Issuer           string                 `json:"issuer"`
+	Region           string                 `json:"region"`
+	RewardType       string                 `json:"rewardType"`
+	RewardCategories []*RewardCategoryInput `json:"rewardCategories,omitempty"`
+}
+
+type RewardCategory struct {
+	Category string  `json:"category"`
+	Rate     float64 `json:"rate"`
+}
+
+type RewardCategoryInput struct {
+	Category string  `json:"category"`
+	Rate     float64 `json:"rate"`
 }
 
 type UpdateBudgetInput struct {

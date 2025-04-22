@@ -63,7 +63,7 @@ type QueryResolver interface {
 	Expenditures(ctx context.Context, since *string, until *string, source *string, category *string, count *int, offset *int) ([]*model.ExpenditureResponse, error)
 	AggregatedExpenditures(ctx context.Context, since *string, until *string, span *model.Timespan, groupBy *model.GroupBy, aggregation *model.Aggregation) ([]*model.AggregatedExpendituresResponse, error)
 	PaymentMethods(ctx context.Context) ([]*model.PaymentMethod, error)
-	RewardCards(ctx context.Context, issuer *string, name *string, region *string) ([]*model.RewardCard, error)
+	RewardCards(ctx context.Context, issuer *string, name *string, region *string, limit *int, offset *int) ([]*model.RewardCard, error)
 }
 
 type executableSchema struct {
@@ -97,6 +97,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputNewBudgetInput,
 		ec.unmarshalInputPaymentMethodInput,
 		ec.unmarshalInputRewardCardInput,
+		ec.unmarshalInputRewardCategoryInput,
 		ec.unmarshalInputUpdateBudgetInput,
 	)
 	first := true
@@ -265,9 +266,13 @@ type RewardCard {
     issuer: String!
     region: String!
     version: Int!
-    rewardRate: Float!
     rewardType: String!
-    rewardCashValue: Float!
+    categories: [RewardCategory!]
+}
+
+type RewardCategory {
+    category: String!
+    rate: Float!
 }
 
 type PaymentMethod {
@@ -288,7 +293,7 @@ type Query {
         groupBy: GroupBy, aggregation: Aggregation): [AggregatedExpendituresResponse]
 
     paymentMethods: [PaymentMethod!]!
-    rewardCards(issuer: String, name: String, region: String): [RewardCard!]!
+    rewardCards(issuer: String, name: String, region: String, limit: Int, Offset: Int): [RewardCard!]!
 }
 
 input NewBudgetInput {
@@ -335,13 +340,17 @@ input PaymentMethodInput {
     cardType: ID
 }
 
+input RewardCategoryInput {
+    category: String!
+    rate: Float!
+}
+
 input RewardCardInput {
     name: String!
     issuer: String!
     region: String!
-    rewardRate: Float!
     rewardType: String!
-    rewardCashValue: Float!
+    rewardCategories: [RewardCategoryInput!]
 }
 
 type Mutation {
@@ -948,6 +957,16 @@ func (ec *executionContext) field_Query_rewardCards_args(ctx context.Context, ra
 		return nil, err
 	}
 	args["region"] = arg2
+	arg3, err := ec.field_Query_rewardCards_argsLimit(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg3
+	arg4, err := ec.field_Query_rewardCards_argsOffset(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["Offset"] = arg4
 	return args, nil
 }
 func (ec *executionContext) field_Query_rewardCards_argsIssuer(
@@ -1001,6 +1020,42 @@ func (ec *executionContext) field_Query_rewardCards_argsRegion(
 	}
 
 	var zeroVal *string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_rewardCards_argsLimit(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["limit"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+	if tmp, ok := rawArgs["limit"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_rewardCards_argsOffset(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["Offset"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("Offset"))
+	if tmp, ok := rawArgs["Offset"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
 	return zeroVal, nil
 }
 
@@ -2671,12 +2726,10 @@ func (ec *executionContext) fieldContext_Mutation_createRewardCard(ctx context.C
 				return ec.fieldContext_RewardCard_region(ctx, field)
 			case "version":
 				return ec.fieldContext_RewardCard_version(ctx, field)
-			case "rewardRate":
-				return ec.fieldContext_RewardCard_rewardRate(ctx, field)
 			case "rewardType":
 				return ec.fieldContext_RewardCard_rewardType(ctx, field)
-			case "rewardCashValue":
-				return ec.fieldContext_RewardCard_rewardCashValue(ctx, field)
+			case "categories":
+				return ec.fieldContext_RewardCard_categories(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type RewardCard", field.Name)
 		},
@@ -2955,12 +3008,10 @@ func (ec *executionContext) fieldContext_PaymentMethod_rewards(_ context.Context
 				return ec.fieldContext_RewardCard_region(ctx, field)
 			case "version":
 				return ec.fieldContext_RewardCard_version(ctx, field)
-			case "rewardRate":
-				return ec.fieldContext_RewardCard_rewardRate(ctx, field)
 			case "rewardType":
 				return ec.fieldContext_RewardCard_rewardType(ctx, field)
-			case "rewardCashValue":
-				return ec.fieldContext_RewardCard_rewardCashValue(ctx, field)
+			case "categories":
+				return ec.fieldContext_RewardCard_categories(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type RewardCard", field.Name)
 		},
@@ -3306,7 +3357,7 @@ func (ec *executionContext) _Query_rewardCards(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().RewardCards(rctx, fc.Args["issuer"].(*string), fc.Args["name"].(*string), fc.Args["region"].(*string))
+		return ec.resolvers.Query().RewardCards(rctx, fc.Args["issuer"].(*string), fc.Args["name"].(*string), fc.Args["region"].(*string), fc.Args["limit"].(*int), fc.Args["Offset"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3341,12 +3392,10 @@ func (ec *executionContext) fieldContext_Query_rewardCards(ctx context.Context, 
 				return ec.fieldContext_RewardCard_region(ctx, field)
 			case "version":
 				return ec.fieldContext_RewardCard_version(ctx, field)
-			case "rewardRate":
-				return ec.fieldContext_RewardCard_rewardRate(ctx, field)
 			case "rewardType":
 				return ec.fieldContext_RewardCard_rewardType(ctx, field)
-			case "rewardCashValue":
-				return ec.fieldContext_RewardCard_rewardCashValue(ctx, field)
+			case "categories":
+				return ec.fieldContext_RewardCard_categories(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type RewardCard", field.Name)
 		},
@@ -3716,50 +3765,6 @@ func (ec *executionContext) fieldContext_RewardCard_version(_ context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _RewardCard_rewardRate(ctx context.Context, field graphql.CollectedField, obj *model.RewardCard) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RewardCard_rewardRate(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.RewardRate, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(float64)
-	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_RewardCard_rewardRate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "RewardCard",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Float does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _RewardCard_rewardType(ctx context.Context, field graphql.CollectedField, obj *model.RewardCard) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_RewardCard_rewardType(ctx, field)
 	if err != nil {
@@ -3804,8 +3809,8 @@ func (ec *executionContext) fieldContext_RewardCard_rewardType(_ context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _RewardCard_rewardCashValue(ctx context.Context, field graphql.CollectedField, obj *model.RewardCard) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RewardCard_rewardCashValue(ctx, field)
+func (ec *executionContext) _RewardCard_categories(ctx context.Context, field graphql.CollectedField, obj *model.RewardCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RewardCard_categories(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -3818,7 +3823,98 @@ func (ec *executionContext) _RewardCard_rewardCashValue(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.RewardCashValue, nil
+		return obj.Categories, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.RewardCategory)
+	fc.Result = res
+	return ec.marshalORewardCategory2ᚕᚖyabaᚋgraphᚋmodelᚐRewardCategoryᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RewardCard_categories(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RewardCard",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "category":
+				return ec.fieldContext_RewardCategory_category(ctx, field)
+			case "rate":
+				return ec.fieldContext_RewardCategory_rate(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RewardCategory", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RewardCategory_category(ctx context.Context, field graphql.CollectedField, obj *model.RewardCategory) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RewardCategory_category(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Category, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RewardCategory_category(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RewardCategory",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RewardCategory_rate(ctx context.Context, field graphql.CollectedField, obj *model.RewardCategory) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RewardCategory_rate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Rate, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3835,9 +3931,9 @@ func (ec *executionContext) _RewardCard_rewardCashValue(ctx context.Context, fie
 	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_RewardCard_rewardCashValue(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_RewardCategory_rate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "RewardCard",
+		Object:     "RewardCategory",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -6067,7 +6163,7 @@ func (ec *executionContext) unmarshalInputRewardCardInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "issuer", "region", "rewardRate", "rewardType", "rewardCashValue"}
+	fieldsInOrder := [...]string{"name", "issuer", "region", "rewardType", "rewardCategories"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6095,13 +6191,6 @@ func (ec *executionContext) unmarshalInputRewardCardInput(ctx context.Context, o
 				return it, err
 			}
 			it.Region = data
-		case "rewardRate":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rewardRate"))
-			data, err := ec.unmarshalNFloat2float64(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.RewardRate = data
 		case "rewardType":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rewardType"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -6109,13 +6198,47 @@ func (ec *executionContext) unmarshalInputRewardCardInput(ctx context.Context, o
 				return it, err
 			}
 			it.RewardType = data
-		case "rewardCashValue":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rewardCashValue"))
+		case "rewardCategories":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rewardCategories"))
+			data, err := ec.unmarshalORewardCategoryInput2ᚕᚖyabaᚋgraphᚋmodelᚐRewardCategoryInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RewardCategories = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputRewardCategoryInput(ctx context.Context, obj any) (model.RewardCategoryInput, error) {
+	var it model.RewardCategoryInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"category", "rate"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "category":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Category = data
+		case "rate":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rate"))
 			data, err := ec.unmarshalNFloat2float64(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.RewardCashValue = data
+			it.Rate = data
 		}
 	}
 
@@ -6745,18 +6868,54 @@ func (ec *executionContext) _RewardCard(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "rewardRate":
-			out.Values[i] = ec._RewardCard_rewardRate(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "rewardType":
 			out.Values[i] = ec._RewardCard_rewardType(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "rewardCashValue":
-			out.Values[i] = ec._RewardCard_rewardCashValue(ctx, field, obj)
+		case "categories":
+			out.Values[i] = ec._RewardCard_categories(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var rewardCategoryImplementors = []string{"RewardCategory"}
+
+func (ec *executionContext) _RewardCategory(ctx context.Context, sel ast.SelectionSet, obj *model.RewardCategory) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, rewardCategoryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RewardCategory")
+		case "category":
+			out.Values[i] = ec._RewardCategory_category(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "rate":
+			out.Values[i] = ec._RewardCategory_rate(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -7322,6 +7481,21 @@ func (ec *executionContext) marshalNRewardCard2ᚖyabaᚋgraphᚋmodelᚐRewardC
 func (ec *executionContext) unmarshalNRewardCardInput2yabaᚋgraphᚋmodelᚐRewardCardInput(ctx context.Context, v any) (model.RewardCardInput, error) {
 	res, err := ec.unmarshalInputRewardCardInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNRewardCategory2ᚖyabaᚋgraphᚋmodelᚐRewardCategory(ctx context.Context, sel ast.SelectionSet, v *model.RewardCategory) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._RewardCategory(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNRewardCategoryInput2ᚖyabaᚋgraphᚋmodelᚐRewardCategoryInput(ctx context.Context, v any) (*model.RewardCategoryInput, error) {
+	res, err := ec.unmarshalInputRewardCategoryInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
@@ -8006,6 +8180,71 @@ func (ec *executionContext) marshalORewardCard2ᚖyabaᚋgraphᚋmodelᚐRewardC
 		return graphql.Null
 	}
 	return ec._RewardCard(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORewardCategory2ᚕᚖyabaᚋgraphᚋmodelᚐRewardCategoryᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.RewardCategory) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNRewardCategory2ᚖyabaᚋgraphᚋmodelᚐRewardCategory(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalORewardCategoryInput2ᚕᚖyabaᚋgraphᚋmodelᚐRewardCategoryInputᚄ(ctx context.Context, v any) ([]*model.RewardCategoryInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.RewardCategoryInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNRewardCategoryInput2ᚖyabaᚋgraphᚋmodelᚐRewardCategoryInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {

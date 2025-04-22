@@ -21,14 +21,13 @@ func TestCreateAndGetPaymentMethod(t *testing.T) {
 
 	// Create reward cards first
 	rewardCard := &model.RewardCard{
-		ID:              uuid.New(),
-		Name:            "Freedom Flex",
-		Version:         1,
-		Issuer:          "Chase",
-		Region:          "USA",
-		RewardRate:      0.05,
-		RewardType:      "cash",
-		RewardCashValue: 0.05,
+		ID:      uuid.New(),
+		Name:    "Freedom Flex",
+		Version: 1,
+		Issuer:  "Chase",
+		Region:  "USA",
+
+		RewardType: "cash",
 	}
 	err := database.CreateRewardCard(ctx, pool, rewardCard)
 	require.NoError(t, err)
@@ -93,8 +92,6 @@ func TestCreateAndGetPaymentMethod(t *testing.T) {
 				require.Equal(t, rewardCard.Version, stored.Rewards.Version)
 				require.Equal(t, rewardCard.Issuer, stored.Rewards.Issuer)
 				require.Equal(t, rewardCard.RewardType, stored.Rewards.RewardType)
-				require.InEpsilon(t, rewardCard.RewardRate, stored.Rewards.RewardRate, 0.0001)
-				require.InEpsilon(t, rewardCard.RewardCashValue, stored.Rewards.RewardCashValue, 0.0001)
 			} else {
 				require.Nil(t, stored.Rewards)
 			}
@@ -144,14 +141,13 @@ func TestListPaymentMethods(t *testing.T) {
 
 	// Create a reward card first
 	rewardCard := &model.RewardCard{
-		ID:              uuid.New(),
-		Name:            "Freedom Flex",
-		Version:         1,
-		Issuer:          "Chase",
-		Region:          "USA",
-		RewardRate:      0.05,
-		RewardType:      "cash",
-		RewardCashValue: 0.05,
+		ID:      uuid.New(),
+		Name:    "Freedom Flex",
+		Version: 1,
+		Issuer:  "Chase",
+		Region:  "USA",
+
+		RewardType: "cash",
 	}
 	err := database.CreateRewardCard(ctx, pool, rewardCard)
 	require.NoError(t, err)
