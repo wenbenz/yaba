@@ -398,6 +398,7 @@ func TestCreateExpenditures(t *testing.T) {
 
 func TestCreateRewardCard(t *testing.T) {
 	t.Parallel()
+
 	user := uuid.New()
 	ctx := ctxutil.WithUser(t.Context(), user)
 	pool := helper.NewIsolatedTestPool()

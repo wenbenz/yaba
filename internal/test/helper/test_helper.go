@@ -24,9 +24,7 @@ func NewIsolatedTestPool() *pgxpool.Pool {
 }
 
 //nolint:gochecknoglobals
-var getSingletonPool = sync.OnceValue(func() *pgxpool.Pool {
-	return NewIsolatedTestPool()
-})
+var getSingletonPool = sync.OnceValue(NewIsolatedTestPool)
 
 // https://golang.testcontainers.org/modules/postgres/#initial-database
 func setupTestContainer() *postgres.PostgresContainer {
