@@ -400,20 +400,18 @@ func TestCreateExpenditures(t *testing.T) {
 func TestCreateRewardCard(t *testing.T) {
 	user := uuid.New()
 	ctx := ctxutil.WithUser(t.Context(), user)
-	pool := helper.GetTestPool()
+	pool := helper.NewIsolatedTestPool()
 	resolver := &handlers.Resolver{Pool: pool}
 
 	input := model.RewardCardInput{
-		Name:            "Chase Freedom Flex",
-		Issuer:          "Chase",
-		Region:          "US",
-		RewardRate:      5.0,
-		RewardType:      "points",
-		RewardCashValue: 0.01,
+		Name:   "Chase Freedom Flex",
+		Issuer: "Chase",
+		Region: "US",
+
+		RewardType: "points",
 	}
 
 	// Create the reward card
-	_, _ = pool.Exec(ctx, "TRUNCATE TABLE rewards_card;")
 	result, err := resolver.Mutation().CreateRewardCard(ctx, input)
 	require.NoError(t, err)
 	require.NotNil(t, result)
@@ -422,12 +420,11 @@ func TestCreateRewardCard(t *testing.T) {
 	require.Equal(t, input.Name, result.Name)
 	require.Equal(t, input.Issuer, result.Issuer)
 	require.Equal(t, input.Region, result.Region)
-	require.InDelta(t, input.RewardRate, result.RewardRate, .0001)
+
 	require.Equal(t, input.RewardType, result.RewardType)
-	require.InDelta(t, input.RewardCashValue, result.RewardCashValue, .0001)
 
 	// Verify persistence using RewardCards query
-	cards, err := resolver.Query().RewardCards(ctx, &input.Issuer, &input.Name, &input.Region)
+	cards, err := resolver.Query().RewardCards(ctx, &input.Issuer, &input.Name, &input.Region, nil, nil)
 	require.NoError(t, err)
 	require.Len(t, cards, 1)
 
@@ -436,9 +433,7 @@ func TestCreateRewardCard(t *testing.T) {
 	require.Equal(t, result.Name, cards[0].Name)
 	require.Equal(t, result.Issuer, cards[0].Issuer)
 	require.Equal(t, result.Region, cards[0].Region)
-	require.InDelta(t, result.RewardRate, cards[0].RewardRate, .0001)
 	require.Equal(t, result.RewardType, cards[0].RewardType)
-	require.InDelta(t, result.RewardCashValue, cards[0].RewardCashValue, .0001)
 }
 
 func TestCreatePaymentMethodSuccess(t *testing.T) {
@@ -451,12 +446,11 @@ func TestCreatePaymentMethodSuccess(t *testing.T) {
 
 	// Create a reward card first
 	rewardCard, err := resolver.Mutation().CreateRewardCard(ctx, model.RewardCardInput{
-		Name:            "Chase Sapphire Reserve",
-		Issuer:          "Chase",
-		Region:          "US",
-		RewardRate:      3.0,
-		RewardType:      "points",
-		RewardCashValue: 0.015,
+		Name:   "Chase Sapphire Reserve",
+		Issuer: "Chase",
+		Region: "US",
+
+		RewardType: "points",
 	})
 	require.NoError(t, err)
 	require.NotNil(t, rewardCard)
@@ -514,24 +508,22 @@ func TestUpdatePaymentMethod(t *testing.T) {
 
 	// Create a reward card first
 	rewardCard, err := resolver.Mutation().CreateRewardCard(ctx, model.RewardCardInput{
-		Name:            "Chase Sapphire Reserve",
-		Issuer:          "Chase",
-		Region:          "US",
-		RewardRate:      3.0,
-		RewardType:      "points",
-		RewardCashValue: 0.015,
+		Name:   "Chase Sapphire Reserve",
+		Issuer: "Chase",
+		Region: "US",
+
+		RewardType: "points",
 	})
 	require.NoError(t, err)
 	require.NotNil(t, rewardCard)
 
 	// Create another reward card for updating
 	newRewardCard, err := resolver.Mutation().CreateRewardCard(ctx, model.RewardCardInput{
-		Name:            "Amex Gold",
-		Issuer:          "American Express",
-		Region:          "US",
-		RewardRate:      4.0,
-		RewardType:      "points",
-		RewardCashValue: 0.01,
+		Name:   "Amex Gold",
+		Issuer: "American Express",
+		Region: "US",
+
+		RewardType: "points",
 	})
 	require.NoError(t, err)
 	require.NotNil(t, newRewardCard)
@@ -590,12 +582,11 @@ func TestDeletePaymentMethod(t *testing.T) {
 
 	// Create a reward card first
 	rewardCard, err := resolver.Mutation().CreateRewardCard(ctx, model.RewardCardInput{
-		Name:            "Chase Sapphire Reserve",
-		Issuer:          "Chase",
-		Region:          "US",
-		RewardRate:      3.0,
-		RewardType:      "points",
-		RewardCashValue: 0.015,
+		Name:   "Chase Sapphire Reserve",
+		Issuer: "Chase",
+		Region: "US",
+
+		RewardType: "points",
 	})
 	require.NoError(t, err)
 	require.NotNil(t, rewardCard)
@@ -656,12 +647,11 @@ func TestPaymentMethods_WithCards(t *testing.T) {
 
 	// Create a reward card first
 	rewardCard, err := resolver.Mutation().CreateRewardCard(ctx, model.RewardCardInput{
-		Name:            "Chase Sapphire Reserve",
-		Issuer:          "Chase",
-		Region:          "US",
-		RewardRate:      3.0,
-		RewardType:      "points",
-		RewardCashValue: 0.015,
+		Name:   "Chase Sapphire Reserve",
+		Issuer: "Chase",
+		Region: "US",
+
+		RewardType: "points",
 	})
 	require.NoError(t, err)
 	require.NotNil(t, rewardCard)
@@ -713,99 +703,97 @@ func TestPaymentMethods_WithCards(t *testing.T) {
 }
 
 //nolint:paralleltest
+func TestRewardCards_empty(t *testing.T) {
+	user := uuid.New()
+	ctx := ctxutil.WithUser(t.Context(), user)
+	pool := helper.NewIsolatedTestPool()
+	resolver := &handlers.Resolver{Pool: pool}
+
+	cards, err := resolver.Query().RewardCards(ctx, nil, nil, nil, nil, nil)
+	require.NoError(t, err)
+	require.Empty(t, cards)
+}
+
+//nolint:paralleltest
 func TestRewardCards(t *testing.T) {
 	user := uuid.New()
 	ctx := ctxutil.WithUser(t.Context(), user)
-	pool := helper.GetTestPool()
+	pool := helper.NewIsolatedTestPool()
 	resolver := &handlers.Resolver{Pool: pool}
+	// Create multiple reward cards
+	inputs := []model.RewardCardInput{
+		{
+			Name:   "Chase Sapphire Reserve",
+			Issuer: "Chase",
+			Region: "US",
 
-	t.Run("empty rewards cards", func(t *testing.T) {
-		_, _ = pool.Exec(ctx, "TRUNCATE TABLE rewards_card;")
-		cards, err := resolver.Query().RewardCards(ctx, nil, nil, nil)
+			RewardType: "points",
+		},
+		{
+			Name:   "Amex Gold",
+			Issuer: "American Express",
+			Region: "US",
+
+			RewardType: "points",
+		},
+		{
+			Name:   "Chase Freedom Flex",
+			Issuer: "Chase",
+			Region: "US",
+
+			RewardType: "points",
+		},
+	}
+
+	// Create reward cards
+	for _, input := range inputs {
+		result, err := resolver.Mutation().CreateRewardCard(ctx, input)
 		require.NoError(t, err)
-		require.Empty(t, cards)
-	})
+		require.NotNil(t, result)
+		require.Equal(t, input.Name, result.Name)
+	}
 
-	t.Run("with reward cards and filters", func(t *testing.T) {
-		_, _ = pool.Exec(ctx, "TRUNCATE TABLE rewards_card;")
-		// Create multiple reward cards
-		inputs := []model.RewardCardInput{
-			{
-				Name:            "Chase Sapphire Reserve",
-				Issuer:          "Chase",
-				Region:          "US",
-				RewardRate:      3.0,
-				RewardType:      "points",
-				RewardCashValue: 0.015,
-			},
-			{
-				Name:            "Amex Gold",
-				Issuer:          "American Express",
-				Region:          "US",
-				RewardRate:      4.0,
-				RewardType:      "points",
-				RewardCashValue: 0.01,
-			},
-			{
-				Name:            "Chase Freedom Flex",
-				Issuer:          "Chase",
-				Region:          "US",
-				RewardRate:      5.0,
-				RewardType:      "points",
-				RewardCashValue: 0.01,
-			},
-		}
+	// Test no filters
+	cards, err := resolver.Query().RewardCards(ctx, nil, nil, nil, nil, nil)
+	require.NoError(t, err)
+	require.Len(t, cards, 3)
 
-		// Create reward cards
-		for _, input := range inputs {
-			result, err := resolver.Mutation().CreateRewardCard(ctx, input)
-			require.NoError(t, err)
-			require.NotNil(t, result)
-			require.Equal(t, input.Name, result.Name)
-		}
+	// Test issuer filter
+	issuer := "Chase"
+	cards, err = resolver.Query().RewardCards(ctx, &issuer, nil, nil, nil, nil)
+	require.NoError(t, err)
+	require.Len(t, cards, 2)
 
-		// Test no filters
-		cards, err := resolver.Query().RewardCards(ctx, nil, nil, nil)
-		require.NoError(t, err)
-		require.Len(t, cards, 3)
+	for _, card := range cards {
+		require.Equal(t, "Chase", card.Issuer)
+	}
 
-		// Test issuer filter
-		issuer := "Chase"
-		cards, err = resolver.Query().RewardCards(ctx, &issuer, nil, nil)
-		require.NoError(t, err)
-		require.Len(t, cards, 2)
+	// Test name filter
+	name := "Amex Gold"
+	cards, err = resolver.Query().RewardCards(ctx, nil, &name, nil, nil, nil)
+	require.NoError(t, err)
+	require.Len(t, cards, 1)
+	require.Equal(t, "Amex Gold", cards[0].Name)
 
-		for _, card := range cards {
-			require.Equal(t, "Chase", card.Issuer)
-		}
+	// Test region filter
+	region := "US"
+	cards, err = resolver.Query().RewardCards(ctx, nil, nil, &region, nil, nil)
+	require.NoError(t, err)
+	require.Len(t, cards, 3)
 
-		// Test name filter
-		name := "Amex Gold"
-		cards, err = resolver.Query().RewardCards(ctx, nil, &name, nil)
-		require.NoError(t, err)
-		require.Len(t, cards, 1)
-		require.Equal(t, "Amex Gold", cards[0].Name)
+	for _, card := range cards {
+		require.Equal(t, "US", card.Region)
+	}
 
-		// Test region filter
-		region := "US"
-		cards, err = resolver.Query().RewardCards(ctx, nil, nil, &region)
-		require.NoError(t, err)
-		require.Len(t, cards, 3)
+	// Test combined filters
+	cards, err = resolver.Query().RewardCards(ctx, &issuer, nil, &region, nil, nil)
+	require.NoError(t, err)
+	require.Len(t, cards, 2)
 
-		for _, card := range cards {
-			require.Equal(t, "US", card.Region)
-		}
-
-		// Test combined filters
-		cards, err = resolver.Query().RewardCards(ctx, &issuer, nil, &region)
-		require.NoError(t, err)
-		require.Len(t, cards, 2)
-
-		for _, card := range cards {
-			require.Equal(t, "Chase", card.Issuer)
-			require.Equal(t, "US", card.Region)
-		}
-	})
+	for _, card := range cards {
+		require.Equal(t, "Chase", card.Issuer)
+		require.Equal(t, "US", card.Region)
+	}
 }
 
 func ptr(s string) *string {

@@ -10,26 +10,40 @@ func RewardCardToRewardCardResponse(rc *model.RewardCard) *RewardCard {
 		return nil
 	}
 
-	return &RewardCard{
-		ID:              rc.ID.String(),
-		Name:            rc.Name,
-		Issuer:          rc.Issuer,
-		Region:          rc.Region,
-		Version:         rc.Version,
-		RewardRate:      rc.RewardRate,
-		RewardType:      rc.RewardType,
-		RewardCashValue: rc.RewardCashValue,
+	card := &RewardCard{
+		ID:         rc.ID.String(),
+		Name:       rc.Name,
+		Issuer:     rc.Issuer,
+		Region:     rc.Region,
+		Version:    rc.Version,
+		RewardType: rc.RewardType,
 	}
+
+	for _, category := range rc.RewardCategories {
+		card.Categories = append(card.Categories, &RewardCategory{
+			Category: category.Category,
+			Rate:     category.Rate,
+		})
+	}
+
+	return card
 }
 
 // RewardCardFromRewardCardInput converts a GraphQL input to an internal reward card.
 func RewardCardFromRewardCardInput(input RewardCardInput) *model.RewardCard {
-	return &model.RewardCard{
-		Name:            input.Name,
-		Issuer:          input.Issuer,
-		Region:          input.Region,
-		RewardRate:      input.RewardRate,
-		RewardType:      input.RewardType,
-		RewardCashValue: input.RewardCashValue,
+	card := &model.RewardCard{
+		Name:       input.Name,
+		Issuer:     input.Issuer,
+		Region:     input.Region,
+		RewardType: input.RewardType,
 	}
+
+	for _, category := range input.RewardCategories {
+		card.RewardCategories = append(card.RewardCategories, &model.RewardCategory{
+			Category: category.Category,
+			Rate:     category.Rate,
+		})
+	}
+
+	return card
 }

@@ -16,12 +16,17 @@ type PaymentMethod struct {
 }
 
 type RewardCard struct {
-	ID              uuid.UUID `db:"id"`
-	Name            string    `db:"name"`
-	Region          string    `db:"region"`
-	Issuer          string    `db:"issuer"`
-	Version         int       `db:"version"`
-	RewardRate      float64   `db:"reward_rate"`
-	RewardType      string    `db:"reward_type"`
-	RewardCashValue float64   `db:"reward_cash_value"`
+	ID               uuid.UUID `db:"id"`
+	Name             string    `db:"name"`
+	Region           string    `db:"region"`
+	Issuer           string    `db:"issuer"`
+	Version          int       `db:"version"`
+	RewardType       string    `db:"reward_type"`
+	RewardCategories []*RewardCategory
+}
+
+type RewardCategory struct {
+	CardID   uuid.UUID `db:"card_id"`
+	Category string    `db:"category"`
+	Rate     float64   `db:"reward_rate"`
 }

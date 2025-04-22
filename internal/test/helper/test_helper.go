@@ -19,10 +19,12 @@ func GetTestPool() *pgxpool.Pool {
 	return getSingletonPool()
 }
 
-//nolint:gochecknoglobals
-var getSingletonPool = sync.OnceValue(func() *pgxpool.Pool {
+func NewIsolatedTestPool() *pgxpool.Pool {
 	return initPool(setupTestContainer())
-})
+}
+
+//nolint:gochecknoglobals
+var getSingletonPool = sync.OnceValue(NewIsolatedTestPool)
 
 // https://golang.testcontainers.org/modules/postgres/#initial-database
 func setupTestContainer() *postgres.PostgresContainer {

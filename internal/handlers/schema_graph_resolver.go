@@ -284,8 +284,8 @@ func (r *queryResolver) PaymentMethods(ctx context.Context) ([]*model.PaymentMet
 }
 
 // RewardCards is the resolver for the rewardCards field.
-func (r *queryResolver) RewardCards(ctx context.Context, issuer *string, name *string, region *string) ([]*model.RewardCard, error) {
-	cards, err := database.ListRewardCards(ctx, r.Pool, issuer, name, region)
+func (r *queryResolver) RewardCards(ctx context.Context, issuer *string, name *string, region *string, limit *int, offset *int) ([]*model.RewardCard, error) {
+	cards, err := database.ListRewardCards(ctx, r.Pool, issuer, name, region, limit, offset)
 	if err != nil {
 		return nil, err
 	}

@@ -68,9 +68,13 @@ type RewardCard {
     issuer: String!
     region: String!
     version: Int!
-    rewardRate: Float!
     rewardType: String!
-    rewardCashValue: Float!
+    categories: [RewardCategory!]
+}
+
+type RewardCategory {
+    category: String!
+    rate: Float!
 }
 
 type PaymentMethod {
@@ -91,7 +95,7 @@ type Query {
         groupBy: GroupBy, aggregation: Aggregation): [AggregatedExpendituresResponse]
 
     paymentMethods: [PaymentMethod!]!
-    rewardCards(issuer: String, name: String, region: String): [RewardCard!]!
+    rewardCards(issuer: String, name: String, region: String, limit: Int, Offset: Int): [RewardCard!]!
 }
 
 input NewBudgetInput {
@@ -138,13 +142,17 @@ input PaymentMethodInput {
     cardType: ID
 }
 
+input RewardCategoryInput {
+    category: String!
+    rate: Float!
+}
+
 input RewardCardInput {
     name: String!
     issuer: String!
     region: String!
-    rewardRate: Float!
     rewardType: String!
-    rewardCashValue: Float!
+    rewardCategories: [RewardCategoryInput!]
 }
 
 type Mutation {

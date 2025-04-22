@@ -1,6 +1,7 @@
 package database_test
 
 import (
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -18,29 +19,47 @@ func TestCreateRewardCard(t *testing.T) {
 		expectError bool
 	}{
 		{
+			name: "valid reward card with categories",
+			reward: &model.RewardCard{
+				ID:         uuid.New(),
+				Name:       "Cash Back",
+				Region:     "Canada",
+				Version:    1,
+				Issuer:     "Chase",
+				RewardType: "cash",
+				RewardCategories: []*model.RewardCategory{
+					{
+						Category: "Dining",
+						Rate:     0.03,
+					},
+					{
+						Category: "Travel",
+						Rate:     0.05,
+					},
+				},
+			},
+		},
+		{
 			name: "valid reward card",
 			reward: &model.RewardCard{
-				ID:              uuid.New(),
-				Name:            "Cash Back",
-				Region:          "Canada",
-				Version:         1,
-				Issuer:          "Chase",
-				RewardRate:      0.025,
-				RewardType:      "cash",
-				RewardCashValue: 0.025,
+				ID:         uuid.New(),
+				Name:       "Cash Back",
+				Region:     "Canada",
+				Version:    1,
+				Issuer:     "Chase",
+				RewardType: "cash",
 			},
 		},
 		{
 			name: "valid reward card with different values",
 			reward: &model.RewardCard{
-				ID:              uuid.New(),
-				Name:            "Travel Points",
-				Region:          "Canada",
-				Version:         1,
-				Issuer:          "American Express",
-				RewardRate:      0.03,
-				RewardType:      "points",
-				RewardCashValue: 0.01,
+				ID:      uuid.New(),
+				Name:    "Travel Points",
+				Region:  "Canada",
+				Version: 1,
+				Issuer:  "American Express",
+
+				RewardType: "points",
 			},
 		},
 		{
@@ -51,78 +70,47 @@ func TestCreateRewardCard(t *testing.T) {
 		{
 			name: "invalid reward card - missing name",
 			reward: &model.RewardCard{
-				ID:              uuid.New(),
-				Region:          "USA",
-				Version:         1,
-				Issuer:          "Chase",
-				RewardRate:      0.025,
-				RewardType:      "cash",
-				RewardCashValue: 0.025,
+				ID:      uuid.New(),
+				Region:  "USA",
+				Version: 1,
+				Issuer:  "Chase",
+
+				RewardType: "cash",
 			},
 			expectError: true,
 		},
 		{
 			name: "invalid reward card - missing region",
 			reward: &model.RewardCard{
-				ID:              uuid.New(),
-				Name:            "Cash Back",
-				Version:         1,
-				Issuer:          "Chase",
-				RewardRate:      0.025,
-				RewardType:      "cash",
-				RewardCashValue: 0.025,
+				ID:      uuid.New(),
+				Name:    "Cash Back",
+				Version: 1,
+				Issuer:  "Chase",
+
+				RewardType: "cash",
 			},
 			expectError: true,
 		},
 		{
 			name: "invalid reward card - missing issuer",
 			reward: &model.RewardCard{
-				ID:              uuid.New(),
-				Name:            "Cash Back",
-				Region:          "Canada",
-				Version:         1,
-				RewardRate:      0.025,
-				RewardType:      "cash",
-				RewardCashValue: 0.025,
+				ID:      uuid.New(),
+				Name:    "Cash Back",
+				Region:  "Canada",
+				Version: 1,
+
+				RewardType: "cash",
 			},
 			expectError: true,
 		},
 		{
 			name: "invalid reward card - missing reward type",
 			reward: &model.RewardCard{
-				ID:              uuid.New(),
-				Name:            "Cash Back",
-				Region:          "Canada",
-				Version:         1,
-				Issuer:          "Chase",
-				RewardRate:      0.025,
-				RewardCashValue: 0.025,
-			},
-			expectError: true,
-		},
-		{
-			name: "invalid reward card - zero reward rate",
-			reward: &model.RewardCard{
-				ID:              uuid.New(),
-				Name:            "Cash Back",
-				Region:          "Canada",
-				Version:         1,
-				Issuer:          "Chase",
-				RewardType:      "cash",
-				RewardCashValue: 0.025,
-			},
-			expectError: true,
-		},
-		{
-			name: "invalid reward card - zero cash value",
-			reward: &model.RewardCard{
-				ID:         uuid.New(),
-				Name:       "Cash Back",
-				Region:     "Canada",
-				Version:    1,
-				Issuer:     "Chase",
-				RewardRate: 0.025,
-				RewardType: "cash",
+				ID:      uuid.New(),
+				Name:    "Cash Back",
+				Region:  "Canada",
+				Version: 1,
+				Issuer:  "Chase",
 			},
 			expectError: true,
 		},
@@ -152,8 +140,12 @@ func TestCreateRewardCard(t *testing.T) {
 			require.Equal(t, tc.reward.Version, stored.Version)
 			require.Equal(t, tc.reward.Issuer, stored.Issuer)
 			require.Equal(t, tc.reward.RewardType, stored.RewardType)
-			require.InEpsilon(t, tc.reward.RewardRate, stored.RewardRate, 0.0001)
-			require.InEpsilon(t, tc.reward.RewardCashValue, stored.RewardCashValue, 0.0001)
+			require.Len(t, stored.RewardCategories, len(tc.reward.RewardCategories))
+
+			for i, cat := range stored.RewardCategories {
+				require.Equal(t, tc.reward.RewardCategories[i].Category, cat.Category)
+				require.InEpsilon(t, tc.reward.RewardCategories[i].Rate, cat.Rate, 0.001)
+			}
 		})
 	}
 }
@@ -165,25 +157,23 @@ func TestCreateRewardCardVersioning(t *testing.T) {
 	ctx := t.Context()
 
 	card1 := &model.RewardCard{
-		ID:              uuid.New(),
-		Name:            "Freedom Flex",
-		Version:         1,
-		Issuer:          "Chase",
-		Region:          "USA",
-		RewardRate:      0.05,
-		RewardType:      "cash",
-		RewardCashValue: 0.05,
+		ID:      uuid.New(),
+		Name:    "Freedom Flex",
+		Version: 1,
+		Issuer:  "Chase",
+		Region:  "USA",
+
+		RewardType: "cash",
 	}
 
 	card2 := &model.RewardCard{
-		ID:              uuid.New(),
-		Name:            "Freedom Flex",
-		Version:         2,
-		Issuer:          "Chase",
-		Region:          "USA",
-		RewardRate:      0.03,
-		RewardType:      "cash",
-		RewardCashValue: 0.03,
+		ID:      uuid.New(),
+		Name:    "Freedom Flex",
+		Version: 2,
+		Issuer:  "Chase",
+		Region:  "USA",
+
+		RewardType: "cash",
 	}
 
 	// Create first card
@@ -223,44 +213,40 @@ func TestListRewardCards(t *testing.T) {
 	// Create test data with more varied combinations
 	cards := []*model.RewardCard{
 		{
-			ID:              uuid.New(),
-			Name:            cashBackPlus,
-			Region:          canada,
-			Version:         1,
-			Issuer:          chase,
-			RewardRate:      0.025,
-			RewardType:      "cash",
-			RewardCashValue: 0.025,
+			ID:      uuid.New(),
+			Name:    cashBackPlus,
+			Region:  canada,
+			Version: 1,
+			Issuer:  chase,
+
+			RewardType: "cash",
 		},
 		{
-			ID:              uuid.New(),
-			Name:            travelPoints,
-			Region:          usa,
-			Version:         1,
-			Issuer:          amex,
-			RewardRate:      0.03,
-			RewardType:      "points",
-			RewardCashValue: 0.01,
+			ID:      uuid.New(),
+			Name:    travelPoints,
+			Region:  usa,
+			Version: 1,
+			Issuer:  amex,
+
+			RewardType: "points",
 		},
 		{
-			ID:              uuid.New(),
-			Name:            "Cash Back Basic",
-			Region:          canada,
-			Version:         1,
-			Issuer:          td,
-			RewardRate:      0.01,
-			RewardType:      "cash",
-			RewardCashValue: 0.01,
+			ID:      uuid.New(),
+			Name:    "Cash Back Basic",
+			Region:  canada,
+			Version: 1,
+			Issuer:  td,
+
+			RewardType: "cash",
 		},
 		{
-			ID:              uuid.New(),
-			Name:            "Premium Card",
-			Region:          usa,
-			Version:         1,
-			Issuer:          chase,
-			RewardRate:      0.02,
-			RewardType:      "cash",
-			RewardCashValue: 0.02,
+			ID:      uuid.New(),
+			Name:    "Premium Card",
+			Region:  usa,
+			Version: 1,
+			Issuer:  chase,
+
+			RewardType: "cash",
 		},
 	}
 
@@ -403,7 +389,7 @@ func TestListRewardCards(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			cards, err := database.ListRewardCards(ctx, pool, tt.issuer, tt.cardName, tt.region)
+			cards, err := database.ListRewardCards(ctx, pool, tt.issuer, tt.cardName, tt.region, nil, nil)
 			require.NoError(t, err)
 			require.Len(t, cards, tt.expectedLen)
 			require.True(t, tt.checkResults(cards))
@@ -411,6 +397,85 @@ func TestListRewardCards(t *testing.T) {
 	}
 }
 
-func ptr(s string) *string {
+//nolint:paralleltest
+func TestListRewardCardsPagination(t *testing.T) {
+	pool := helper.NewIsolatedTestPool()
+	ctx := t.Context()
+
+	// Create 15 test cards
+	cards := make([]*model.RewardCard, 15)
+	for i := range 15 {
+		cards[i] = &model.RewardCard{
+			ID:      uuid.New(),
+			Name:    fmt.Sprintf("Card %02d", i+1),
+			Region:  "Canada",
+			Version: 1,
+			Issuer:  "Test Bank",
+
+			RewardType: "cash",
+		}
+		err := database.CreateRewardCard(ctx, pool, cards[i])
+		require.NoError(t, err)
+	}
+
+	tests := []struct {
+		name         string
+		limit        *int
+		offset       *int
+		expectedLen  int
+		checkResults func([]*model.RewardCard) bool
+	}{
+		{
+			name:        "default limit (10)",
+			expectedLen: 10,
+			checkResults: func(results []*model.RewardCard) bool {
+				return len(results) == 10 && results[0].Name == "Card 01"
+			},
+		},
+		{
+			name:        "custom limit",
+			limit:       ptr(5),
+			expectedLen: 5,
+			checkResults: func(results []*model.RewardCard) bool {
+				return len(results) == 5 && results[0].Name == "Card 01"
+			},
+		},
+		{
+			name:        "with offset",
+			limit:       ptr(5),
+			offset:      ptr(5),
+			expectedLen: 5,
+			checkResults: func(results []*model.RewardCard) bool {
+				return len(results) == 5 && results[0].Name == "Card 06"
+			},
+		},
+		{
+			name:        "offset beyond data",
+			limit:       ptr(5),
+			offset:      ptr(20),
+			expectedLen: 0,
+			checkResults: func(results []*model.RewardCard) bool {
+				return len(results) == 0
+			},
+		},
+		{
+			name:        "large limit",
+			limit:       ptr(20),
+			expectedLen: 15,
+			checkResults: func(results []*model.RewardCard) bool {
+				return len(results) == 15
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		results, err := database.ListRewardCards(ctx, pool, nil, nil, nil, tt.limit, tt.offset)
+		require.NoError(t, err)
+		require.Len(t, results, tt.expectedLen)
+		require.True(t, tt.checkResults(results))
+	}
+}
+
+func ptr[T interface{}](s T) *T {
 	return &s
 }
