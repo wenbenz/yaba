@@ -12,7 +12,7 @@ import (
 
 func main() {
 	user, _ := uuid.Parse("b49585ce-1ba0-4875-a99a-431b4c44c4d0")
-	start, _ := time.Parse(time.DateOnly, "2025-01-01")
+	start, _ := time.ParseInLocation(time.DateOnly, "2025-01-01", time.UTC)
 	expenditures := helper.MockExpenditures(1000, user, start, time.Now())
 
 	f, _ := os.Create("generated.csv")

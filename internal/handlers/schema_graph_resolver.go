@@ -206,12 +206,12 @@ func (r *queryResolver) Expenditures(ctx context.Context, since *string, until *
 		limit = *count
 	}
 
-	sinceTime, err := time.Parse(time.DateOnly, start)
+	sinceTime, err := time.ParseInLocation(time.DateOnly, start, time.UTC)
 	if err != nil {
 		return []*model.ExpenditureResponse{}, err
 	}
 
-	untilTime, err := time.Parse(time.DateOnly, end)
+	untilTime, err := time.ParseInLocation(time.DateOnly, end, time.UTC)
 	if err != nil {
 		return []*model.ExpenditureResponse{}, err
 	}
@@ -230,7 +230,7 @@ func (r *queryResolver) AggregatedExpenditures(ctx context.Context, since *strin
 
 	start := time.Unix(0, 0)
 	if since != nil {
-		start, err = time.Parse(time.DateOnly, *since)
+		start, err = time.ParseInLocation(time.DateOnly, *since, time.UTC)
 		if err != nil {
 			return []*model.AggregatedExpendituresResponse{}, fmt.Errorf("invalid start date: %w", err)
 		}
@@ -238,7 +238,7 @@ func (r *queryResolver) AggregatedExpenditures(ctx context.Context, since *strin
 
 	end := time.Now()
 	if until != nil {
-		end, err = time.Parse(time.DateOnly, *until)
+		end, err = time.ParseInLocation(time.DateOnly, *until, time.UTC)
 		if err != nil {
 			return []*model.AggregatedExpendituresResponse{}, fmt.Errorf("invalid end date: %w", err)
 		}

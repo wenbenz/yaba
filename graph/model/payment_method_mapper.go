@@ -44,13 +44,13 @@ func PaymentMethodFromPaymentMethodInput(ctx context.Context, pool *pgxpool.Pool
 
 	var err error
 	if input.AcquiredDate != nil {
-		if acquired, err = time.Parse(time.DateOnly, *input.AcquiredDate); err != nil {
+		if acquired, err = time.ParseInLocation(time.DateOnly, *input.AcquiredDate, time.UTC); err != nil {
 			return nil, fmt.Errorf("failed to parse date: %w", err)
 		}
 	}
 
 	if input.CancelByDate != nil {
-		if cancel, err = time.Parse(time.DateOnly, *input.CancelByDate); err != nil {
+		if cancel, err = time.ParseInLocation(time.DateOnly, *input.CancelByDate, time.UTC); err != nil {
 			return nil, fmt.Errorf("failed to parse date: %w", err)
 		}
 	}

@@ -55,7 +55,7 @@ func ExpendituresFromExpenditureInput(user uuid.UUID, input []*ExpenditureInput)
 	expenditures := make([]*model.Expenditure, len(input))
 
 	for i, expenditure := range input {
-		date, err := time.Parse(time.DateOnly, expenditure.Date)
+		date, err := time.ParseInLocation(time.DateOnly, expenditure.Date, time.UTC)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse date: %w", err)
 		}
