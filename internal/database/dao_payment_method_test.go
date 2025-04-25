@@ -73,7 +73,31 @@ func TestCreateAndGetPaymentMethod(t *testing.T) {
 			require.Equal(t, tc.method.CancelByDate.UTC(), stored.CancelByDate.UTC())
 
 			if tc.method.CardType != uuid.Nil {
-				require.NotNil(t, stored.Rewards)
+				require.Equal(t, &model.RewardCard{
+					ID:         tc.method.CardType,
+					Name:       "Freedom Flex",
+					Version:    1,
+					Issuer:     "Chase",
+					Region:     "USA",
+					RewardType: "cash",
+					RewardCategories: []*model.RewardCategory{
+						{
+							CardID:   tc.method.CardType,
+							Category: "Groceries",
+							Rate:     3.0,
+						},
+						{
+							CardID:   tc.method.CardType,
+							Category: "Transportation",
+							Rate:     2.0,
+						},
+						{
+							CardID:   tc.method.CardType,
+							Category: "Other",
+							Rate:     1.0,
+						},
+					},
+				}, stored.Rewards)
 			} else {
 				require.Nil(t, stored.Rewards)
 			}
@@ -382,14 +406,31 @@ func TestDeletePaymentMethod(t *testing.T) {
 
 func newTestRewardCard(ctx context.Context, pool *pgxpool.Pool) uuid.UUID {
 	// Create reward cards first
+	cardID := uuid.New()
 	rewardCard := &model.RewardCard{
-		ID:      uuid.New(),
-		Name:    "Freedom Flex",
-		Version: 1,
-		Issuer:  "Chase",
-		Region:  "USA",
-
+		ID:         cardID,
+		Name:       "Freedom Flex",
+		Version:    1,
+		Issuer:     "Chase",
+		Region:     "USA",
 		RewardType: "cash",
+		RewardCategories: []*model.RewardCategory{
+			{
+				CardID:   cardID,
+				Category: "Groceries",
+				Rate:     3.0,
+			},
+			{
+				CardID:   cardID,
+				Category: "Transportation",
+				Rate:     2.0,
+			},
+			{
+				CardID:   cardID,
+				Category: "Other",
+				Rate:     1.0,
+			},
+		},
 	}
 	_ = database.CreateRewardCard(ctx, pool, rewardCard)
 

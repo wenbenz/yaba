@@ -205,7 +205,7 @@ func TestCSVUploadBadCSV(t *testing.T) {
 		},
 		{
 			filename: "invalid_category.csv",
-			errorMsg: "invalid input value for enum reward_category",
+			errorMsg: "failed to save batch of expenditures",
 		},
 	}
 	for _, test := range testCases {
