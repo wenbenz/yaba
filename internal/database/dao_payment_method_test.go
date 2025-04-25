@@ -99,7 +99,7 @@ func TestCreateAndGetPaymentMethod(t *testing.T) {
 					},
 				}, stored.Rewards)
 			} else {
-				require.Nil(t, stored.Rewards)
+				require.Equal(t, &model.RewardCard{}, stored.Rewards)
 			}
 		})
 	}
