@@ -393,8 +393,8 @@ func TestAggregateExpenditures(t *testing.T) {
 			ctx := ctxutil.WithUser(t.Context(), user)
 			pool := helper.GetTestPool()
 
-			startDate, _ := time.Parse(time.DateOnly, tc.dataStartDate)
-			endDate, _ := time.Parse(time.DateOnly, tc.dataEndDate)
+			startDate, _ := time.ParseInLocation(time.DateOnly, tc.dataStartDate, time.UTC)
+			endDate, _ := time.ParseInLocation(time.DateOnly, tc.dataEndDate, time.UTC)
 
 			mocked := helper.MockExpenditures(300, user, startDate, endDate)
 
@@ -417,8 +417,8 @@ func TestAggregateExpenditures(t *testing.T) {
 			require.NoError(t, err)
 
 			// Make the call
-			startDate, _ = time.Parse(time.DateOnly, tc.startDate)
-			endDate, _ = time.Parse(time.DateOnly, tc.endDate)
+			startDate, _ = time.ParseInLocation(time.DateOnly, tc.startDate, time.UTC)
+			endDate, _ = time.ParseInLocation(time.DateOnly, tc.endDate, time.UTC)
 			aggregate, err := database.AggregateExpenditures(ctx, pool, startDate, endDate, tc.span, tc.aggregate, tc.groupBy)
 			require.NoError(t, err)
 
@@ -479,7 +479,7 @@ func janFebGroupBy(groupBy model.GroupBy) func(expenditures []*model.Expenditure
 
 func twoWeeksInAugust() func(expenditures []*model.Expenditure) []float64 {
 	return func(expenditures []*model.Expenditure) []float64 {
-		monday, _ := time.Parse(time.DateOnly, "2024-08-12")
+		monday, _ := time.ParseInLocation(time.DateOnly, "2024-08-12", time.UTC)
 		out := make([]float64, 2)
 
 		for _, e := range expenditures {

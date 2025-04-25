@@ -242,8 +242,8 @@ func TestExpenditures(t *testing.T) {
 	resolver := &handlers.Resolver{Pool: pool}
 
 	startDateString, endDateString := "2020-01-01", "2020-02-01"
-	startDate, _ := time.Parse(time.DateOnly, startDateString)
-	endDate, _ := time.Parse(time.DateOnly, endDateString)
+	startDate, _ := time.ParseInLocation(time.DateOnly, startDateString, time.UTC)
+	endDate, _ := time.ParseInLocation(time.DateOnly, endDateString, time.UTC)
 	limit := 301
 
 	err := database.PersistExpenditures(ctx, pool, helper.MockExpenditures(300, user, startDate, endDate))
@@ -287,8 +287,8 @@ func TestAggregateExpenditures(t *testing.T) {
 	resolver := &handlers.Resolver{Pool: pool}
 
 	startDateString, endDateString := "2020-01-01", "2020-02-02"
-	startDate, _ := time.Parse(time.DateOnly, startDateString)
-	endDate, _ := time.Parse(time.DateOnly, endDateString)
+	startDate, _ := time.ParseInLocation(time.DateOnly, startDateString, time.UTC)
+	endDate, _ := time.ParseInLocation(time.DateOnly, endDateString, time.UTC)
 
 	err := database.PersistExpenditures(ctx, pool, helper.MockExpenditures(300, user, startDate, endDate))
 	require.NoError(t, err)
@@ -332,8 +332,8 @@ func TestCreateExpenditures(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, *success)
 
-		startDate, _ := time.Parse(time.DateOnly, "2024-03-20")
-		endDate, _ := time.Parse(time.DateOnly, "2024-03-21")
+		startDate, _ := time.ParseInLocation(time.DateOnly, "2024-03-20", time.UTC)
+		endDate, _ := time.ParseInLocation(time.DateOnly, "2024-03-21", time.UTC)
 		limit := 10
 
 		expenditures, err := database.ListExpenditures(ctx, pool, startDate, endDate, nil, nil, &limit, nil)

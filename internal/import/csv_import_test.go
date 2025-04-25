@@ -159,7 +159,7 @@ func TestCSVUploadSuccess(t *testing.T) {
 	require.NoError(t, importer.UploadSpendingsCSV(ctx, pool, user, f, "spend.csv"))
 
 	endTime := time.Now()
-	date, err := time.Parse(time.DateOnly, "2006-07-08")
+	date, err := time.ParseInLocation(time.DateOnly, "2006-07-08", time.UTC)
 	require.NoError(t, err)
 
 	expenditures, err := database.ListExpenditures(ctx, pool, date, date, nil, nil, nil, nil)
@@ -221,7 +221,7 @@ func TestCSVUploadBadCSV(t *testing.T) {
 
 			require.ErrorContains(t, importer.UploadSpendingsCSV(ctx, pool, user, f, ""), test.errorMsg)
 
-			date, err := time.Parse(time.DateOnly, "2006-07-08")
+			date, err := time.ParseInLocation(time.DateOnly, "2006-07-08", time.UTC)
 			require.NoError(t, err)
 
 			expenditures, err := database.ListExpenditures(ctx, pool, date, date, nil, nil, nil, nil)
