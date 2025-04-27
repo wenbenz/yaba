@@ -15,12 +15,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func ListExpenditures(
-	ctx context.Context,
-	pool *pgxpool.Pool,
-	since, until time.Time,
-	source, category *string,
-	limit, cursor *int,
+func ListExpenditures(ctx context.Context, pool *pgxpool.Pool,
+	filter, category, source *string,
+	since, until time.Time, limit, cursor *int,
 ) ([]*model.Expenditure, error) {
 	sq := squirrel.Select("*").
 		From("expenditure").
@@ -28,16 +25,19 @@ func ListExpenditures(
 		OrderBy("date DESC, id DESC").
 		PlaceholderFormat(squirrel.Dollar)
 
-	if source != nil {
-		sq = sq.Where(squirrel.Eq{"source": *source})
+	if filter != nil {
+		sq = sq.Where(squirrel.Or{
+			squirrel.ILike{"name": "%" + *filter + "%"},
+			squirrel.ILike{"comment": "%" + *filter + "%"},
+		})
 	}
 
 	if category != nil {
-		if *category == "" {
-			sq = sq.Where(squirrel.Eq{"budget_category": ""})
-		} else {
-			sq = sq.Where(squirrel.Eq{"budget_category": *category})
-		}
+		sq = sq.Where(squirrel.Eq{"budget_category": *category})
+	}
+
+	if source != nil {
+		sq = sq.Where(squirrel.Eq{"source": *source})
 	}
 
 	if limit != nil {

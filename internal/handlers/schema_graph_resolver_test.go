@@ -249,7 +249,7 @@ func TestExpenditures(t *testing.T) {
 	err := database.PersistExpenditures(ctx, pool, helper.MockExpenditures(300, user, startDate, endDate))
 	require.NoError(t, err)
 
-	persistedExpenditures, err := database.ListExpenditures(ctx, pool, startDate, endDate, nil, nil, &limit, nil)
+	persistedExpenditures, err := database.ListExpenditures(ctx, pool, nil, nil, nil, startDate, endDate, &limit, nil)
 	require.NoError(t, err)
 	require.Len(t, persistedExpenditures, 300)
 
@@ -336,7 +336,7 @@ func TestCreateExpenditures(t *testing.T) {
 		endDate, _ := time.ParseInLocation(time.DateOnly, "2024-03-21", time.UTC)
 		limit := 10
 
-		expenditures, err := database.ListExpenditures(ctx, pool, startDate, endDate, nil, nil, &limit, nil)
+		expenditures, err := database.ListExpenditures(ctx, pool, nil, nil, nil, startDate, endDate, &limit, nil)
 		require.NoError(t, err)
 		require.Len(t, expenditures, 2)
 

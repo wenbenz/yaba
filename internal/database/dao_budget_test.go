@@ -152,8 +152,7 @@ func TestPersistBudgetClassifiesExpenditures(t *testing.T) {
 	require.NoError(t, database.PersistBudget(ctx, pool, budget))
 
 	// Verify expenditures were updated
-	fetched, err := database.ListExpenditures(ctx, pool, time.Now().AddDate(0, 0, -1),
-		time.Now().AddDate(0, 0, 1), nil, nil, nil, nil)
+	fetched, err := database.ListExpenditures(ctx, pool, nil, nil, nil, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, 1), nil, nil)
 	require.NoError(t, err)
 	require.Len(t, fetched, 3)
 
@@ -264,8 +263,7 @@ func TestPersistBudgetClassifiesExpendituresWithExistingBudget(t *testing.T) {
 			require.NoError(t, database.PersistBudget(ctx, pool, budget))
 
 			// Verify classifications
-			fetched, err := database.ListExpenditures(ctx, pool, time.Now().AddDate(0, 0, -1),
-				time.Now().AddDate(0, 0, 1), nil, nil, nil, nil)
+			fetched, err := database.ListExpenditures(ctx, pool, nil, nil, nil, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, 1), nil, nil)
 			require.NoError(t, err)
 
 			// Get the new expense IDs from the budget

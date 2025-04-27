@@ -45,8 +45,7 @@ func TestListAllExpenditures(t *testing.T) {
 
 	require.NoError(t, database.PersistExpenditures(t.Context(), pool, expenditures))
 
-	fetched, err := database.ListExpenditures(
-		ctxutil.WithUser(t.Context(), owner), pool, startDate, endDate, nil, nil, nil, nil)
+	fetched, err := database.ListExpenditures(ctxutil.WithUser(t.Context(), owner), pool, nil, nil, nil, startDate, endDate, nil, nil)
 	require.NoError(t, err)
 	require.Len(t, fetched, len(expenditures))
 
@@ -91,8 +90,7 @@ func TestListExpenditures(t *testing.T) {
 
 	// Refetch expenditures so IDs and order is correct for other tests.
 	// TestListAllExpenditures verifies the integrity of using this.
-	expenditures, err := database.ListExpenditures(
-		ctxutil.WithUser(t.Context(), owner), pool, startDate, endDate, nil, nil, nil, nil)
+	expenditures, err := database.ListExpenditures(ctxutil.WithUser(t.Context(), owner), pool, nil, nil, nil, startDate, endDate, nil, nil)
 	require.NoError(t, err)
 	require.Len(t, expenditures, numExpenditures, "Num expenditures doesn't match")
 
@@ -100,6 +98,7 @@ func TestListExpenditures(t *testing.T) {
 		name       string
 		queryStart time.Time
 		queryEnd   time.Time
+		filter     *string
 		category   *string
 		source     *string
 		cursor     *int
@@ -149,6 +148,26 @@ func TestListExpenditures(t *testing.T) {
 				require.NotEmpty(t, result, "expenditures should not be empty")
 
 				return result
+			},
+		},
+		{
+			name:       "fetch_with_name_filter",
+			queryStart: startDate,
+			queryEnd:   endDate,
+			filter:     pointer("aLE"), // descriptions are mocked using beer names
+			limit:      pointer(10),
+			expected: func() []*model.Expenditure {
+				return expenditures[:10]
+			},
+		},
+		{
+			name:       "fetch_with_comment_filter",
+			queryStart: startDate,
+			queryEnd:   endDate,
+			filter:     pointer("DenIM "), // comments are mocked using hipster sentences
+			limit:      pointer(10),
+			expected: func() []*model.Expenditure {
+				return expenditures[:10]
 			},
 		},
 		{
@@ -219,8 +238,7 @@ func TestListExpenditures(t *testing.T) {
 			ctx := ctxutil.WithUser(t.Context(), owner)
 
 			// Run test case
-			fetched, err := database.ListExpenditures(
-				ctx, pool, tc.queryStart, tc.queryEnd, tc.source, tc.category, tc.limit, tc.cursor)
+			fetched, err := database.ListExpenditures(ctx, pool, nil, tc.category, tc.source, tc.queryStart, tc.queryEnd, tc.limit, tc.cursor)
 			require.NoError(t, err)
 
 			expected := tc.expected()
@@ -423,7 +441,7 @@ func TestAggregateExpenditures(t *testing.T) {
 			require.NoError(t, err)
 
 			// Calculate the expected and compare the amounts
-			expenditures, err := database.ListExpenditures(ctx, pool, startDate, endDate, nil, nil, pointer(300), nil)
+			expenditures, err := database.ListExpenditures(ctx, pool, nil, nil, nil, startDate, endDate, pointer(300), nil)
 			require.NoError(t, err)
 
 			expected := tc.expectedAmounts(expenditures)

@@ -56,7 +56,7 @@ func TestUploadCSV(t *testing.T) {
 
 	// Check that rows in each csv exist
 	date := time.Date(2006, time.July, 8, 0, 0, 0, 0, time.UTC)
-	expenditures, err := database.ListExpenditures(ctx, pool, date, date, nil, nil, nil, nil)
+	expenditures, err := database.ListExpenditures(ctx, pool, nil, nil, nil, date, date, nil, nil)
 	require.NoError(t, err)
 	require.Len(t, expenditures, 4)
 }
@@ -126,7 +126,7 @@ func TestUploadCSVPartialSuccess(t *testing.T) {
 
 	// Check that rows in the CSV
 	date := time.Date(2006, time.July, 8, 0, 0, 0, 0, time.UTC)
-	expenditures, err := database.ListExpenditures(ctx, pool, date, date, nil, nil, nil, nil)
+	expenditures, err := database.ListExpenditures(ctx, pool, nil, nil, nil, date, date, nil, nil)
 	require.NoError(t, err)
 	require.Len(t, expenditures, 3)
 }

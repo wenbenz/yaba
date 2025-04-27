@@ -60,7 +60,7 @@ type MutationResolver interface {
 type QueryResolver interface {
 	Budget(ctx context.Context, id string) (*model.BudgetResponse, error)
 	Budgets(ctx context.Context, first *int) ([]*model.BudgetResponse, error)
-	Expenditures(ctx context.Context, since *string, until *string, source *string, category *string, count *int, offset *int) ([]*model.ExpenditureResponse, error)
+	Expenditures(ctx context.Context, filter *string, category *string, source *string, since *string, until *string, count *int, offset *int) ([]*model.ExpenditureResponse, error)
 	AggregatedExpenditures(ctx context.Context, since *string, until *string, span *model.Timespan, groupBy *model.GroupBy, aggregation *model.Aggregation) ([]*model.AggregatedExpendituresResponse, error)
 	PaymentMethods(ctx context.Context) ([]*model.PaymentMethod, error)
 	RewardCards(ctx context.Context, issuer *string, name *string, region *string, limit *int, offset *int) ([]*model.RewardCard, error)
@@ -288,7 +288,8 @@ type Query {
     budget(id: ID!): BudgetResponse
     budgets(first: Int): [BudgetResponse]
 
-    expenditures(since: String, until: String, source: String, category: String, count: Int, offset: Int): [ExpenditureResponse]
+    expenditures(filter: String, category: String, source: String,
+        since: String, until: String, count: Int, offset: Int): [ExpenditureResponse]
     aggregatedExpenditures(since: String, until: String, span: Timespan,
         groupBy: GroupBy, aggregation: Aggregation): [AggregatedExpendituresResponse]
 
@@ -799,38 +800,97 @@ func (ec *executionContext) field_Query_budgets_argsFirst(
 func (ec *executionContext) field_Query_expenditures_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_expenditures_argsSince(ctx, rawArgs)
+	arg0, err := ec.field_Query_expenditures_argsFilter(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["since"] = arg0
-	arg1, err := ec.field_Query_expenditures_argsUntil(ctx, rawArgs)
+	args["filter"] = arg0
+	arg1, err := ec.field_Query_expenditures_argsCategory(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["until"] = arg1
+	args["category"] = arg1
 	arg2, err := ec.field_Query_expenditures_argsSource(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
 	args["source"] = arg2
-	arg3, err := ec.field_Query_expenditures_argsCategory(ctx, rawArgs)
+	arg3, err := ec.field_Query_expenditures_argsSince(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["category"] = arg3
-	arg4, err := ec.field_Query_expenditures_argsCount(ctx, rawArgs)
+	args["since"] = arg3
+	arg4, err := ec.field_Query_expenditures_argsUntil(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["count"] = arg4
-	arg5, err := ec.field_Query_expenditures_argsOffset(ctx, rawArgs)
+	args["until"] = arg4
+	arg5, err := ec.field_Query_expenditures_argsCount(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["offset"] = arg5
+	args["count"] = arg5
+	arg6, err := ec.field_Query_expenditures_argsOffset(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg6
 	return args, nil
 }
+func (ec *executionContext) field_Query_expenditures_argsFilter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*string, error) {
+	if _, ok := rawArgs["filter"]; !ok {
+		var zeroVal *string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+	if tmp, ok := rawArgs["filter"]; ok {
+		return ec.unmarshalOString2ᚖstring(ctx, tmp)
+	}
+
+	var zeroVal *string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_expenditures_argsCategory(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*string, error) {
+	if _, ok := rawArgs["category"]; !ok {
+		var zeroVal *string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
+	if tmp, ok := rawArgs["category"]; ok {
+		return ec.unmarshalOString2ᚖstring(ctx, tmp)
+	}
+
+	var zeroVal *string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_expenditures_argsSource(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*string, error) {
+	if _, ok := rawArgs["source"]; !ok {
+		var zeroVal *string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
+	if tmp, ok := rawArgs["source"]; ok {
+		return ec.unmarshalOString2ᚖstring(ctx, tmp)
+	}
+
+	var zeroVal *string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Query_expenditures_argsSince(
 	ctx context.Context,
 	rawArgs map[string]any,
@@ -860,42 +920,6 @@ func (ec *executionContext) field_Query_expenditures_argsUntil(
 
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("until"))
 	if tmp, ok := rawArgs["until"]; ok {
-		return ec.unmarshalOString2ᚖstring(ctx, tmp)
-	}
-
-	var zeroVal *string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_expenditures_argsSource(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*string, error) {
-	if _, ok := rawArgs["source"]; !ok {
-		var zeroVal *string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
-	if tmp, ok := rawArgs["source"]; ok {
-		return ec.unmarshalOString2ᚖstring(ctx, tmp)
-	}
-
-	var zeroVal *string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_expenditures_argsCategory(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*string, error) {
-	if _, ok := rawArgs["category"]; !ok {
-		var zeroVal *string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("category"))
-	if tmp, ok := rawArgs["category"]; ok {
 		return ec.unmarshalOString2ᚖstring(ctx, tmp)
 	}
 
@@ -3161,7 +3185,7 @@ func (ec *executionContext) _Query_expenditures(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Expenditures(rctx, fc.Args["since"].(*string), fc.Args["until"].(*string), fc.Args["source"].(*string), fc.Args["category"].(*string), fc.Args["count"].(*int), fc.Args["offset"].(*int))
+		return ec.resolvers.Query().Expenditures(rctx, fc.Args["filter"].(*string), fc.Args["category"].(*string), fc.Args["source"].(*string), fc.Args["since"].(*string), fc.Args["until"].(*string), fc.Args["count"].(*int), fc.Args["offset"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

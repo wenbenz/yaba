@@ -162,7 +162,7 @@ func TestCSVUploadSuccess(t *testing.T) {
 	date, err := time.ParseInLocation(time.DateOnly, "2006-07-08", time.UTC)
 	require.NoError(t, err)
 
-	expenditures, err := database.ListExpenditures(ctx, pool, date, date, nil, nil, nil, nil)
+	expenditures, err := database.ListExpenditures(ctx, pool, nil, nil, nil, date, date, nil, nil)
 	require.NoError(t, err)
 	require.Len(t, expenditures, 3)
 
@@ -224,7 +224,7 @@ func TestCSVUploadBadCSV(t *testing.T) {
 			date, err := time.ParseInLocation(time.DateOnly, "2006-07-08", time.UTC)
 			require.NoError(t, err)
 
-			expenditures, err := database.ListExpenditures(ctx, pool, date, date, nil, nil, nil, nil)
+			expenditures, err := database.ListExpenditures(ctx, pool, nil, nil, nil, date, date, nil, nil)
 			require.Empty(t, expenditures)
 			require.NoError(t, err)
 		})
