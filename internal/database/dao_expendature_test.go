@@ -1,9 +1,11 @@
 package database_test
 
 import (
+	"fmt"
 	"github.com/brianvoe/gofakeit"
 	"slices"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 	"yaba/internal/ctxutil"
@@ -151,23 +153,36 @@ func TestListExpenditures(t *testing.T) {
 			},
 		},
 		{
-			name:       "fetch_with_name_filter",
-			queryStart: startDate,
-			queryEnd:   endDate,
-			filter:     pointer("aLE"), // descriptions are mocked using beer names
-			limit:      pointer(10),
-			expected: func() []*model.Expenditure {
-				return expenditures[:10]
-			},
-		},
-		{
 			name:       "fetch_with_comment_filter",
 			queryStart: startDate,
 			queryEnd:   endDate,
-			filter:     pointer("DenIM "), // comments are mocked using hipster sentences
-			limit:      pointer(10),
+			filter:     pointer("DenIM"), // comments are mocked using hipster sentences
 			expected: func() []*model.Expenditure {
-				return expenditures[:10]
+				var expected []*model.Expenditure
+				for _, e := range expenditures {
+					if strings.Contains(strings.ToLower(e.Comment), "denim") {
+						expected = append(expected, e)
+					}
+				}
+				return expected
+			},
+		},
+		{
+			name:       "fetch_with_name_or_comment_filter",
+			queryStart: startDate,
+			queryEnd:   endDate,
+			filter:     pointer("aLE"), // descriptions are mocked using beer names,
+			// but this will also appear in hipster phrases
+			expected: func() []*model.Expenditure {
+				var expected []*model.Expenditure
+				for _, e := range expenditures {
+					if strings.Contains(strings.ToLower(e.Name), "ale") ||
+						strings.Contains(strings.ToLower(e.Comment), "ale") {
+						expected = append(expected, e)
+					}
+				}
+				fmt.Println("expected", expected)
+				return expected
 			},
 		},
 		{
@@ -238,7 +253,7 @@ func TestListExpenditures(t *testing.T) {
 			ctx := ctxutil.WithUser(t.Context(), owner)
 
 			// Run test case
-			fetched, err := database.ListExpenditures(ctx, pool, nil, tc.category, tc.source, tc.queryStart, tc.queryEnd, tc.limit, tc.cursor)
+			fetched, err := database.ListExpenditures(ctx, pool, tc.filter, tc.category, tc.source, tc.queryStart, tc.queryEnd, tc.limit, tc.cursor)
 			require.NoError(t, err)
 
 			expected := tc.expected()
