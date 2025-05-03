@@ -3,15 +3,20 @@ package database
 import (
 	"context"
 	"fmt"
+	"yaba/internal/ctxutil"
+	"yaba/internal/model"
+
 	"github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"yaba/internal/ctxutil"
-	"yaba/internal/model"
 )
 
-func GetPaymentMethod(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) (*model.PaymentMethod, error) {
+func GetPaymentMethod(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	id uuid.UUID,
+) (*model.PaymentMethod, error) {
 	pmQuery, pmArgs, err := squirrel.Select("*").
 		From("payment_method").
 		Where(squirrel.Eq{
@@ -30,6 +35,31 @@ func GetPaymentMethod(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) (*m
 
 	if method.Rewards, err = getRewardCard(ctx, pool, method.CardType); err != nil {
 		return nil, err
+	}
+
+	return &method, nil
+}
+
+func GetPaymentMethodByName(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	name string,
+) (*model.PaymentMethod, error) {
+	query, args, err := squirrel.Select("*").
+		From("payment_method").
+		Where(squirrel.Eq{
+			"display_name": name,
+			"owner":        ctxutil.GetUser(ctx),
+		}).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build payment method query: %w", err)
+	}
+
+	var method model.PaymentMethod
+	if err = pgxscan.Get(ctx, pool, &method, query, args...); err != nil {
+		return nil, fmt.Errorf("failed to get payment method: %w", err)
 	}
 
 	return &method, nil
@@ -60,7 +90,11 @@ func ListPaymentMethods(ctx context.Context, pool *pgxpool.Pool) ([]*model.Payme
 	return methods, nil
 }
 
-func CreatePaymentMethod(ctx context.Context, pool *pgxpool.Pool, method *model.PaymentMethod) error {
+func CreatePaymentMethod(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	method *model.PaymentMethod,
+) error {
 	method.Owner = ctxutil.GetUser(ctx)
 
 	query, args, err := squirrel.Insert("payment_method").
@@ -80,7 +114,11 @@ func CreatePaymentMethod(ctx context.Context, pool *pgxpool.Pool, method *model.
 	return nil
 }
 
-func UpdatePaymentMethod(ctx context.Context, pool *pgxpool.Pool, method *model.PaymentMethod) error {
+func UpdatePaymentMethod(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	method *model.PaymentMethod,
+) error {
 	query, args, err := squirrel.Update("payment_method").
 		Set("display_name", method.DisplayName).
 		Set("acquired_date", method.AcquiredDate).
@@ -123,7 +161,11 @@ func DeletePaymentMethod(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) 
 	return tag.RowsAffected() > 0, nil
 }
 
-func getRewardCard(ctx context.Context, pool *pgxpool.Pool, cardID uuid.UUID) (*model.RewardCard, error) {
+func getRewardCard(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	cardID uuid.UUID,
+) (*model.RewardCard, error) {
 	if cardID == uuid.Nil {
 		return &model.RewardCard{}, nil
 	}

@@ -2,14 +2,15 @@ package auth
 
 import (
 	"errors"
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"golang.org/x/net/context"
 	"log"
 	"net/http"
 	"time"
 	"yaba/internal/user"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/net/context"
 )
 
 type LoginHandler struct {

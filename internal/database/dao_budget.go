@@ -3,14 +3,15 @@ package database
 import (
 	"context"
 	"fmt"
+	"yaba/errors"
+	"yaba/internal/ctxutil"
+	"yaba/internal/model"
+
 	"github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"yaba/errors"
-	"yaba/internal/ctxutil"
-	"yaba/internal/model"
 )
 
 const getBudget = `
@@ -67,7 +68,11 @@ DELETE FROM expense
 WHERE budget_id = $1
 `
 
-func GetBudget(ctx context.Context, pool *pgxpool.Pool, owner, budgetID uuid.UUID) (*model.Budget, error) {
+func GetBudget(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	owner, budgetID uuid.UUID,
+) (*model.Budget, error) {
 	var budgets []*model.Budget
 
 	var err error
@@ -87,7 +92,12 @@ func GetBudget(ctx context.Context, pool *pgxpool.Pool, owner, budgetID uuid.UUI
 	return budgets[0], nil
 }
 
-func GetBudgets(ctx context.Context, pool *pgxpool.Pool, owner uuid.UUID, limit int) ([]*model.Budget, error) {
+func GetBudgets(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	owner uuid.UUID,
+	limit int,
+) ([]*model.Budget, error) {
 	var budgets []*model.Budget
 
 	var err error
@@ -156,8 +166,15 @@ func PersistBudget(ctx context.Context, pool *pgxpool.Pool, budget *model.Budget
 			}
 		}
 
-		batch.Queue(upsertExpense,
-			expense.BudgetID, expense.Category, expense.Amount, expense.Fixed, expense.Slack, expense.ID)
+		batch.Queue(
+			upsertExpense,
+			expense.BudgetID,
+			expense.Category,
+			expense.Amount,
+			expense.Fixed,
+			expense.Slack,
+			expense.ID,
+		)
 	}
 
 	// Persist budget in batched transaction

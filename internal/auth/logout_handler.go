@@ -2,9 +2,10 @@ package auth
 
 import (
 	"encoding/hex"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"net/http"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type LogoutHandler struct {

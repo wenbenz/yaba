@@ -1,8 +1,6 @@
 package handlers_test
 
 import (
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
 	"strconv"
 	"testing"
 	"time"
@@ -10,6 +8,9 @@ import (
 	"yaba/internal/ctxutil"
 	"yaba/internal/database"
 	"yaba/internal/handlers"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 
 	"yaba/internal/test/helper"
 )
@@ -244,36 +245,34 @@ func TestExpenditures(t *testing.T) {
 	startDateString, endDateString := "2020-01-01", "2020-02-01"
 	startDate, _ := time.ParseInLocation(time.DateOnly, startDateString, time.UTC)
 	endDate, _ := time.ParseInLocation(time.DateOnly, endDateString, time.UTC)
-	limit := 301
+	limit := 11
 
-	err := database.PersistExpenditures(ctx, pool, helper.MockExpenditures(300, user, startDate, endDate))
-	require.NoError(t, err)
+	generator := helper.NewTestDataGenerator(user, 87)
+	generator.GenerateExpenditures(limit-1, user, startDate, endDate)
+	require.NoError(t, generator.PersistAll(ctx, pool))
 
-	persistedExpenditures, err := database.ListExpenditures(ctx, pool, nil, nil, nil, startDate, endDate, &limit, nil)
+	expenditures, err := resolver.Query().
+		Expenditures(ctx, nil, nil, nil, nil, &startDateString, &endDateString, &limit, nil)
 	require.NoError(t, err)
-	require.Len(t, persistedExpenditures, 300)
-
-	expenditures, err := resolver.Query().Expenditures(ctx, &startDateString, &endDateString, nil, nil, &limit, nil)
-	require.NoError(t, err)
-	require.Len(t, expenditures, 300)
+	require.Len(t, expenditures, limit-1)
 
 	for i, expenditure := range expenditures {
-		require.Equal(t, persistedExpenditures[i].Name, *expenditure.Name)
+		require.Equal(t, generator.Expenditures[i].Name, *expenditure.Name)
 		amount, err := strconv.ParseFloat(*expenditure.Amount, 64)
 		require.NoError(t, err)
-		require.InDelta(t, persistedExpenditures[i].Amount, amount, .009)
-		require.Equal(t, persistedExpenditures[i].CreatedTime.Format(time.DateOnly), *expenditure.Created)
-		require.Equal(t, persistedExpenditures[i].Date.Format(time.DateOnly), *expenditure.Date)
-		require.Equal(t, persistedExpenditures[i].Comment, *expenditure.Comment)
-		require.Equal(t, persistedExpenditures[i].BudgetCategory, *expenditure.BudgetCategory)
-		require.Equal(t, strconv.Itoa(persistedExpenditures[i].ID), *expenditure.ID)
-		require.Equal(t, persistedExpenditures[i].Method, *expenditure.Method)
-		require.Equal(t, persistedExpenditures[i].Source, *expenditure.Source)
-		require.Equal(t, persistedExpenditures[i].RewardCategory, *expenditure.RewardCategory)
+		require.InDelta(t, generator.Expenditures[i].Amount, amount, .009)
+		require.Equal(t, time.Now().UTC().Format(time.DateOnly), *expenditure.Created)
+		require.Equal(t, generator.Expenditures[i].Date.Format(time.DateOnly), *expenditure.Date)
+		require.Equal(t, generator.Expenditures[i].Comment, *expenditure.Comment)
+		require.Equal(t, generator.Expenditures[i].BudgetCategory, *expenditure.BudgetCategory)
+		require.NotNil(t, expenditure.ID)
+		require.Equal(t, generator.Expenditures[i].Method.String(), *expenditure.Method)
+		require.Equal(t, generator.Expenditures[i].Source, *expenditure.Source)
+		require.Equal(t, generator.Expenditures[i].RewardCategory, *expenditure.RewardCategory)
 	}
 
 	// nil range should return everything
-	expenditures, err = resolver.Query().Expenditures(ctx, nil, nil, nil, nil, nil, nil)
+	expenditures, err = resolver.Query().Expenditures(ctx, nil, nil, nil, nil, nil, nil, nil, nil)
 	require.NoError(t, err)
 	require.Len(t, expenditures, 10)
 }
@@ -290,7 +289,11 @@ func TestAggregateExpenditures(t *testing.T) {
 	startDate, _ := time.ParseInLocation(time.DateOnly, startDateString, time.UTC)
 	endDate, _ := time.ParseInLocation(time.DateOnly, endDateString, time.UTC)
 
-	err := database.PersistExpenditures(ctx, pool, helper.MockExpenditures(300, user, startDate, endDate))
+	err := database.PersistExpenditures(
+		ctx,
+		pool,
+		helper.NewTestDataGenerator(user, 847).GenerateExpenditures(300, user, startDate, endDate),
+	)
 	require.NoError(t, err)
 
 	aggregate, err := resolver.Query().AggregatedExpenditures(ctx, nil, nil, nil, nil, nil)
@@ -309,12 +312,14 @@ func TestCreateExpenditures(t *testing.T) {
 	t.Run("successful creation", func(t *testing.T) {
 		t.Parallel()
 
+		generator := helper.NewTestDataGenerator(user, 847)
+		methods := generator.GeneratePaymentMethods(2, user)
 		inputs := []*model.ExpenditureInput{
 			{
 				Name:           ptr("Expense 1"),
 				Amount:         100.50,
 				Date:           "2024-03-20",
-				Method:         ptr("credit"),
+				Method:         ptr(methods[0].ID.String()),
 				BudgetCategory: ptr("groceries"),
 				Comment:        ptr("Test expense 1"),
 			},
@@ -322,7 +327,7 @@ func TestCreateExpenditures(t *testing.T) {
 				Name:           ptr("Expense 2"),
 				Amount:         50.25,
 				Date:           "2024-03-21",
-				Method:         ptr("debit"),
+				Method:         ptr(methods[1].ID.String()),
 				BudgetCategory: ptr("entertainment"),
 				Comment:        ptr("Test expense 2"),
 			},
@@ -336,7 +341,18 @@ func TestCreateExpenditures(t *testing.T) {
 		endDate, _ := time.ParseInLocation(time.DateOnly, "2024-03-21", time.UTC)
 		limit := 10
 
-		expenditures, err := database.ListExpenditures(ctx, pool, nil, nil, nil, startDate, endDate, &limit, nil)
+		expenditures, err := database.ListExpenditures(
+			ctx,
+			pool,
+			nil,
+			nil,
+			nil,
+			nil,
+			startDate,
+			endDate,
+			&limit,
+			nil,
+		)
 		require.NoError(t, err)
 		require.Len(t, expenditures, 2)
 
@@ -344,14 +360,14 @@ func TestCreateExpenditures(t *testing.T) {
 		require.Equal(t, *inputs[1].Name, expenditures[0].Name)
 		require.InDelta(t, inputs[1].Amount, expenditures[0].Amount, 0.001)
 		require.Equal(t, *inputs[1].BudgetCategory, expenditures[0].BudgetCategory)
-		require.Equal(t, *inputs[1].Method, expenditures[0].Method)
+		require.Equal(t, methods[1].ID, expenditures[0].Method)
 		require.Equal(t, *inputs[1].Comment, expenditures[0].Comment)
 
 		// Verify first expenditure (comes second due to descending order)
 		require.Equal(t, *inputs[0].Name, expenditures[1].Name)
 		require.InDelta(t, inputs[0].Amount, expenditures[1].Amount, 0.001)
 		require.Equal(t, *inputs[0].BudgetCategory, expenditures[1].BudgetCategory)
-		require.Equal(t, *inputs[0].Method, expenditures[1].Method)
+		require.Equal(t, methods[0].ID, expenditures[1].Method)
 		require.Equal(t, *inputs[0].Comment, expenditures[1].Comment)
 	})
 
@@ -424,7 +440,8 @@ func TestCreateRewardCard(t *testing.T) {
 	require.Equal(t, input.RewardType, result.RewardType)
 
 	// Verify persistence using RewardCards query
-	cards, err := resolver.Query().RewardCards(ctx, &input.Issuer, &input.Name, &input.Region, nil, nil)
+	cards, err := resolver.Query().
+		RewardCards(ctx, &input.Issuer, &input.Name, &input.Region, nil, nil)
 	require.NoError(t, err)
 	require.Len(t, cards, 1)
 

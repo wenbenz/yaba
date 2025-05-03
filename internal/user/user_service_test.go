@@ -1,12 +1,13 @@
 package user_test
 
 import (
-	"github.com/brianvoe/gofakeit"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"yaba/internal/test/helper"
 	"yaba/internal/user"
+
+	"github.com/brianvoe/gofakeit/v7"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCreateNewUserWithEmptyUsername(t *testing.T) {

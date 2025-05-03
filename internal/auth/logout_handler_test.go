@@ -1,8 +1,6 @@
 package auth_test
 
 import (
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,6 +8,9 @@ import (
 	"yaba/internal/auth"
 	"yaba/internal/ctxutil"
 	"yaba/internal/test/helper"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLogoutHandler(t *testing.T) {

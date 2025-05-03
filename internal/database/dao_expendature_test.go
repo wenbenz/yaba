@@ -1,8 +1,6 @@
 package database_test
 
 import (
-	"fmt"
-	"github.com/brianvoe/gofakeit"
 	"slices"
 	"sort"
 	"strings"
@@ -12,6 +10,8 @@ import (
 	"yaba/internal/database"
 	"yaba/internal/model"
 	"yaba/internal/test/helper"
+
+	"github.com/brianvoe/gofakeit/v7"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -24,7 +24,8 @@ func TestListAllExpenditures(t *testing.T) {
 	owner := uuid.New()
 	endDate := time.Now()
 	startDate := endDate.AddDate(0, 0, -30)
-	generated := helper.MockExpenditures(10, owner, startDate, endDate)
+	generated := helper.NewTestDataGenerator(owner, 346).
+		GenerateExpenditures(10, owner, startDate, endDate)
 
 	// Sort expenditures and make sure dates are unique
 	sort.Slice(generated, func(i, j int) bool {
@@ -47,7 +48,18 @@ func TestListAllExpenditures(t *testing.T) {
 
 	require.NoError(t, database.PersistExpenditures(t.Context(), pool, expenditures))
 
-	fetched, err := database.ListExpenditures(ctxutil.WithUser(t.Context(), owner), pool, nil, nil, nil, startDate, endDate, nil, nil)
+	fetched, err := database.ListExpenditures(
+		ctxutil.WithUser(t.Context(), owner),
+		pool,
+		nil,
+		nil,
+		nil,
+		nil,
+		startDate,
+		endDate,
+		nil,
+		nil,
+	)
 	require.NoError(t, err)
 	require.Len(t, fetched, len(expenditures))
 
@@ -62,7 +74,7 @@ func TestListAllExpenditures(t *testing.T) {
 	}
 }
 
-//nolint:gocognit,cyclop
+//nolint:gocognit,cyclop, maintidx
 func TestListExpenditures(t *testing.T) {
 	t.Parallel()
 
@@ -73,8 +85,8 @@ func TestListExpenditures(t *testing.T) {
 	owner := uuid.New()
 	endDate := time.Now().UTC().Truncate(24 * time.Hour)
 	startDate := endDate.AddDate(0, 0, -30)
-	generated := helper.MockExpenditures(numExpenditures, owner, startDate, endDate)
-
+	generator := helper.NewTestDataGenerator(owner, 78567)
+	generated := generator.GenerateExpenditures(numExpenditures, owner, startDate, endDate)
 	// Randomly make 10 of them have no categories
 	for range 10 {
 		for {
@@ -88,24 +100,36 @@ func TestListExpenditures(t *testing.T) {
 	}
 
 	// Persist expenditures
-	require.NoError(t, database.PersistExpenditures(t.Context(), pool, generated))
+	require.NoError(t, generator.PersistAll(t.Context(), pool))
 
 	// Refetch expenditures so IDs and order is correct for other tests.
 	// TestListAllExpenditures verifies the integrity of using this.
-	expenditures, err := database.ListExpenditures(ctxutil.WithUser(t.Context(), owner), pool, nil, nil, nil, startDate, endDate, nil, nil)
+	expenditures, err := database.ListExpenditures(
+		ctxutil.WithUser(t.Context(), owner),
+		pool,
+		nil,
+		nil,
+		nil,
+		nil,
+		startDate,
+		endDate,
+		nil,
+		nil,
+	)
 	require.NoError(t, err)
 	require.Len(t, expenditures, numExpenditures, "Num expenditures doesn't match")
 
 	testCases := []struct {
-		name       string
-		queryStart time.Time
-		queryEnd   time.Time
-		filter     *string
-		category   *string
-		source     *string
-		cursor     *int
-		limit      *int
-		expected   func() []*model.Expenditure
+		name          string
+		queryStart    time.Time
+		queryEnd      time.Time
+		filter        *string
+		category      *string
+		paymentMethod *string
+		source        *string
+		cursor        *int
+		limit         *int
+		expected      func() []*model.Expenditure
 	}{
 		{
 			name:       "fetch_with_limit",
@@ -164,6 +188,7 @@ func TestListExpenditures(t *testing.T) {
 						expected = append(expected, e)
 					}
 				}
+
 				return expected
 			},
 		},
@@ -181,7 +206,7 @@ func TestListExpenditures(t *testing.T) {
 						expected = append(expected, e)
 					}
 				}
-				fmt.Println("expected", expected)
+
 				return expected
 			},
 		},
@@ -189,14 +214,14 @@ func TestListExpenditures(t *testing.T) {
 			name:       "fetch_by_category",
 			queryStart: startDate,
 			queryEnd:   endDate,
-			category:   pointer("Electric"),
+			category:   pointer("Groceries"),
 			source:     nil,
 			cursor:     nil,
 			limit:      nil,
 			expected: func() []*model.Expenditure {
 				var result []*model.Expenditure
 				for _, e := range expenditures {
-					if e.BudgetCategory == "Electric" {
+					if e.BudgetCategory == "Groceries" {
 						result = append(result, e)
 					}
 				}
@@ -253,7 +278,18 @@ func TestListExpenditures(t *testing.T) {
 			ctx := ctxutil.WithUser(t.Context(), owner)
 
 			// Run test case
-			fetched, err := database.ListExpenditures(ctx, pool, tc.filter, tc.category, tc.source, tc.queryStart, tc.queryEnd, tc.limit, tc.cursor)
+			fetched, err := database.ListExpenditures(
+				ctx,
+				pool,
+				tc.filter,
+				tc.category,
+				nil,
+				tc.source,
+				tc.queryStart,
+				tc.queryEnd,
+				tc.limit,
+				tc.cursor,
+			)
 			require.NoError(t, err)
 
 			expected := tc.expected()
@@ -429,13 +465,14 @@ func TestAggregateExpenditures(t *testing.T) {
 			startDate, _ := time.ParseInLocation(time.DateOnly, tc.dataStartDate, time.UTC)
 			endDate, _ := time.ParseInLocation(time.DateOnly, tc.dataEndDate, time.UTC)
 
-			mocked := helper.MockExpenditures(300, user, startDate, endDate)
+			generator := helper.NewTestDataGenerator(user, 785)
+			generator.GenerateExpenditures(300, user, startDate, endDate)
 
 			// Create a basic budget with all the generated categories
 			budget := model.NewBudget(user, "test budget")
 
 			categories := make(map[string]bool)
-			for i, e := range mocked {
+			for i, e := range generator.Expenditures {
 				if e.BudgetCategory != "" && !categories[e.BudgetCategory] {
 					budget.SetBasicExpense(e.BudgetCategory, float64(i*100))
 
@@ -446,17 +483,35 @@ func TestAggregateExpenditures(t *testing.T) {
 			require.NoError(t, database.PersistBudget(ctx, pool, budget))
 
 			// Persist expenditures after budget so we can group by budget category
-			err := database.PersistExpenditures(ctx, pool, mocked)
-			require.NoError(t, err)
+			require.NoError(t, generator.PersistAll(ctx, pool))
 
 			// Make the call
 			startDate, _ = time.ParseInLocation(time.DateOnly, tc.startDate, time.UTC)
 			endDate, _ = time.ParseInLocation(time.DateOnly, tc.endDate, time.UTC)
-			aggregate, err := database.AggregateExpenditures(ctx, pool, startDate, endDate, tc.span, tc.aggregate, tc.groupBy)
+			aggregate, err := database.AggregateExpenditures(
+				ctx,
+				pool,
+				startDate,
+				endDate,
+				tc.span,
+				tc.aggregate,
+				tc.groupBy,
+			)
 			require.NoError(t, err)
 
 			// Calculate the expected and compare the amounts
-			expenditures, err := database.ListExpenditures(ctx, pool, nil, nil, nil, startDate, endDate, pointer(300), nil)
+			expenditures, err := database.ListExpenditures(
+				ctx,
+				pool,
+				nil,
+				nil,
+				nil,
+				nil,
+				startDate,
+				endDate,
+				pointer(300),
+				nil,
+			)
 			require.NoError(t, err)
 
 			expected := tc.expectedAmounts(expenditures)

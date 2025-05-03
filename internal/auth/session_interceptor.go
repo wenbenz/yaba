@@ -2,10 +2,11 @@ package auth
 
 import (
 	"encoding/hex"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"golang.org/x/net/context"
 	"net/http"
 	"yaba/internal/ctxutil"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/net/context"
 )
 
 type SessionInterceptor struct {

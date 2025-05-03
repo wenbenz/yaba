@@ -2,12 +2,13 @@ package model
 
 import (
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"golang.org/x/net/context"
 	"time"
 	"yaba/internal/database"
 	"yaba/internal/model"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/net/context"
 )
 
 // PaymentMethodToPaymentMethodResponse converts an internal payment method to a GraphQL response.
@@ -38,7 +39,10 @@ func PaymentMethodToPaymentMethodResponse(pm *model.PaymentMethod) *PaymentMetho
 }
 
 // PaymentMethodFromPaymentMethodInput converts a GraphQL input to an internal payment method.
-func PaymentMethodFromPaymentMethodInput(ctx context.Context, pool *pgxpool.Pool, input PaymentMethodInput,
+func PaymentMethodFromPaymentMethodInput(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	input PaymentMethodInput,
 ) (*model.PaymentMethod, error) {
 	var acquired, cancel time.Time
 

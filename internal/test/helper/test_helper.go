@@ -48,7 +48,11 @@ func setupTestContainer() *postgres.PostgresContainer {
 
 	log.Println("started test container")
 
-	connectionString := postgresContainer.MustConnectionString(ctx, "sslmode=disable", "application_name=test")
+	connectionString := postgresContainer.MustConnectionString(
+		ctx,
+		"sslmode=disable",
+		"application_name=test",
+	)
 
 	migrator := must(migrate.New("file://../../migrations", connectionString))
 	if err := migrator.Up(); err != nil {
