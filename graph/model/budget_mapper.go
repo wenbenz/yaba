@@ -2,9 +2,10 @@ package model
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"time"
 	"yaba/internal/model"
+
+	"github.com/google/uuid"
 )
 
 func BudgetFromNewBudgetInput(owner uuid.UUID, input *NewBudgetInput) (*model.Budget, error) {
@@ -24,7 +25,10 @@ func BudgetFromNewBudgetInput(owner uuid.UUID, input *NewBudgetInput) (*model.Bu
 	}, nil
 }
 
-func BudgetFromUpdateBudgetInput(budgetID, owner uuid.UUID, input *UpdateBudgetInput) (*model.Budget, error) {
+func BudgetFromUpdateBudgetInput(
+	budgetID, owner uuid.UUID,
+	input *UpdateBudgetInput,
+) (*model.Budget, error) {
 	expenses, err := expensesFromExpenseInput(budgetID, input.Expenses)
 	if err != nil {
 		return nil, err
@@ -60,12 +64,20 @@ func ExpendituresFromExpenditureInput(user uuid.UUID, input []*ExpenditureInput)
 			return nil, fmt.Errorf("failed to parse date: %w", err)
 		}
 
+		method := uuid.Nil
+
+		if expenditure.Method != nil {
+			if method, err = uuid.Parse(*expenditure.Method); err != nil {
+				return nil, fmt.Errorf("failed to parse UUID: %w", err)
+			}
+		}
+
 		expenditures[i] = &model.Expenditure{
 			Owner:          user,
 			Date:           date,
 			Amount:         expenditure.Amount,
 			Name:           dereferenceOrEmpty(expenditure.Name),
-			Method:         dereferenceOrEmpty(expenditure.Method),
+			Method:         method,
 			BudgetCategory: dereferenceOrEmpty(expenditure.BudgetCategory),
 			RewardCategory: dereferenceOrEmpty(expenditure.RewardCategory),
 			Comment:        dereferenceOrEmpty(expenditure.Comment),

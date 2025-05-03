@@ -1,9 +1,10 @@
 package auth
 
 import (
-	"github.com/google/uuid"
 	"net/http"
 	"yaba/internal/ctxutil"
+
+	"github.com/google/uuid"
 )
 
 type RequiresAuthenticatedUser struct {

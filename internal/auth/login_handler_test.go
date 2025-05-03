@@ -1,8 +1,6 @@
 package auth_test
 
 import (
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -11,6 +9,9 @@ import (
 	"yaba/internal/auth"
 	"yaba/internal/test/helper"
 	"yaba/internal/user"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLoginHandler(t *testing.T) {

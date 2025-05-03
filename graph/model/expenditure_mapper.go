@@ -5,9 +5,11 @@ import (
 	"strconv"
 	"time"
 	"yaba/internal/model"
+
+	"github.com/google/uuid"
 )
 
-func ExpendituresToExpenitureResponse(expenditures []*model.Expenditure) []*ExpenditureResponse {
+func ExpendituresToExpenitureResponse(expenditures []*model.Expenditure) ([]*ExpenditureResponse, error) {
 	ret := make([]*ExpenditureResponse, len(expenditures))
 
 	for i, obj := range expenditures {
@@ -24,19 +26,25 @@ func ExpendituresToExpenitureResponse(expenditures []*model.Expenditure) []*Expe
 			Name:           &obj.Name,
 			Amount:         &amount,
 			Date:           &date,
-			Method:         &obj.Method,
 			BudgetCategory: &obj.BudgetCategory,
 			RewardCategory: &cat,
 			Comment:        &obj.Comment,
 			Created:        &created,
 			Source:         &obj.Source,
 		}
+
+		if obj.Method != uuid.Nil {
+			v := obj.Method.String()
+			ret[i].Method = &v
+		}
 	}
 
-	return ret
+	return ret, nil
 }
 
-func ExpenditureSummariesToAggregateExpenditures(expenditures []*model.ExpenditureSummary, timespan Timespan,
+func ExpenditureSummariesToAggregateExpenditures(
+	expenditures []*model.ExpenditureSummary,
+	timespan Timespan,
 ) []*AggregatedExpendituresResponse {
 	ret := make([]*AggregatedExpendituresResponse, len(expenditures))
 

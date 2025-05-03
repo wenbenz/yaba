@@ -4,15 +4,16 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/net/context"
-	"log"
-	"net/http"
-	"os"
-	"time"
 )
 
 type Token struct {
@@ -79,7 +80,10 @@ func GetSessionToken(ctx context.Context, pool *pgxpool.Pool, id []byte) (*Token
 }
 
 func DeleteSessionToken(ctx context.Context, pool *pgxpool.Pool, id []byte) error {
-	sql, args, err := squirrel.Delete("token").Where(squirrel.Eq{"id": id}).PlaceholderFormat(squirrel.Dollar).ToSql()
+	sql, args, err := squirrel.Delete("token").
+		Where(squirrel.Eq{"id": id}).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
 	if err == nil {
 		if _, err = pool.Exec(ctx, sql, args...); err == nil {
 			return nil

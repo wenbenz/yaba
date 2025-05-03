@@ -2,12 +2,13 @@ package database
 
 import (
 	"fmt"
+	"yaba/internal/model"
+
 	"github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/net/context"
-	"yaba/internal/model"
 )
 
 func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *model.User) error {
@@ -28,7 +29,11 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *model.User) error
 	return nil
 }
 
-func GetUserByUsername(ctx context.Context, pool *pgxpool.Pool, username string) (*model.User, error) {
+func GetUserByUsername(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	username string,
+) (*model.User, error) {
 	u := &model.User{}
 
 	query, args, err := squirrel.

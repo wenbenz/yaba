@@ -152,8 +152,8 @@ func TestPersistBudgetClassifiesExpenditures(t *testing.T) {
 	require.NoError(t, database.PersistBudget(ctx, pool, budget))
 
 	// Verify expenditures were updated
-	fetched, err := database.ListExpenditures(ctx, pool, time.Now().AddDate(0, 0, -1),
-		time.Now().AddDate(0, 0, 1), nil, nil, nil, nil)
+	fetched, err := database.ListExpenditures(ctx, pool,
+		nil, nil, nil, nil, time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, 1), nil, nil)
 	require.NoError(t, err)
 	require.Len(t, fetched, 3)
 
@@ -169,7 +169,11 @@ func TestPersistBudgetClassifiesExpenditures(t *testing.T) {
 		switch e.BudgetCategory {
 		case "groceries":
 			if e.Name == "Walmart" {
-				require.Equal(t, existingExpenseID, e.ExpenseID) // Should keep existing classification
+				require.Equal(
+					t,
+					existingExpenseID,
+					e.ExpenseID,
+				) // Should keep existing classification
 			} else {
 				require.Equal(t, groceryExpense.ID, e.ExpenseID) // Should be newly classified
 			}
@@ -218,8 +222,16 @@ func TestPersistBudgetClassifiesExpendituresWithExistingBudget(t *testing.T) {
 		{
 			name: "mixed classified and unclassified",
 			initialExpenditures: []*model.Expenditure{
-				{Name: "Walmart", Amount: 50.00, BudgetCategory: "groceries"},     // Will be classified
-				{Name: "Netflix", Amount: 15.00, BudgetCategory: "entertainment"}, // Will be classified
+				{
+					Name:           "Walmart",
+					Amount:         50.00,
+					BudgetCategory: "groceries",
+				}, // Will be classified
+				{
+					Name:           "Netflix",
+					Amount:         15.00,
+					BudgetCategory: "entertainment",
+				}, // Will be classified
 				{Name: "Rent", Amount: 12.00, BudgetCategory: "rent"},
 			},
 			existingExpenses: []string{"rent"},
@@ -264,8 +276,8 @@ func TestPersistBudgetClassifiesExpendituresWithExistingBudget(t *testing.T) {
 			require.NoError(t, database.PersistBudget(ctx, pool, budget))
 
 			// Verify classifications
-			fetched, err := database.ListExpenditures(ctx, pool, time.Now().AddDate(0, 0, -1),
-				time.Now().AddDate(0, 0, 1), nil, nil, nil, nil)
+			fetched, err := database.ListExpenditures(ctx, pool, nil, nil, nil, nil,
+				time.Now().AddDate(0, 0, -1), time.Now().AddDate(0, 0, 1), nil, nil)
 			require.NoError(t, err)
 
 			// Get the new expense IDs from the budget

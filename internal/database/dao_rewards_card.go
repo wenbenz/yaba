@@ -3,13 +3,14 @@ package database
 import (
 	"errors"
 	"fmt"
+	"yaba/internal/model"
+
 	"github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/net/context"
-	"yaba/internal/model"
 )
 
 var (
@@ -21,7 +22,11 @@ var (
 	ErrMissingRewardType = errors.New("reward type is required")
 )
 
-func GetRewardCard(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) (*model.RewardCard, error) {
+func GetRewardCard(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	id uuid.UUID,
+) (*model.RewardCard, error) {
 	query, args, err := squirrel.Select("*").
 		From("rewards_card").
 		Where(squirrel.Eq{"id": id}).
@@ -58,8 +63,15 @@ func ListRewardCards(ctx context.Context, pool *pgxpool.Pool,
 }
 
 //nolint:cyclop
-func getCards(ctx context.Context, pool *pgxpool.Pool,
-	issuer *string, name *string, region *string, limit *int, offset *int) ([]*model.RewardCard, error) {
+func getCards(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	issuer *string,
+	name *string,
+	region *string,
+	limit *int,
+	offset *int,
+) ([]*model.RewardCard, error) {
 	query := squirrel.Select("*").
 		From("rewards_card").
 		OrderBy("name", "version DESC")
@@ -100,7 +112,11 @@ func getCards(ctx context.Context, pool *pgxpool.Pool,
 	return cards, nil
 }
 
-func setRewardCardCategories(ctx context.Context, pool *pgxpool.Pool, cards []*model.RewardCard) error {
+func setRewardCardCategories(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	cards []*model.RewardCard,
+) error {
 	if len(cards) == 0 {
 		return nil
 	}

@@ -3,16 +3,22 @@ package user
 import (
 	"bytes"
 	"fmt"
+	"yaba/errors"
+	"yaba/internal/database"
+	"yaba/internal/model"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/argon2"
 	"golang.org/x/net/context"
-	"yaba/errors"
-	"yaba/internal/database"
-	"yaba/internal/model"
 )
 
-func CreateNewUser(ctx context.Context, pool *pgxpool.Pool, username string, password string) (*uuid.UUID, error) {
+func CreateNewUser(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	username string,
+	password string,
+) (*uuid.UUID, error) {
 	var passwordHash []byte
 	var err error
 
@@ -37,7 +43,11 @@ func CreateNewUser(ctx context.Context, pool *pgxpool.Pool, username string, pas
 	return &id, nil
 }
 
-func VerifyUser(ctx context.Context, pool *pgxpool.Pool, username, password string) (*uuid.UUID, error) {
+func VerifyUser(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	username, password string,
+) (*uuid.UUID, error) {
 	var u *model.User
 	var err error
 
@@ -63,5 +73,12 @@ func hashPassword(userID uuid.UUID, password string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to marshal user id: %w", err)
 	}
 
-	return argon2.IDKey([]byte(password), idBytes, 1, passwordHashMemory, passwordHashThreads, passwordHashKeylength), nil
+	return argon2.IDKey(
+		[]byte(password),
+		idBytes,
+		1,
+		passwordHashMemory,
+		passwordHashThreads,
+		passwordHashKeylength,
+	), nil
 }

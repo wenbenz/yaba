@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
-	"github.com/Masterminds/squirrel"
 	"os"
 	"yaba/errors"
+
+	"github.com/Masterminds/squirrel"
 )
 
 func init() {

@@ -1,16 +1,17 @@
 package database_test
 
 import (
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 	"testing"
 	"time"
 	"yaba/internal/ctxutil"
 	"yaba/internal/database"
 	"yaba/internal/model"
 	"yaba/internal/test/helper"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/net/context"
 )
 
 func TestCreateAndGetPaymentMethod(t *testing.T) {
@@ -270,7 +271,11 @@ func TestUpdatePaymentMethod(t *testing.T) {
 				CancelByDate: time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC),
 			}
 
-			err = database.UpdatePaymentMethod(context.WithValue(t.Context(), ctxutil.CTXUser, tt.updater), pool, updatedMethod)
+			err = database.UpdatePaymentMethod(
+				context.WithValue(t.Context(), ctxutil.CTXUser, tt.updater),
+				pool,
+				updatedMethod,
+			)
 			require.NoError(t, err)
 
 			expected := updatedMethod

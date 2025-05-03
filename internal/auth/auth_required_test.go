@@ -1,15 +1,16 @@
 package auth_test
 
 import (
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"yaba/internal/auth"
 	"yaba/internal/ctxutil"
 	"yaba/internal/test/helper"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/net/context"
 )
 
 func TestAuthRequired(t *testing.T) {
@@ -20,8 +21,12 @@ func TestAuthRequired(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}}
 
-	request, err := http.NewRequestWithContext(context.WithValue(t.Context(), ctxutil.CTXUser, uuid.New()),
-		http.MethodGet, "/", nil)
+	request, err := http.NewRequestWithContext(
+		context.WithValue(t.Context(), ctxutil.CTXUser, uuid.New()),
+		http.MethodGet,
+		"/",
+		nil,
+	)
 	require.NoError(t, err)
 
 	handler = auth.NewAuthRequired(handler)

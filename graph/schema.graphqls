@@ -90,7 +90,8 @@ type Query {
     budget(id: ID!): BudgetResponse
     budgets(first: Int): [BudgetResponse]
 
-    expenditures(since: String, until: String, source: String, category: String, count: Int, offset: Int): [ExpenditureResponse]
+    expenditures(filter: String, category: String, paymentMethod: String, source: String,
+        since: String, until: String, count: Int, offset: Int): [ExpenditureResponse]
     aggregatedExpenditures(since: String, until: String, span: Timespan,
         groupBy: GroupBy, aggregation: Aggregation): [AggregatedExpendituresResponse]
 

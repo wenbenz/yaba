@@ -1,9 +1,10 @@
 package database_test
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
 	"yaba/internal/database"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetPGConnectionString(t *testing.T) {
@@ -15,7 +16,11 @@ func TestGetPGConnectionString(t *testing.T) {
 
 	connectionString, err := database.GetPGConnectionString()
 	require.NoError(t, err)
-	require.Equal(t, "postgres://user:password1@localhost:5432/db?sslmode=disable", connectionString)
+	require.Equal(
+		t,
+		"postgres://user:password1@localhost:5432/db?sslmode=disable",
+		connectionString,
+	)
 }
 
 func TestGetPGConnectionStringBadPasswordFile(t *testing.T) {

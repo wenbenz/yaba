@@ -1,13 +1,14 @@
 package database_test
 
 import (
-	"github.com/brianvoe/gofakeit"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"yaba/internal/database"
 	"yaba/internal/model"
 	"yaba/internal/test/helper"
+
+	"github.com/brianvoe/gofakeit/v7"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCreateUser(t *testing.T) {

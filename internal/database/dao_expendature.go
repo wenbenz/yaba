@@ -3,11 +3,12 @@ package database
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"strings"
 	"time"
 	"yaba/internal/ctxutil"
 	"yaba/internal/model"
+
+	"github.com/google/uuid"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
@@ -18,8 +19,8 @@ import (
 func ListExpenditures(
 	ctx context.Context,
 	pool *pgxpool.Pool,
+	filter, category, paymentMethod, source *string,
 	since, until time.Time,
-	source, category *string,
 	limit, cursor *int,
 ) ([]*model.Expenditure, error) {
 	sq := squirrel.Select("*").
@@ -28,16 +29,23 @@ func ListExpenditures(
 		OrderBy("date DESC, id DESC").
 		PlaceholderFormat(squirrel.Dollar)
 
-	if source != nil {
-		sq = sq.Where(squirrel.Eq{"source": *source})
+	if filter != nil {
+		sq = sq.Where(squirrel.Or{
+			squirrel.ILike{"name": "%" + *filter + "%"},
+			squirrel.ILike{"comment": "%" + *filter + "%"},
+		})
 	}
 
 	if category != nil {
-		if *category == "" {
-			sq = sq.Where(squirrel.Eq{"budget_category": ""})
-		} else {
-			sq = sq.Where(squirrel.Eq{"budget_category": *category})
-		}
+		sq = sq.Where(squirrel.Eq{"budget_category": *category})
+	}
+
+	if paymentMethod != nil {
+		sq = sq.Where(squirrel.Eq{"method": *paymentMethod})
+	}
+
+	if source != nil {
+		sq = sq.Where(squirrel.Eq{"source": *source})
 	}
 
 	if limit != nil {
@@ -64,8 +72,14 @@ func ListExpenditures(
 	return expenditures, nil
 }
 
-func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, endDate time.Time,
-	timespan model.Timespan, aggregation model.Aggregation, groupBy model.GroupBy) ([]*model.ExpenditureSummary, error) {
+func AggregateExpenditures(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	startDate, endDate time.Time,
+	timespan model.Timespan,
+	aggregation model.Aggregation,
+	groupBy model.GroupBy,
+) ([]*model.ExpenditureSummary, error) {
 	var category string
 	var categoryDefault string
 
@@ -121,7 +135,11 @@ func AggregateExpenditures(ctx context.Context, pool *pgxpool.Pool, startDate, e
 	return expenditures, nil
 }
 
-func PersistExpenditures(ctx context.Context, pool *pgxpool.Pool, expenditures []*model.Expenditure) error {
+func PersistExpenditures(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	expenditures []*model.Expenditure,
+) error {
 	// If budget exists, map the expense ID to the expenditure's expense_id
 	budgets, err := GetBudgets(ctx, pool, ctxutil.GetUser(ctx), 1)
 	if err != nil {
@@ -165,7 +183,11 @@ func PersistExpenditures(ctx context.Context, pool *pgxpool.Pool, expenditures [
 	return nil
 }
 
-func ClassifyExpendituresWithNewCategory(ctx context.Context, batch *pgx.Batch, category string, expenseID uuid.UUID,
+func ClassifyExpendituresWithNewCategory(
+	ctx context.Context,
+	batch *pgx.Batch,
+	category string,
+	expenseID uuid.UUID,
 ) error {
 	query, args, err := squirrel.Update("expenditure").
 		Where(map[string]interface{}{

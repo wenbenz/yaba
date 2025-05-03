@@ -12,7 +12,7 @@ type Expenditure struct {
 	Name           string    `db:"name"`
 	Amount         float64   `db:"amount"`
 	Date           time.Time `db:"date"`
-	Method         string    `db:"method"`
+	Method         uuid.UUID `db:"method"`
 	BudgetCategory string    `db:"budget_category"`
 	RewardCategory string    `db:"reward_category"`
 	Comment        string    `db:"comment"`

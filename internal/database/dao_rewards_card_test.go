@@ -2,12 +2,13 @@ package database_test
 
 import (
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"yaba/internal/database"
 	"yaba/internal/model"
 	"yaba/internal/test/helper"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCreateRewardCard(t *testing.T) {
@@ -389,7 +390,15 @@ func TestListRewardCards(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			cards, err := database.ListRewardCards(ctx, pool, tt.issuer, tt.cardName, tt.region, nil, nil)
+			cards, err := database.ListRewardCards(
+				ctx,
+				pool,
+				tt.issuer,
+				tt.cardName,
+				tt.region,
+				nil,
+				nil,
+			)
 			require.NoError(t, err)
 			require.Len(t, cards, tt.expectedLen)
 			require.True(t, tt.checkResults(cards))

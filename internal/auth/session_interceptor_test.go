@@ -2,8 +2,6 @@ package auth_test
 
 import (
 	"encoding/hex"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -11,6 +9,9 @@ import (
 	"yaba/internal/auth"
 	"yaba/internal/ctxutil"
 	"yaba/internal/test/helper"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 )
 
 func TestInvalidSIDFormat(t *testing.T) {
@@ -41,9 +42,11 @@ func TestInvalidSIDFormat(t *testing.T) {
 
 			w := httptest.NewRecorder()
 			handler := auth.SessionInterceptor{
-				Intercepted: helper.FuncHandler{HandlerFunc: func(writer http.ResponseWriter, request *http.Request) {
-					_, _ = writer.Write([]byte(ctxutil.GetUser(request.Context()).String()))
-				}},
+				Intercepted: helper.FuncHandler{
+					HandlerFunc: func(writer http.ResponseWriter, request *http.Request) {
+						_, _ = writer.Write([]byte(ctxutil.GetUser(request.Context()).String()))
+					},
+				},
 			}
 
 			request, _ := http.NewRequestWithContext(t.Context(), http.MethodPost, "localhost", nil)

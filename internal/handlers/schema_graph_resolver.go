@@ -190,7 +190,17 @@ func (r *queryResolver) Budgets(ctx context.Context, first *int) ([]*model.Budge
 }
 
 // Expenditures is the resolver for the expenditures field.
-func (r *queryResolver) Expenditures(ctx context.Context, since *string, until *string, source *string, category *string, count *int, offset *int) ([]*model.ExpenditureResponse, error) {
+func (r *queryResolver) Expenditures(
+	ctx context.Context,
+	filter *string,
+	category *string,
+	paymentMethod *string,
+	source *string,
+	since *string,
+	until *string,
+	count *int,
+	offset *int,
+) ([]*model.ExpenditureResponse, error) {
 	start := time.Unix(0, 0).Format(time.DateOnly)
 	if since != nil {
 		start = *since
@@ -216,12 +226,12 @@ func (r *queryResolver) Expenditures(ctx context.Context, since *string, until *
 		return []*model.ExpenditureResponse{}, err
 	}
 
-	expenditures, err := database.ListExpenditures(ctx, r.Pool, sinceTime, untilTime, source, category, &limit, offset)
+	expenditures, err := database.ListExpenditures(ctx, r.Pool, filter, category, paymentMethod, source, sinceTime, untilTime, &limit, offset)
 	if err != nil {
 		return []*model.ExpenditureResponse{}, err
 	}
 
-	return model.ExpendituresToExpenitureResponse(expenditures), nil
+	return model.ExpendituresToExpenitureResponse(expenditures)
 }
 
 // AggregatedExpenditures is the resolver for the aggregatedExpenditures field.

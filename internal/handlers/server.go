@@ -1,14 +1,15 @@
 package handlers
 
 import (
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/handler/extension"
-	"github.com/99designs/gqlgen/graphql/handler/transport"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
 	"os"
 	"yaba/graph/server"
 	"yaba/internal/auth"
+
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
@@ -24,7 +25,6 @@ func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 
 	mux.Handle("/graphql", auth.NewAuthRequired(gqlHandler))
 
-	mux.Handle("/api/upload", auth.NewAuthRequired(UploadHandler{Pool: pool}))
 	mux.Handle("/api/register", auth.CreateNewUserHandler(pool))
 	mux.Handle("/api/login", auth.VerifyUserHandler(pool))
 	mux.Handle("/api/logout", auth.NewLogoutHandler(pool))

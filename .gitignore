@@ -30,3 +30,4 @@ go.work.sum
 
 db_password.txt
 dist
+/generated.csv

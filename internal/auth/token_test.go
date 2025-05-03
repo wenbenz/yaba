@@ -2,13 +2,14 @@ package auth_test
 
 import (
 	"encoding/hex"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
 	"time"
 	"yaba/internal/auth"
 	"yaba/internal/test/helper"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewToken(t *testing.T) {
