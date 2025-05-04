@@ -1,6 +1,7 @@
 package model
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 	"yaba/internal/database"
@@ -18,13 +19,13 @@ func PaymentMethodToPaymentMethodResponse(pm *model.PaymentMethod) *PaymentMetho
 	}
 	var acquired, cancel *string
 
-	if !pm.AcquiredDate.IsZero() {
-		date := pm.AcquiredDate.Format("2006-01-02")
+	if pm.AcquiredDate.Valid {
+		date := pm.AcquiredDate.Time.Format("2006-01-02")
 		acquired = &date
 	}
 
-	if !pm.CancelByDate.IsZero() {
-		date := pm.CancelByDate.Format("2006-01-02")
+	if pm.CancelByDate.Valid {
+		date := pm.CancelByDate.Time.Format("2006-01-02")
 		cancel = &date
 	}
 
@@ -75,10 +76,16 @@ func PaymentMethodFromPaymentMethodInput(
 	}
 
 	return &model.PaymentMethod{
-		ID:           uuid.New(),
-		DisplayName:  displayName,
-		AcquiredDate: acquired,
-		CancelByDate: cancel,
-		CardType:     cardType,
+		ID:          uuid.New(),
+		DisplayName: displayName,
+		AcquiredDate: sql.NullTime{
+			Time:  acquired,
+			Valid: input.AcquiredDate != nil,
+		},
+		CancelByDate: sql.NullTime{
+			Time:  cancel,
+			Valid: input.CancelByDate != nil,
+		},
+		CardType: cardType,
 	}, nil
 }

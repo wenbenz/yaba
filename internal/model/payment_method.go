@@ -1,18 +1,17 @@
 package model
 
 import (
-	"time"
-
+	"database/sql"
 	"github.com/google/uuid"
 )
 
 type PaymentMethod struct {
-	ID           uuid.UUID `db:"id"`
-	Owner        uuid.UUID `db:"owner"`
-	DisplayName  string    `db:"display_name"`
-	AcquiredDate time.Time `db:"acquired_date"`
-	CancelByDate time.Time `db:"cancel_by_date"`
-	CardType     uuid.UUID `db:"card_type"`
+	ID           uuid.UUID    `db:"id"`
+	Owner        uuid.UUID    `db:"owner"`
+	DisplayName  string       `db:"display_name"`
+	AcquiredDate sql.NullTime `db:"acquired_date"`
+	CancelByDate sql.NullTime `db:"cancel_by_date"`
+	CardType     uuid.UUID    `db:"card_type"`
 	Rewards      *RewardCard
 }
 
