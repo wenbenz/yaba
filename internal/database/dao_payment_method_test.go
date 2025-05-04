@@ -1,6 +1,7 @@
 package database_test
 
 import (
+	"database/sql"
 	"testing"
 	"time"
 	"yaba/internal/ctxutil"
@@ -31,8 +32,8 @@ func TestCreateAndGetPaymentMethod(t *testing.T) {
 				Owner:        uuid.New(),
 				DisplayName:  "Freedom Flex Card",
 				CardType:     newTestRewardCard(ctx, pool),
-				AcquiredDate: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-				CancelByDate: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+				AcquiredDate: toNullTime(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
+				CancelByDate: toNullTime(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)),
 			},
 		},
 		{
@@ -42,8 +43,8 @@ func TestCreateAndGetPaymentMethod(t *testing.T) {
 				Owner:        uuid.New(),
 				DisplayName:  "Debit Card",
 				CardType:     uuid.Nil,
-				AcquiredDate: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-				CancelByDate: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+				AcquiredDate: toNullTime(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
+				CancelByDate: toNullTime(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)),
 			},
 		},
 		{
@@ -70,8 +71,8 @@ func TestCreateAndGetPaymentMethod(t *testing.T) {
 			require.Equal(t, tc.method.Owner, stored.Owner)
 			require.Equal(t, tc.method.DisplayName, stored.DisplayName)
 			require.Equal(t, tc.method.CardType, stored.CardType)
-			require.Equal(t, tc.method.AcquiredDate.UTC(), stored.AcquiredDate.UTC())
-			require.Equal(t, tc.method.CancelByDate.UTC(), stored.CancelByDate.UTC())
+			require.Equal(t, tc.method.AcquiredDate.Time.UTC(), stored.AcquiredDate.Time.UTC())
+			require.Equal(t, tc.method.CancelByDate.Time.UTC(), stored.CancelByDate.Time.UTC())
 
 			if tc.method.CardType != uuid.Nil {
 				require.Equal(t, &model.RewardCard{
@@ -120,8 +121,8 @@ func TestCreatePaymentMethodForOtherUser(t *testing.T) {
 		Owner:        otherUser, // Attempting to create for different user
 		DisplayName:  "Other User's Card",
 		CardType:     uuid.Nil,
-		AcquiredDate: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-		CancelByDate: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		AcquiredDate: toNullTime(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
+		CancelByDate: toNullTime(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)),
 	}
 
 	err := database.CreatePaymentMethod(ctx, pool, method)
@@ -166,24 +167,24 @@ func TestListPaymentMethods(t *testing.T) {
 			Owner:        owner,
 			DisplayName:  "A - First Card",
 			CardType:     rewardCard.ID,
-			AcquiredDate: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			CancelByDate: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+			AcquiredDate: toNullTime(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
+			CancelByDate: toNullTime(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)),
 		},
 		{
 			ID:           uuid.New(),
 			Owner:        owner,
 			DisplayName:  "B - Debit Card",
 			CardType:     uuid.Nil,
-			AcquiredDate: time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC),
-			CancelByDate: time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC),
+			AcquiredDate: toNullTime(time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC)),
+			CancelByDate: toNullTime(time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC)),
 		},
 		{
 			ID:           uuid.New(),
 			Owner:        owner,
 			DisplayName:  "C - Another Card",
 			CardType:     rewardCard.ID,
-			AcquiredDate: time.Date(2024, 3, 1, 0, 0, 0, 0, time.UTC),
-			CancelByDate: time.Date(2025, 3, 1, 0, 0, 0, 0, time.UTC),
+			AcquiredDate: toNullTime(time.Date(2024, 3, 1, 0, 0, 0, 0, time.UTC)),
+			CancelByDate: toNullTime(time.Date(2025, 3, 1, 0, 0, 0, 0, time.UTC)),
 		},
 	}
 
@@ -199,8 +200,8 @@ func TestListPaymentMethods(t *testing.T) {
 		Owner:        uuid.New(),
 		DisplayName:  "Other User's Card",
 		CardType:     uuid.Nil,
-		AcquiredDate: time.Now(),
-		CancelByDate: time.Now().AddDate(1, 0, 0),
+		AcquiredDate: toNullTime(time.Now()),
+		CancelByDate: toNullTime(time.Now().AddDate(1, 0, 0)),
 	}
 	otherCtx := context.WithValue(ctx, ctxutil.CTXUser, otherMethod.Owner)
 	err = database.CreatePaymentMethod(otherCtx, pool, otherMethod)
@@ -217,8 +218,8 @@ func TestListPaymentMethods(t *testing.T) {
 		require.Equal(t, methods[i].Owner, method.Owner)
 		require.Equal(t, methods[i].DisplayName, method.DisplayName)
 		require.Equal(t, methods[i].CardType, method.CardType)
-		require.Equal(t, methods[i].AcquiredDate.UTC(), method.AcquiredDate.UTC())
-		require.Equal(t, methods[i].CancelByDate.UTC(), method.CancelByDate.UTC())
+		require.Equal(t, methods[i].AcquiredDate.Time.UTC(), method.AcquiredDate.Time.UTC())
+		require.Equal(t, methods[i].CancelByDate.Time.UTC(), method.CancelByDate.Time.UTC())
 	}
 }
 
@@ -254,8 +255,8 @@ func TestUpdatePaymentMethod(t *testing.T) {
 				Owner:        owner,
 				DisplayName:  "Initial Name",
 				CardType:     uuid.Nil,
-				AcquiredDate: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-				CancelByDate: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+				AcquiredDate: toNullTime(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
+				CancelByDate: toNullTime(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)),
 			}
 
 			err := database.CreatePaymentMethod(ctx, pool, method)
@@ -267,8 +268,8 @@ func TestUpdatePaymentMethod(t *testing.T) {
 				Owner:        owner,
 				DisplayName:  "Updated Name",
 				CardType:     uuid.Nil,
-				AcquiredDate: time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC),
-				CancelByDate: time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC),
+				AcquiredDate: toNullTime(time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC)),
+				CancelByDate: toNullTime(time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC)),
 			}
 
 			err = database.UpdatePaymentMethod(
@@ -290,8 +291,8 @@ func TestUpdatePaymentMethod(t *testing.T) {
 			require.Equal(t, expected.Owner, stored.Owner)
 			require.Equal(t, expected.DisplayName, stored.DisplayName)
 			require.Equal(t, expected.CardType, stored.CardType)
-			require.Equal(t, expected.AcquiredDate.UTC(), stored.AcquiredDate.UTC())
-			require.Equal(t, expected.CancelByDate.UTC(), stored.CancelByDate.UTC())
+			require.Equal(t, expected.AcquiredDate.Time.UTC(), stored.AcquiredDate.Time.UTC())
+			require.Equal(t, expected.CancelByDate.Time.UTC(), stored.CancelByDate.Time.UTC())
 		})
 	}
 }
@@ -310,8 +311,8 @@ func TestUpdatePaymentMethodDifferentUser(t *testing.T) {
 		Owner:        originalOwner,
 		DisplayName:  "Original Name",
 		CardType:     uuid.Nil,
-		AcquiredDate: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-		CancelByDate: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		AcquiredDate: toNullTime(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
+		CancelByDate: toNullTime(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)),
 	}
 
 	err := database.CreatePaymentMethod(ctx, pool, method)
@@ -326,8 +327,8 @@ func TestUpdatePaymentMethodDifferentUser(t *testing.T) {
 		Owner:        differentOwner,
 		DisplayName:  "Attempted Update",
 		CardType:     uuid.Nil,
-		AcquiredDate: time.Now(),
-		CancelByDate: time.Now().AddDate(1, 0, 0),
+		AcquiredDate: toNullTime(time.Now()),
+		CancelByDate: toNullTime(time.Now().AddDate(1, 0, 0)),
 	}
 
 	err = database.UpdatePaymentMethod(differentCtx, pool, updateAttempt)
@@ -338,8 +339,8 @@ func TestUpdatePaymentMethodDifferentUser(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, method.Owner, stored.Owner)
 	require.Equal(t, method.DisplayName, stored.DisplayName)
-	require.Equal(t, method.AcquiredDate.UTC(), stored.AcquiredDate.UTC())
-	require.Equal(t, method.CancelByDate.UTC(), stored.CancelByDate.UTC())
+	require.Equal(t, method.AcquiredDate.Time.UTC(), stored.AcquiredDate.Time.UTC())
+	require.Equal(t, method.CancelByDate.Time.UTC(), stored.CancelByDate.Time.UTC())
 
 	// Verify different owner cannot retrieve the payment method
 	_, err = database.GetPaymentMethod(differentCtx, pool, method.ID)
@@ -377,8 +378,8 @@ func TestDeletePaymentMethod(t *testing.T) {
 				Owner:        owner,
 				DisplayName:  "Test Card",
 				CardType:     uuid.Nil,
-				AcquiredDate: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-				CancelByDate: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+				AcquiredDate: toNullTime(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
+				CancelByDate: toNullTime(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)),
 			}
 
 			err := database.CreatePaymentMethod(ctx, pool, method)
@@ -440,4 +441,11 @@ func newTestRewardCard(ctx context.Context, pool *pgxpool.Pool) uuid.UUID {
 	_ = database.CreateRewardCard(ctx, pool, rewardCard)
 
 	return rewardCard.ID
+}
+
+func toNullTime(t time.Time) sql.NullTime {
+	return sql.NullTime{
+		Time:  t,
+		Valid: !t.IsZero(),
+	}
 }

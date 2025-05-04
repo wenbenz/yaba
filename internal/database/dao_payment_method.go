@@ -100,7 +100,7 @@ func CreatePaymentMethod(
 	query, args, err := squirrel.Insert("payment_method").
 		Columns("id", "owner", "display_name", "card_type", "acquired_date", "cancel_by_date").
 		Values(method.ID, method.Owner, method.DisplayName, method.CardType,
-			method.AcquiredDate.UTC(), method.CancelByDate.UTC()).
+			method.AcquiredDate, method.CancelByDate).
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
 	if err != nil {

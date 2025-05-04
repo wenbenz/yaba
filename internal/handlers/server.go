@@ -50,6 +50,8 @@ func routeReactPages(mux *http.ServeMux) {
 		"/budget",
 		"/expenditure",
 		"/register",
+		"/payment-methods",
+		"/browse",
 	} {
 		routeReactPage(mux, path)
 	}
