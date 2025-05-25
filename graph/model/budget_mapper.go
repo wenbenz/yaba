@@ -2,7 +2,6 @@ package model
 
 import (
 	"fmt"
-	"time"
 	"yaba/internal/model"
 
 	"github.com/google/uuid"
