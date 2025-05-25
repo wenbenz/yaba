@@ -2,7 +2,6 @@ package model
 
 import (
 	"fmt"
-	"time"
 	"yaba/internal/model"
 
 	"github.com/google/uuid"
@@ -53,47 +52,6 @@ func BudgetToBudgetResponse(b *model.Budget) *BudgetResponse {
 		Incomes:  incomesToIncomeResponse(b.Incomes),
 		Expenses: expensesToExpenseResponse(b.Expenses),
 	}
-}
-
-func ExpendituresFromExpenditureInput(user uuid.UUID, input []*ExpenditureInput) ([]*model.Expenditure, error) {
-	expenditures := make([]*model.Expenditure, len(input))
-
-	for i, expenditure := range input {
-		date, err := time.ParseInLocation(time.DateOnly, expenditure.Date, time.UTC)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse date: %w", err)
-		}
-
-		method := uuid.Nil
-
-		if expenditure.Method != nil {
-			if method, err = uuid.Parse(*expenditure.Method); err != nil {
-				return nil, fmt.Errorf("failed to parse UUID: %w", err)
-			}
-		}
-
-		expenditures[i] = &model.Expenditure{
-			Owner:          user,
-			Date:           date,
-			Amount:         expenditure.Amount,
-			Name:           dereferenceOrEmpty(expenditure.Name),
-			Method:         method,
-			BudgetCategory: dereferenceOrEmpty(expenditure.BudgetCategory),
-			RewardCategory: dereferenceOrEmpty(expenditure.RewardCategory),
-			Comment:        dereferenceOrEmpty(expenditure.Comment),
-			Source:         dereferenceOrEmpty(expenditure.Source),
-		}
-	}
-
-	return expenditures, nil
-}
-
-func dereferenceOrEmpty(ptr *string) string {
-	if ptr != nil {
-		return *ptr
-	}
-
-	return ""
 }
 
 func expensesToExpenseResponse(expenses []*model.Expense) []*ExpenseResponse {
