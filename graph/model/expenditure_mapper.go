@@ -20,7 +20,7 @@ func ExpendituresFromExpenditureInput(user uuid.UUID, input []*ExpenditureInput)
 
 		method := uuid.Nil
 
-		if expenditure.Method != nil {
+		if expenditure.Method != nil && *expenditure.Method != "" {
 			if method, err = uuid.Parse(*expenditure.Method); err != nil {
 				return nil, fmt.Errorf("failed to parse UUID: %w", err)
 			}
