@@ -13,6 +13,7 @@ func exportExpenditureHandler(pool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			w.WriteHeader(http.StatusMethodNotAllowed)
+
 			return
 		}
 
@@ -20,12 +21,14 @@ func exportExpenditureHandler(pool *pgxpool.Pool) http.HandlerFunc {
 		startDate, err := time.Parse("2006-01-02", r.URL.Query().Get("startDate"))
 		if err != nil {
 			http.Error(w, "invalid startDate format (use YYYY-MM-DD)", http.StatusBadRequest)
+
 			return
 		}
 
 		endDate, err := time.Parse("2006-01-02", r.URL.Query().Get("endDate"))
 		if err != nil {
 			http.Error(w, "invalid endDate format (use YYYY-MM-DD)", http.StatusBadRequest)
+
 			return
 		}
 
@@ -33,6 +36,7 @@ func exportExpenditureHandler(pool *pgxpool.Pool) http.HandlerFunc {
 		transactions, err := database.ListExpenditures(r.Context(), pool, nil, nil, nil, nil, startDate, endDate, nil, nil)
 		if err != nil {
 			http.Error(w, "failed to retrieve transactions", http.StatusInternalServerError)
+
 			return
 		}
 
@@ -54,6 +58,7 @@ func exportExpenditureHandler(pool *pgxpool.Pool) http.HandlerFunc {
 			"Comment",
 		}); err != nil {
 			http.Error(w, "error writing CSV", http.StatusInternalServerError)
+
 			return
 		}
 
@@ -68,6 +73,7 @@ func exportExpenditureHandler(pool *pgxpool.Pool) http.HandlerFunc {
 				t.Comment,
 			}); err != nil {
 				http.Error(w, "error writing CSV", http.StatusInternalServerError)
+
 				return
 			}
 		}
