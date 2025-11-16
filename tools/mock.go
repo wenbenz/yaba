@@ -28,6 +28,7 @@ func main() {
 
 	csvWriter := csv.NewWriter(f)
 	defer csvWriter.Flush()
+
 	_ = csvWriter.Write(
 		[]string{
 			"date",

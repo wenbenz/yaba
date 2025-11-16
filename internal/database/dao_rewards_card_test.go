@@ -485,6 +485,6 @@ func TestListRewardCardsPagination(t *testing.T) {
 	}
 }
 
-func ptr[T interface{}](s T) *T {
+func ptr[T any](s T) *T {
 	return &s
 }

@@ -17,6 +17,7 @@ func PaymentMethodToPaymentMethodResponse(pm *model.PaymentMethod) *PaymentMetho
 	if pm == nil {
 		return nil
 	}
+
 	var acquired, cancel *string
 
 	if pm.AcquiredDate.Valid {

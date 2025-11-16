@@ -34,20 +34,23 @@ func NewTestDataGenerator(owner uuid.UUID, seed uint64) *TestDataGenerator {
 
 func (g *TestDataGenerator) PersistAll(ctx context.Context, pool *pgxpool.Pool) error {
 	for _, card := range g.RewardsCards {
-		if err := database.CreateRewardCard(ctx, pool, card); err != nil {
+		err := database.CreateRewardCard(ctx, pool, card)
+		if err != nil {
 			return fmt.Errorf("failed to create reward card: %w", err)
 		}
 	}
 
 	for _, method := range g.PaymentMethods {
-		if err := database.CreatePaymentMethod(ctx, pool, method); err != nil {
+		err := database.CreatePaymentMethod(ctx, pool, method)
+		if err != nil {
 			return fmt.Errorf("failed to create payment method: %w", err)
 		}
 
 		g.PaymentMethodsMap[method.ID] = method
 	}
 
-	if err := database.PersistExpenditures(ctx, pool, g.Expenditures); err != nil {
+	err := database.PersistExpenditures(ctx, pool, g.Expenditures)
+	if err != nil {
 		return fmt.Errorf("failed to create expenditures: %w", err)
 	}
 

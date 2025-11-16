@@ -17,6 +17,7 @@ func TestAuthRequired(t *testing.T) {
 	t.Parallel()
 
 	w := httptest.NewRecorder()
+
 	var handler http.Handler = helper.FuncHandler{HandlerFunc: func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}}
@@ -38,6 +39,7 @@ func TestAuthRequiredNoUserInContext(t *testing.T) {
 	t.Parallel()
 
 	w := httptest.NewRecorder()
+
 	var handler http.Handler = helper.FuncHandler{HandlerFunc: func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}}

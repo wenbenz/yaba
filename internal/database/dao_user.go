@@ -17,7 +17,6 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *model.User) error
 		Values(user.ID, user.Username, user.PasswordHash).
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
-
 	if err != nil {
 		return fmt.Errorf("failed to construct sql: %w", err)
 	}
@@ -42,7 +41,6 @@ func GetUserByUsername(
 		Where(squirrel.Eq{"username": username}).
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to form query: %w", err)
 	}
