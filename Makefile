@@ -31,4 +31,4 @@ start-ui:
 	cd ui && yarn start
 
 build-ui:
-	cd ui && yarn build
+	cd ui && yarn package && mv ui/dist.tar.gz ../dist.tar.gz
