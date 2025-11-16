@@ -8,10 +8,9 @@ linters:
     - ireturn
     - mnd
     - nolintlint
+    - noinlineerr
+    - unqueryvet
     - varnamelen
-  settings:
-    wsl:
-      allow-cuddle-declarations: true
   exclusions:
     generated: lax
     presets:

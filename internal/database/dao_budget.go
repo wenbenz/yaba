@@ -119,7 +119,8 @@ func populateBudgets(ctx context.Context, pool *pgxpool.Pool, budgets []*model.B
 	for _, b := range budgets {
 		// get expenses
 		batch.Queue(getExpensesForBudget, b.ID).Query(func(rows pgx.Rows) error {
-			if err := pgxscan.ScanAll(&b.Expenses, rows); err != nil {
+			err := pgxscan.ScanAll(&b.Expenses, rows)
+			if err != nil {
 				return fmt.Errorf("failed to scan expenses: %w", err)
 			}
 
@@ -128,7 +129,8 @@ func populateBudgets(ctx context.Context, pool *pgxpool.Pool, budgets []*model.B
 
 		// get incomes
 		batch.Queue(getIncomesByOwner, b.ID).Query(func(rows pgx.Rows) error {
-			if err := pgxscan.ScanAll(&b.Incomes, rows); err != nil {
+			err := pgxscan.ScanAll(&b.Incomes, rows)
+			if err != nil {
 				return fmt.Errorf("failed to scan incomes: %w", err)
 			}
 
@@ -136,7 +138,8 @@ func populateBudgets(ctx context.Context, pool *pgxpool.Pool, budgets []*model.B
 		})
 	}
 
-	if err := pool.SendBatch(ctx, batch).Close(); err != nil {
+	err := pool.SendBatch(ctx, batch).Close()
+	if err != nil {
 		return fmt.Errorf("get budgets batch failed: %w", err)
 	}
 
@@ -161,7 +164,9 @@ func PersistBudget(ctx context.Context, pool *pgxpool.Pool, budget *model.Budget
 	for _, expense := range budget.Expenses {
 		if expense.ID == uuid.Nil {
 			expense.ID = uuid.New()
-			if err := ClassifyExpendituresWithNewCategory(ctx, batch, expense.Category, expense.ID); err != nil {
+
+			err := ClassifyExpendituresWithNewCategory(ctx, batch, expense.Category, expense.ID)
+			if err != nil {
 				return fmt.Errorf("failed to classify expenditures: %w", err)
 			}
 		}

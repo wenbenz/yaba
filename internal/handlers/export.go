@@ -49,14 +49,8 @@ func exportExpenditureHandler(pool *pgxpool.Pool) http.HandlerFunc {
 		defer csvWriter.Flush()
 
 		// Write header
-		if err := csvWriter.Write([]string{
-			"Date",
-			"Name",
-			"Amount",
-			"Budget Category",
-			"Reward Category",
-			"Comment",
-		}); err != nil {
+		err = csvWriter.Write([]string{"Date", "Name", "Amount", "Budget Category", "Reward Category", "Comment"})
+		if err != nil {
 			http.Error(w, "error writing CSV", http.StatusInternalServerError)
 
 			return
@@ -64,14 +58,15 @@ func exportExpenditureHandler(pool *pgxpool.Pool) http.HandlerFunc {
 
 		// And update the corresponding data write:
 		for _, t := range transactions {
-			if err := csvWriter.Write([]string{
+			err := csvWriter.Write([]string{
 				t.Date.Format("2006-01-02"),
 				t.Name,
 				fmt.Sprintf("%.2f", t.Amount),
 				t.BudgetCategory,
 				t.RewardCategory,
 				t.Comment,
-			}); err != nil {
+			})
+			if err != nil {
 				http.Error(w, "error writing CSV", http.StatusInternalServerError)
 
 				return

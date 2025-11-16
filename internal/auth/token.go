@@ -48,7 +48,6 @@ func SaveSessionToken(ctx context.Context, pool *pgxpool.Pool, token *Token) err
 		Values(token.ID, token.User, token.Type, token.Created, token.Expires).
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
-
 	if err == nil {
 		_, err = pool.Exec(ctx, sql, args...)
 	}

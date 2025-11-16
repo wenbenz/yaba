@@ -55,7 +55,9 @@ func setupTestContainer() *postgres.PostgresContainer {
 	)
 
 	migrator := must(migrate.New("file://../../migrations", connectionString))
-	if err := migrator.Up(); err != nil {
+
+	err := migrator.Up()
+	if err != nil {
 		log.Fatalf("failed to run migrations migrator: %s", err)
 	}
 

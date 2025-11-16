@@ -19,8 +19,10 @@ func CreateNewUser(
 	username string,
 	password string,
 ) (*uuid.UUID, error) {
-	var passwordHash []byte
-	var err error
+	var (
+		passwordHash []byte
+		err          error
+	)
 
 	if username == "" || password == "" {
 		return nil, errors.InvalidInputError{Input: "username/password cannot be empty"}
@@ -48,8 +50,10 @@ func VerifyUser(
 	pool *pgxpool.Pool,
 	username, password string,
 ) (*uuid.UUID, error) {
-	var u *model.User
-	var err error
+	var (
+		u   *model.User
+		err error
+	)
 
 	if u, err = database.GetUserByUsername(ctx, pool, username); err == nil {
 		var hash []byte

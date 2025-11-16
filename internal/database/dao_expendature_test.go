@@ -165,12 +165,14 @@ func TestListExpenditures(t *testing.T) {
 			limit:      nil,
 			expected: func() []*model.Expenditure {
 				var result []*model.Expenditure
+
 				for _, e := range expenditures {
 					if !e.Date.Before(startDate.AddDate(0, 0, 5)) &&
 						!e.Date.After(startDate.AddDate(0, 0, 10)) {
 						result = append(result, e)
 					}
 				}
+
 				require.NotEmpty(t, result, "expenditures should not be empty")
 
 				return result
@@ -183,6 +185,7 @@ func TestListExpenditures(t *testing.T) {
 			filter:     pointer("DenIM"), // comments are mocked using hipster sentences
 			expected: func() []*model.Expenditure {
 				var expected []*model.Expenditure
+
 				for _, e := range expenditures {
 					if strings.Contains(strings.ToLower(e.Comment), "denim") {
 						expected = append(expected, e)
@@ -200,6 +203,7 @@ func TestListExpenditures(t *testing.T) {
 			// but this will also appear in hipster phrases
 			expected: func() []*model.Expenditure {
 				var expected []*model.Expenditure
+
 				for _, e := range expenditures {
 					if strings.Contains(strings.ToLower(e.Name), "ale") ||
 						strings.Contains(strings.ToLower(e.Comment), "ale") {
@@ -220,11 +224,13 @@ func TestListExpenditures(t *testing.T) {
 			limit:      nil,
 			expected: func() []*model.Expenditure {
 				var result []*model.Expenditure
+
 				for _, e := range expenditures {
 					if e.BudgetCategory == "Groceries" {
 						result = append(result, e)
 					}
 				}
+
 				require.NotEmpty(t, result, "expenditures should not be empty")
 
 				return result
@@ -240,6 +246,7 @@ func TestListExpenditures(t *testing.T) {
 			limit:      nil,
 			expected: func() []*model.Expenditure {
 				var result []*model.Expenditure
+
 				for _, e := range expenditures {
 					if e.BudgetCategory == "" {
 						result = append(result, e)
@@ -260,11 +267,13 @@ func TestListExpenditures(t *testing.T) {
 			limit:      pointer(100),
 			expected: func() []*model.Expenditure {
 				var result []*model.Expenditure
+
 				for _, e := range expenditures {
 					if e.Source == "Nissan.csv" {
 						result = append(result, e)
 					}
 				}
+
 				require.NotEmpty(t, result, "expenditures should not be empty")
 
 				return result

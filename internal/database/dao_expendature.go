@@ -56,10 +56,12 @@ func ListExpenditures(
 		sq = sq.Offset(uint64(*cursor)) //nolint:gosec
 	}
 
-	var expenditures []*model.Expenditure
-	var query string
-	var args []interface{}
-	var err error
+	var (
+		expenditures []*model.Expenditure
+		query        string
+		args         []any
+		err          error
+	)
 
 	if query, args, err = sq.ToSql(); err == nil {
 		err = pgxscan.Select(ctx, pool, &expenditures, query, args...)
@@ -80,8 +82,10 @@ func AggregateExpenditures(
 	aggregation model.Aggregation,
 	groupBy model.GroupBy,
 ) ([]*model.ExpenditureSummary, error) {
-	var category string
-	var categoryDefault string
+	var (
+		category        string
+		categoryDefault string
+	)
 
 	switch groupBy {
 	case model.GroupByNone:
@@ -121,8 +125,8 @@ func AggregateExpenditures(
 	}
 
 	var expenditures []*model.ExpenditureSummary
-	err = pgxscan.Select(ctx, pool, &expenditures, query, args...)
 
+	err = pgxscan.Select(ctx, pool, &expenditures, query, args...)
 	if err != nil {
 		return []*model.ExpenditureSummary{}, fmt.Errorf("failed to get expenditures: %w", err)
 	}
@@ -190,14 +194,13 @@ func ClassifyExpendituresWithNewCategory(
 	expenseID uuid.UUID,
 ) error {
 	query, args, err := squirrel.Update("expenditure").
-		Where(map[string]interface{}{
+		Where(map[string]any{
 			"owner":           ctxutil.GetUser(ctx),
 			"budget_category": category,
 			"expense_id":      uuid.Nil,
 		}).
 		Set("expense_id", expenseID).
 		ToSql()
-
 	if err != nil {
 		return fmt.Errorf("failed to build query: %w", err)
 	}

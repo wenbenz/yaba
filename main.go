@@ -70,6 +70,7 @@ func main() {
 func waitForConnection(pool *pgxpool.Pool) error {
 	startTime := time.Now()
 	ticker := time.NewTicker(time.Second)
+
 	var err error
 
 	for t := range ticker.C {
@@ -94,8 +95,8 @@ func waitForConnection(pool *pgxpool.Pool) error {
 
 func applyMigrations(pool *pgxpool.Pool) error {
 	db := stdlib.OpenDBFromPool(pool)
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
 
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		return fmt.Errorf("could not create postgres driver: %w", err)
 	}
