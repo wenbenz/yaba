@@ -24,6 +24,10 @@ func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 
 	mux.Handle("/graphql", auth.NewAuthRequired(gqlHandler))
 
+	mux.Handle("/api/health", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("pong"))
+	}))
 	mux.Handle("/api/register", auth.CreateNewUserHandler(pool))
 	mux.Handle("/api/login", auth.VerifyUserHandler(pool))
 	mux.Handle("/api/logout", auth.NewLogoutHandler(pool))

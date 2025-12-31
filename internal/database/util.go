@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"yaba/errors"
 
@@ -33,7 +34,7 @@ func GetPGConnectionString() (string, error) {
 	}
 
 	return fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
-		pgUser, pgPassword, pgURL, pgDatabase, sslEnabled), nil
+		url.PathEscape(pgUser), url.PathEscape(string(pgPassword)), pgURL, pgDatabase, sslEnabled), nil
 }
 
 func getEnvTrackMissing(key string, missing *[]string) string {

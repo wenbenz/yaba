@@ -1,0 +1,31 @@
+{{- if .Values.postgresql.provisioning.enabled }}
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PostgresCluster
+metadata:
+  name: yaba
+  namespace: {{ .Values.global.namespace }}
+  annotations:
+    sidecar.opentelemetry.io/inject: "true"
+spec:
+  postgresVersion: {{ .Values.postgresql.provisioning.version }}
+  users:
+    - name: yaba
+      databases:
+        - yaba
+      options: superuser
+  instances:
+    - replicas: {{ .Values.postgresql.provisioning.replicas }}
+      minAvailable: 0
+      dataVolumeClaimSpec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.postgresql.provisioning.storage }}
+      {{- with .Values.postgresql.provisioning.resources }}
+      resources:
+        {{- . | toYaml | nindent 8 }}
+      {{- end }}
+{{/*  databaseInitSQL:*/}}
+{{/*    name: init-sql*/}}
+{{/*    key: init.sql*/}}
+{{- end }}

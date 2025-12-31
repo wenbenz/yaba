@@ -49,19 +49,22 @@ func main() {
 	}
 
 	// Server setup
-	port, ok := os.LookupEnv("YABA_PORT")
-	if !ok {
-		port = "80"
+	host := os.Getenv("YABA_SERVER_HOST")
+	port := os.Getenv("YABA_SERVER_PORT")
+
+	var address string
+	if host != "" || port != "" {
+		address = host + ":" + port
 	}
 
 	yabaServer := http.Server{
 		Handler:      rootHandler,
-		Addr:         ":" + port,
-		ReadTimeout:  1 * time.Second,
-		WriteTimeout: 1 * time.Second,
+		Addr:         address,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
 	}
 
-	log.Println("Starting server on port", port)
+	log.Println("Starting server on address", address)
 
 	err = yabaServer.ListenAndServe()
 	log.Fatalln("Failed to start server", err)
