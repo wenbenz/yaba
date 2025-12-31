@@ -17,13 +17,12 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o ./yaba
 # Copy migrations
 COPY migrations ./migrations/
 
-# Unpack the UI
-COPY dist.tar.gz ./
-RUN tar -xzvf ./dist.tar.gz
+# Copy UI
+COPY ui/dist ./dist
 ENV UI_ROOT_DIR /yaba/dist
 
 # Open port
 EXPOSE 80
 
 # Start server
-CMD ["./yaba"]
+CMD ["/yaba/yaba"]

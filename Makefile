@@ -24,11 +24,11 @@ test:
 cover:
 	go test -v -race -covermode=atomic -coverprofile=coverage.out yaba/internal/...
 
-docker: build-ui
-	docker build --tag wenbenz/yaba:latest .
+docker:
+	@docker build --tag wenbenz/yaba:latest --tag wenbenz/yaba:$$(git rev-parse --short HEAD) .
 
 start-ui:
 	cd ui && yarn start
 
 build-ui:
-	cd ui && yarn package && mv ui/dist.tar.gz ../dist.tar.gz
+	cd ui && yarn package
