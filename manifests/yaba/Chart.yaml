@@ -1,0 +1,8 @@
+apiVersion: v2
+name: yaba
+description: Yet Another Budget App
+
+type: application
+
+version: 0.1.0
+appVersion: "0.1.0"

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: yaba
+  namespace: {{ .Values.global.namespace }}
+spec:
+  selector:
+    app.kubernetes.io/name: yaba
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80

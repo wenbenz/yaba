@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yaba
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/name: yaba
+spec:
+  replicas: {{ .Values.yaba.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yaba
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: yaba
+    spec:
+      containers:
+        - image: {{ .Values.yaba.image }}
+          imagePullPolicy: Always
+          name: yaba
+          ports:
+            - containerPort: 80
+              name: http
+              protocol: TCP
+          {{- with .Values.yaba.resources }}
+          resources:
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: POSTGRES_DB
+              {{ toYaml .Values.postgresql.database | nindent 14 }}
+            - name: POSTGRES_USER
+              {{ toYaml .Values.postgresql.user | nindent 14 }}
+            - name: POSTGRES_PASSWORD_FILE
+              value: {{ .Values.postgresql.password.file | default "/secrets/db/password" }}
+            - name: POSTGRES_URL
+              {{ toYaml .Values.postgresql.host | nindent 14 }}
+            - name: POSTGRES_SSL_MODE
+              value: {{ .Values.postgresql.sslmode }}
+          volumeMounts:
+            - name: db
+              mountPath: /secrets/db
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 80
+              scheme: HTTP
+          startupProbe:
+            httpGet:
+              path: /
+              port: 80
+              scheme: HTTP
+      volumes:
+        - name: db
+          secret:
+            secretName: yaba-pguser-yaba

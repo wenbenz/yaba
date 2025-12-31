@@ -62,5 +62,5 @@ jobs:
       with:
         platforms: linux/amd64,linux/arm64
         push: ${{ github.ref == 'refs/heads/main' }}
-        tags: wenbenz/yaba:latest
+        tags: wenbenz/yaba:latest , wenbenz/yaba:${{ github.sha }}
         no-cache: ${{ github.ref == 'refs/heads/main' }}

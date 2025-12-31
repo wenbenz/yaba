@@ -1,0 +1,60 @@
+global:
+  namespace: yaba
+
+yaba:
+  replicas: 1
+  image: docker.io/wenbenz/yaba
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+postgresql:
+  provisioning:
+    enabled: true
+    version: 18
+    replicas: 1
+    storage: 1Gi
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+  host:
+    valueFrom:
+      secretKeyRef:
+        name: yaba-pguser-yaba
+        key: host
+  port:
+    valueFrom:
+      secretKeyRef:
+        name: yaba-pguser-yaba
+        key: port
+  database:
+    valueFrom:
+      secretKeyRef:
+        name: yaba-pguser-yaba
+        key: dbname
+  user:
+    valueFrom:
+      secretKeyRef:
+        name: yaba-pguser-yaba
+        key: user
+  password:
+    file: /secrets/db/password
+  sslmode: require
+
+ingress:
+  enabled: false
+  className:
+  hostname:
+  tls:
+    secretName: yaba-tls
+    issuer:
+      name:
+      kind:

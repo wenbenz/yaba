@@ -6,14 +6,6 @@ ENV GOPATH /yaba
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Build the app binary
-COPY errors ./errors/
-COPY config/*.go ./config/
-COPY graph/ ./graph/
-COPY internal ./internal/
-COPY main.go ./
-RUN CGO_ENABLED=0 GOOS=linux go build -o ./yaba
-
 # Copy migrations
 COPY migrations ./migrations/
 
@@ -21,6 +13,14 @@ COPY migrations ./migrations/
 COPY dist.tar.gz ./
 RUN tar -xzvf ./dist.tar.gz
 ENV UI_ROOT_DIR /yaba/dist
+
+# Build the app binary
+COPY errors ./errors/
+COPY config/*.go ./config/
+COPY graph/ ./graph/
+COPY internal ./internal/
+COPY main.go ./
+RUN CGO_ENABLED=0 GOOS=linux go build -o ./yaba
 
 # Open port
 EXPOSE 80
