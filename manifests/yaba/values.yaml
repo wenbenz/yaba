@@ -3,7 +3,7 @@ global:
 
 yaba:
   replicas: 1
-  image: docker.io/wenbenz/yaba
+  image: docker.io/wenbenz/yaba:latest
   resources:
     requests:
       cpu: 100m
