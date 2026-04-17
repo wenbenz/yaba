@@ -13,7 +13,7 @@ these problems by:
 spending over time
 - display the credit card reward categories of actual spending to find the best
 credit card for the budget
-- reduce manual input by adding PFD imports and automatic assignments for
+- reduce manual input by adding PDF imports and automatic assignments for
 similar transactions.
 
 ## Quick Start
