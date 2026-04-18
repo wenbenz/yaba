@@ -20,6 +20,12 @@ WHERE owner = $1
   AND id = $2;
 `
 
+const getBudgetByName = `
+SELECT * FROM budget
+WHERE owner = $1
+  AND name = $2;
+`
+
 const getBudgetsByOwner = `
 SELECT * FROM budget
 WHERE owner = $1
@@ -111,6 +117,29 @@ func GetBudgets(
 	}
 
 	return budgets, nil
+}
+
+func GetBudgetByName(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	owner uuid.UUID,
+	name string,
+) (*model.Budget, error) {
+	var budgets []*model.Budget
+
+	if err := pgxscan.Select(ctx, pool, &budgets, getBudgetByName, owner, name); err != nil {
+		return nil, fmt.Errorf("failed to fetch budget by name: %w", err)
+	}
+
+	if len(budgets) == 0 {
+		return nil, errors.NoSuchElementError{Element: name}
+	}
+
+	if err := populateBudgets(ctx, pool, budgets); err != nil {
+		return nil, err
+	}
+
+	return budgets[0], nil
 }
 
 func populateBudgets(ctx context.Context, pool *pgxpool.Pool, budgets []*model.Budget) error {

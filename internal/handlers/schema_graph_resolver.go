@@ -6,6 +6,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 	"yaba/graph/model"
@@ -14,6 +15,7 @@ import (
 	"yaba/internal/database"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // CreateBudget is the resolver for the createBudget field.
@@ -26,6 +28,15 @@ func (r *mutationResolver) CreateBudget(ctx context.Context, input model.NewBudg
 	}
 
 	if err = database.PersistBudget(ctx, r.Pool, b); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "idx_owner_name" {
+			// Budget with this name already exists; return it (idempotent create).
+			existing, fetchErr := database.GetBudgetByName(ctx, r.Pool, user, input.Name)
+			if fetchErr == nil {
+				return model.BudgetToBudgetResponse(existing), nil
+			}
+		}
+
 		return nil, err
 	}
 
@@ -190,17 +201,7 @@ func (r *queryResolver) Budgets(ctx context.Context, first *int) ([]*model.Budge
 }
 
 // Expenditures is the resolver for the expenditures field.
-func (r *queryResolver) Expenditures(
-	ctx context.Context,
-	filter *string,
-	category *string,
-	paymentMethod *string,
-	source *string,
-	since *string,
-	until *string,
-	count *int,
-	offset *int,
-) ([]*model.ExpenditureResponse, error) {
+func (r *queryResolver) Expenditures(ctx context.Context, filter *string, category *string, paymentMethod *string, source *string, since *string, until *string, count *int, offset *int) ([]*model.ExpenditureResponse, error) {
 	start := time.Unix(0, 0).Format(time.DateOnly)
 	if since != nil {
 		start = *since
