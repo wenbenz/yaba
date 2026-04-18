@@ -22,6 +22,17 @@ docker build --tag wenbenz/yaba --progress plain --no-cache .
 
 The `Dockerfile` configures the image to bind bind to port 9222.
 
+## Publishing a release
+
+To publish a versioned Docker image, create and push a git tag. The CI workflow will automatically build and push `wenbenz/yaba:<version>` to Docker Hub.
+
+```shell
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+[Renovate](https://docs.renovatebot.com/) is configured in `renovate.json` to detect new Docker image versions and open pull requests to update `manifests/yaba/values.yaml` automatically.
+
 # DB Migrations
 
 This project uses [go-migrate](https://github.com/golang-migrate/migrate) to manage migrations.
