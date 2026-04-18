@@ -22,9 +22,9 @@ Create a password file.
 echo "POSTGRES PASSWORD HERE" > db_password.txt
 ```
 
-Pull docker image.
+Pull docker image (replace `latest` with a specific [release tag](https://github.com/wenbenz/yaba/releases) for a pinned version).
 ```shell
-docker pull wenbenz/yaba
+docker pull wenbenz/yaba:latest
 ```
 
 Start containers.
