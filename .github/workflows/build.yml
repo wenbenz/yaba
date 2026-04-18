@@ -28,7 +28,7 @@ jobs:
       run: make cover
 
     - name: Upload Codecov report
-      uses: codecov/codecov-action@v4.6.0
+      uses: codecov/codecov-action@v6.0.0
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
 
