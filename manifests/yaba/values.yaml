@@ -3,9 +3,7 @@ global:
 
 yaba:
   replicas: 1
-  image:
-    repository: docker.io/wenbenz/yaba
-    tag: "1.0.0"
+  image: docker.io/wenbenz/yaba:latest
   resources:
     requests:
       cpu: 100m
