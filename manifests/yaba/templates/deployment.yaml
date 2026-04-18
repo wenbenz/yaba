@@ -16,7 +16,7 @@ spec:
         app.kubernetes.io/name: yaba
     spec:
       containers:
-        - image: {{ .Values.yaba.image }}
+        - image: {{ .Values.yaba.image.repository }}:{{ .Values.yaba.image.tag }}
           imagePullPolicy: Always
           name: yaba
           ports:
