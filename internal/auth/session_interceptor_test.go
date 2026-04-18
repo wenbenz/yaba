@@ -2,6 +2,7 @@ package auth_test
 
 import (
 	"encoding/hex"
+	"html"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -99,7 +100,7 @@ func TestInterceptorValidSID(t *testing.T) {
 			u, _ := r.Context().Value(ctxutil.CTXUser).(uuid.UUID)
 			sid, _ := r.Context().Value(ctxutil.CTXSID).([]byte)
 
-			_, _ = w.Write([]byte(u.String() + hex.EncodeToString(sid)))
+			_, _ = w.Write([]byte(html.EscapeString(u.String() + hex.EncodeToString(sid))))
 		}},
 	}
 

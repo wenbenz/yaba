@@ -25,7 +25,7 @@ func TestLogoutHandler(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create a request with the user context
-	req := httptest.NewRequest(http.MethodPost, "/logout", nil)
+	req, _ := http.NewRequestWithContext(t.Context(), http.MethodPost, "/logout", nil)
 	req = req.WithContext(ctxutil.WithUser(req.Context(), user))
 	cookie, _ := auth.BakeCookie(token, "host")
 	req.AddCookie(cookie)
