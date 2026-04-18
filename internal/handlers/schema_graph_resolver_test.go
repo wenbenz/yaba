@@ -15,6 +15,31 @@ import (
 	"yaba/internal/test/helper"
 )
 
+func TestCreateBudgetIdempotent(t *testing.T) {
+	t.Parallel()
+
+	user := uuid.New()
+	ctx := ctxutil.WithUser(t.Context(), user)
+	pool := helper.GetTestPool()
+	resolver := &handlers.Resolver{Pool: pool}
+
+	input := model.NewBudgetInput{Name: "My Budget"}
+
+	first, err := resolver.Mutation().CreateBudget(ctx, input)
+	require.NoError(t, err)
+	require.NotNil(t, first)
+
+	// Concurrent duplicate — must not error and must return the existing budget.
+	second, err := resolver.Mutation().CreateBudget(ctx, input)
+	require.NoError(t, err)
+	require.Equal(t, *first.ID, *second.ID)
+
+	// Only one budget should exist in the DB.
+	budgets, err := resolver.Query().Budgets(ctx, nil)
+	require.NoError(t, err)
+	require.Len(t, budgets, 1)
+}
+
 func TestCreateEmptyBudget(t *testing.T) {
 	t.Parallel()
 
