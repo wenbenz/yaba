@@ -304,6 +304,33 @@ func TestPersistBudgetClassifiesExpendituresWithExistingBudget(t *testing.T) {
 	}
 }
 
+func TestGetBudgetByName(t *testing.T) {
+	t.Parallel()
+
+	pool := helper.GetTestPool()
+	owner := uuid.New()
+	ctx := ctxutil.WithUser(t.Context(), owner)
+
+	b := model.NewBudget(owner, "named-budget")
+	b.SetBudgetIncome("work", 3000)
+	require.NoError(t, database.PersistBudget(ctx, pool, b))
+
+	fetched, err := database.GetBudgetByName(ctx, pool, owner, "named-budget")
+	require.NoError(t, err)
+	require.Equal(t, b.ID, fetched.ID)
+	require.Equal(t, "named-budget", fetched.Name)
+}
+
+func TestGetBudgetByNameNotFound(t *testing.T) {
+	t.Parallel()
+
+	pool := helper.GetTestPool()
+	ctx := ctxutil.WithUser(t.Context(), uuid.New())
+
+	_, err := database.GetBudgetByName(ctx, pool, uuid.New(), "nonexistent")
+	require.ErrorContains(t, err, "no such element")
+}
+
 func findExpenseByCategory(expenses []*model.Expense, category string) *model.Expense {
 	for _, e := range expenses {
 		if e.Category == category {

@@ -64,7 +64,7 @@ func main() {
 		WriteTimeout: 30 * time.Second,
 	}
 
-	log.Println("Starting server on address", address)
+	log.Printf("Starting server on address %q", address) //nolint:gosec // address is from env config, not user input
 
 	err = yabaServer.ListenAndServe()
 	log.Fatalln("Failed to start server", err)
