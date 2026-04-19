@@ -12,6 +12,7 @@ require (
 	github.com/testcontainers/testcontainers-go v0.32.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.32.0
 	github.com/vektah/gqlparser/v2 v2.5.32
+	golang.org/x/net v0.51.0
 )
 
 require (
