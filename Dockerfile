@@ -1,3 +1,10 @@
+FROM node:lts AS ui-builder
+WORKDIR /ui
+COPY ui/package.json ui/yarn.lock ./
+RUN yarn install --frozen-lockfile
+COPY ui/ ./
+RUN yarn build
+
 FROM golang
 WORKDIR /yaba
 ENV GOPATH /yaba
@@ -9,9 +16,8 @@ RUN go mod download
 # Copy migrations
 COPY migrations ./migrations/
 
-# Unpack the UI
-COPY dist.tar.gz ./
-RUN tar -xzvf ./dist.tar.gz
+# Copy UI build output
+COPY --from=ui-builder /ui/dist ./dist
 ENV UI_ROOT_DIR /yaba/dist
 
 # Build the app binary

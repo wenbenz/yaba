@@ -24,7 +24,7 @@ test:
 cover:
 	go test -v -race -covermode=atomic -coverprofile=coverage.out yaba/internal/...
 
-docker: build-ui
+docker:
 	docker build --tag wenbenz/yaba:latest --tag wenbenz/yaba:$$(git rev-parse --short HEAD) .
 
 start-ui:
