@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"yaba/internal/ctxutil"
 
+	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"golang.org/x/net/context"
 )
 
 type SessionInterceptor struct {

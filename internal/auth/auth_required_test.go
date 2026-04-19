@@ -8,9 +8,9 @@ import (
 	"yaba/internal/ctxutil"
 	"yaba/internal/test/helper"
 
+	"context"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 )
 
 func TestAuthRequired(t *testing.T) {
