@@ -5,7 +5,7 @@ RUN yarn install --frozen-lockfile
 COPY ui/ ./
 RUN yarn build
 
-FROM golang
+FROM golang:1.26
 WORKDIR /yaba
 ENV GOPATH /yaba
 
