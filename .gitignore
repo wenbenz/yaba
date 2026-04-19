@@ -22,7 +22,8 @@ go.work
 go.work.sum
 scheduled_tasks.lock
 settings.local.json
-.pipeline
+.pipeline/
+.worktrees/
 
 # IDE files
 .DS_Store
