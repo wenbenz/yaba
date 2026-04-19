@@ -55,7 +55,7 @@ func TestLoginHandler(t *testing.T) {
 		{
 			name:      "login as non-existing user",
 			handlerFn: auth.VerifyUserHandler,
-			username:  "username-login",
+			username:  "no-such-user",
 			password:  "bar",
 			assertFn:  assertFail,
 		},
