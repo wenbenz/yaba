@@ -7,10 +7,10 @@ import (
 	"yaba/internal/database"
 	"yaba/internal/model"
 
+	"context"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"golang.org/x/net/context"
 )
 
 type TestDataGenerator struct {

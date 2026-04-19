@@ -7,9 +7,9 @@ import (
 	"yaba/internal/database"
 	"yaba/internal/model"
 
+	"context"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"golang.org/x/net/context"
 )
 
 // PaymentMethodToPaymentMethodResponse converts an internal payment method to a GraphQL response.
