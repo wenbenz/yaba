@@ -14,7 +14,8 @@ spec:
         - yaba
       options: superuser
   instances:
-    - replicas: {{ .Values.postgresql.provisioning.replicas }}
+    - name: "00"
+      replicas: {{ .Values.postgresql.provisioning.replicas }}
       minAvailable: 0
       dataVolumeClaimSpec:
         accessModes: ["ReadWriteOnce"]
