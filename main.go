@@ -7,9 +7,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 	"yaba/internal/database"
+	"yaba/internal/email"
 	"yaba/internal/handlers"
+	"yaba/internal/scheduler"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -19,13 +22,16 @@ import (
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// Initialize connection pool
 	connectionString, err := database.GetPGConnectionString()
 	if err != nil {
 		log.Fatalln("could not build connection string:", err)
 	}
 
-	pool, err := pgxpool.New(context.Background(), connectionString)
+	pool, err := pgxpool.New(ctx, connectionString)
 	if err != nil {
 		log.Fatalln("failed to connect to database:", err)
 	}
@@ -42,6 +48,10 @@ func main() {
 	}
 
 	log.Println("Migrations applied successfully!")
+
+	mailer := buildMailer()
+
+	go scheduler.Start(ctx, &scheduler.ReminderJob{Pool: pool, Mailer: mailer})
 
 	rootHandler, err := handlers.BuildServerHandler(pool)
 	if err != nil {
@@ -68,6 +78,43 @@ func main() {
 
 	err = yabaServer.ListenAndServe()
 	log.Fatalln("Failed to start server", err)
+}
+
+// buildMailer constructs an SMTPMailer from environment variables, or returns a
+// NoopMailer when SMTP_HOST is not set (development / no-email mode).
+func buildMailer() email.Mailer {
+	host := os.Getenv("SMTP_HOST")
+	if host == "" {
+		log.Println("SMTP_HOST not set — email sending disabled")
+
+		return email.NoopMailer{}
+	}
+
+	passwordFile := os.Getenv("SMTP_PASSWORD_FILE")
+
+	var password string
+
+	if passwordFile != "" {
+		raw, err := os.ReadFile(passwordFile)
+		if err != nil {
+			log.Fatalln("could not read SMTP_PASSWORD_FILE:", err)
+		}
+
+		password = strings.TrimSpace(string(raw))
+	}
+
+	port := os.Getenv("SMTP_PORT")
+	if port == "" {
+		port = "587"
+	}
+
+	return email.NewSMTPMailer(email.SMTPConfig{
+		Host:     host,
+		Port:     port,
+		Username: os.Getenv("SMTP_USERNAME"),
+		Password: password,
+		From:     os.Getenv("SMTP_FROM"),
+	})
 }
 
 func waitForConnection(pool *pgxpool.Pool) error {
