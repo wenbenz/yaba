@@ -28,10 +28,6 @@ func GetUserByID(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) (*model.
 		return nil, fmt.Errorf("failed to fetch user: %w", err)
 	}
 
-	if u.ID == uuid.Nil {
-		return nil, nil
-	}
-
 	return u, nil
 }
 
