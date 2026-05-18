@@ -1,0 +1,85 @@
+package email_test
+
+import (
+	"bufio"
+	"fmt"
+	"net"
+	"strings"
+	"testing"
+	"yaba/internal/email"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestSMTPMailerSend(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	defer ln.Close()
+
+	_, port, _ := net.SplitHostPort(ln.Addr().String())
+
+	captured := make(chan string, 1)
+
+	go func() {
+		conn, err := ln.Accept()
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+
+		var body strings.Builder
+		scanner := bufio.NewScanner(conn)
+		inData := false
+
+		_, _ = fmt.Fprintln(conn, "220 test ready")
+
+		for scanner.Scan() {
+			line := scanner.Text()
+			switch {
+			case strings.HasPrefix(line, "EHLO"):
+				_, _ = fmt.Fprintln(conn, "250-test\r\n250 AUTH PLAIN LOGIN")
+			case strings.HasPrefix(line, "AUTH"):
+				_, _ = fmt.Fprintln(conn, "235 OK")
+			case strings.HasPrefix(line, "MAIL FROM"):
+				_, _ = fmt.Fprintln(conn, "250 OK")
+			case strings.HasPrefix(line, "RCPT TO"):
+				_, _ = fmt.Fprintln(conn, "250 OK")
+			case line == "DATA":
+				inData = true
+				_, _ = fmt.Fprintln(conn, "354 Start input")
+			case inData && line == ".":
+				inData = false
+				captured <- body.String()
+				_, _ = fmt.Fprintln(conn, "250 OK")
+			case inData:
+				body.WriteString(line + "\n")
+			case strings.HasPrefix(line, "QUIT"):
+				_, _ = fmt.Fprintln(conn, "221 Bye")
+				return
+			}
+		}
+	}()
+
+	m := email.NewSMTPMailer(email.SMTPConfig{
+		Host:     "127.0.0.1",
+		Port:     port,
+		Username: "user",
+		Password: "pass",
+		From:     "from@example.com",
+	})
+
+	err = m.Send("to@example.com", "Test Subject", "<p>Hello world</p>")
+	require.NoError(t, err)
+
+	body := <-captured
+	assert.Contains(t, body, "Subject: Test Subject")
+	assert.Contains(t, body, "From: from@example.com")
+	assert.Contains(t, body, "To: to@example.com")
+	assert.Contains(t, body, "<p>Hello world</p>")
+}
+
+func TestNoopMailer(t *testing.T) {
+	var m email.Mailer = email.NoopMailer{}
+	assert.NoError(t, m.Send("to@example.com", "subject", "<p>body</p>"))
+}

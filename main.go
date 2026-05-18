@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 	"yaba/internal/database"
+	"yaba/internal/email"
 	"yaba/internal/handlers"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -43,7 +44,9 @@ func main() {
 
 	log.Println("Migrations applied successfully!")
 
-	rootHandler, err := handlers.BuildServerHandler(pool)
+	mailer := buildMailer()
+
+	rootHandler, err := handlers.BuildServerHandler(pool, mailer)
 	if err != nil {
 		log.Fatalln("could not build root handler:", err)
 	}
@@ -68,6 +71,38 @@ func main() {
 
 	err = yabaServer.ListenAndServe()
 	log.Fatalln("Failed to start server", err)
+}
+
+// buildMailer constructs an SMTPMailer from environment variables, or returns a
+// NoopMailer when SMTP_HOST is not set (development / no-email mode).
+func buildMailer() email.Mailer {
+	host := os.Getenv("SMTP_HOST")
+	if host == "" {
+		log.Println("SMTP_HOST not set — email sending disabled")
+
+		return email.NoopMailer{}
+	}
+
+	passwordFile := os.Getenv("SMTP_PASSWORD_FILE")
+
+	var password string
+
+	if passwordFile != "" {
+		raw, err := os.ReadFile(passwordFile)
+		if err != nil {
+			log.Fatalln("could not read SMTP_PASSWORD_FILE:", err)
+		}
+
+		password = string(raw)
+	}
+
+	return email.NewSMTPMailer(email.SMTPConfig{
+		Host:     host,
+		Port:     os.Getenv("SMTP_PORT"),
+		Username: os.Getenv("SMTP_USERNAME"),
+		Password: password,
+		From:     os.Getenv("SMTP_FROM"),
+	})
 }
 
 func waitForConnection(pool *pgxpool.Pool) error {
