@@ -9,15 +9,13 @@ import (
 	"os"
 	"yaba/graph/server"
 	"yaba/internal/auth"
-	"yaba/internal/email"
 )
 
-func BuildServerHandler(pool *pgxpool.Pool, mailer email.Mailer) (http.Handler, error) {
+func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 	mux := http.NewServeMux()
 
 	gqlHandler := handler.New(server.NewExecutableSchema(server.Config{Resolvers: &Resolver{
-		Pool:   pool,
-		Mailer: mailer,
+		Pool: pool,
 	}}))
 	gqlHandler.AddTransport(transport.GET{})
 	gqlHandler.AddTransport(transport.POST{})

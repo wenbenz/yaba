@@ -1,8 +1,10 @@
 package scheduler
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"html/template"
 	"time"
 	"yaba/internal/database"
 	"yaba/internal/email"
@@ -70,13 +72,28 @@ func reminderSubject(displayName string) string {
 	return fmt.Sprintf("Reminder: %s renewal coming up", displayName)
 }
 
-func reminderBody(displayName string, renewalDate time.Time) string {
-	return fmt.Sprintf(
-		`<p>Hi,</p>
-<p>This is a reminder that your credit card <strong>%s</strong> is set to renew on <strong>%s</strong>.</p>
+var reminderBodyTmpl = template.Must(template.New("reminder").Parse(`<p>Hi,</p>
+<p>This is a reminder that your credit card <strong>{{.DisplayName}}</strong> is set to renew on <strong>{{.RenewalDate}}</strong>.</p>
 <p>If you'd like to cancel before the annual fee is charged, please do so before that date.</p>
-<p>— YABA</p>`,
-		displayName,
-		renewalDate.Format("January 2, 2006"),
-	)
+<p>— YABA</p>`))
+
+func reminderBody(displayName string, renewalDate time.Time) string {
+	var buf bytes.Buffer
+
+	data := struct {
+		DisplayName string
+		RenewalDate string
+	}{
+		DisplayName: displayName,
+		RenewalDate: renewalDate.Format("January 2, 2006"),
+	}
+
+	if err := reminderBodyTmpl.Execute(&buf, data); err != nil {
+		// Fallback: return plain-text safe version
+		return fmt.Sprintf("<p>Your card %s renews on %s.</p>",
+			template.HTMLEscapeString(displayName),
+			renewalDate.Format("January 2, 2006"))
+	}
+
+	return buf.String()
 }

@@ -53,7 +53,7 @@ func main() {
 
 	go scheduler.Start(ctx, &scheduler.ReminderJob{Pool: pool, Mailer: mailer})
 
-	rootHandler, err := handlers.BuildServerHandler(pool, mailer)
+	rootHandler, err := handlers.BuildServerHandler(pool)
 	if err != nil {
 		log.Fatalln("could not build root handler:", err)
 	}
