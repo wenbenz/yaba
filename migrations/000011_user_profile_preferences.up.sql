@@ -1,0 +1,3 @@
+ALTER TABLE user_profile
+    ADD COLUMN IF NOT EXISTS email TEXT,
+    ADD COLUMN IF NOT EXISTS email_reminders_enabled BOOLEAN NOT NULL DEFAULT FALSE;
