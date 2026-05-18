@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 	"yaba/internal/database"
 	"yaba/internal/email"
@@ -93,12 +94,17 @@ func buildMailer() email.Mailer {
 			log.Fatalln("could not read SMTP_PASSWORD_FILE:", err)
 		}
 
-		password = string(raw)
+		password = strings.TrimSpace(string(raw))
+	}
+
+	port := os.Getenv("SMTP_PORT")
+	if port == "" {
+		port = "587"
 	}
 
 	return email.NewSMTPMailer(email.SMTPConfig{
 		Host:     host,
-		Port:     os.Getenv("SMTP_PORT"),
+		Port:     port,
 		Username: os.Getenv("SMTP_USERNAME"),
 		Password: password,
 		From:     os.Getenv("SMTP_FROM"),
