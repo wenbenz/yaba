@@ -11,6 +11,7 @@ import (
 	"yaba/internal/database"
 	"yaba/internal/email"
 	"yaba/internal/handlers"
+	"yaba/internal/scheduler"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -20,13 +21,16 @@ import (
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// Initialize connection pool
 	connectionString, err := database.GetPGConnectionString()
 	if err != nil {
 		log.Fatalln("could not build connection string:", err)
 	}
 
-	pool, err := pgxpool.New(context.Background(), connectionString)
+	pool, err := pgxpool.New(ctx, connectionString)
 	if err != nil {
 		log.Fatalln("failed to connect to database:", err)
 	}
@@ -45,6 +49,8 @@ func main() {
 	log.Println("Migrations applied successfully!")
 
 	mailer := buildMailer()
+
+	go scheduler.Start(ctx, &scheduler.ReminderJob{Pool: pool, Mailer: mailer})
 
 	rootHandler, err := handlers.BuildServerHandler(pool, mailer)
 	if err != nil {
