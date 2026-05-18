@@ -1,10 +1,10 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"yaba/internal/model"
 
-	"context"
 	"github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/google/uuid"
