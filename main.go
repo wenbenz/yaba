@@ -89,7 +89,7 @@ func buildMailer() email.Mailer {
 	var password string
 
 	if passwordFile != "" {
-		raw, err := os.ReadFile(passwordFile)
+		raw, err := os.ReadFile(passwordFile) //nolint:gosec // path comes from trusted env var, not user input
 		if err != nil {
 			log.Fatalln("could not read SMTP_PASSWORD_FILE:", err)
 		}

@@ -13,6 +13,45 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// smtpLineResult is the action to take after processing one SMTP client line.
+type smtpLineResult int
+
+const (
+	smtpContinue  smtpLineResult = iota // keep reading
+	smtpDataReady                       // entering DATA mode
+	smtpBodyDone                        // DATA body complete — body is ready
+	smtpQuit                            // QUIT received — close connection
+)
+
+// handleSMTPLine processes one line from the SMTP client, writes the
+// appropriate response to conn, and returns the next action to take.
+func handleSMTPLine(conn net.Conn, body *strings.Builder, line string, inData bool) smtpLineResult {
+	switch {
+	case strings.HasPrefix(line, "EHLO"):
+		_, _ = fmt.Fprintln(conn, "250-test\r\n250 AUTH PLAIN LOGIN")
+	case strings.HasPrefix(line, "AUTH"):
+		_, _ = fmt.Fprintln(conn, "235 OK")
+	case strings.HasPrefix(line, "MAIL FROM"), strings.HasPrefix(line, "RCPT TO"):
+		_, _ = fmt.Fprintln(conn, "250 OK")
+	case line == "DATA":
+		_, _ = fmt.Fprintln(conn, "354 Start input")
+
+		return smtpDataReady
+	case inData && line == ".":
+		_, _ = fmt.Fprintln(conn, "250 OK")
+
+		return smtpBodyDone
+	case inData:
+		body.WriteString(line + "\n")
+	case strings.HasPrefix(line, "QUIT"):
+		_, _ = fmt.Fprintln(conn, "221 Bye")
+
+		return smtpQuit
+	}
+
+	return smtpContinue
+}
+
 // runFakeSMTPServer starts a minimal fake SMTP server on ln and returns a
 // channel that receives the DATA body once a complete message is accepted.
 func runFakeSMTPServer(t *testing.T, ln net.Listener) <-chan string {
@@ -38,27 +77,14 @@ func runFakeSMTPServer(t *testing.T, ln net.Listener) <-chan string {
 		for scanner.Scan() {
 			line := scanner.Text()
 
-			switch {
-			case strings.HasPrefix(line, "EHLO"):
-				_, _ = fmt.Fprintln(conn, "250-test\r\n250 AUTH PLAIN LOGIN")
-			case strings.HasPrefix(line, "AUTH"):
-				_, _ = fmt.Fprintln(conn, "235 OK")
-			case strings.HasPrefix(line, "MAIL FROM"):
-				_, _ = fmt.Fprintln(conn, "250 OK")
-			case strings.HasPrefix(line, "RCPT TO"):
-				_, _ = fmt.Fprintln(conn, "250 OK")
-			case line == "DATA":
+			switch handleSMTPLine(conn, &body, line, inData) {
+			case smtpDataReady:
 				inData = true
-				_, _ = fmt.Fprintln(conn, "354 Start input")
-			case inData && line == ".":
-				inData = false
+			case smtpBodyDone:
 				captured <- body.String()
-				_, _ = fmt.Fprintln(conn, "250 OK")
-			case inData:
-				body.WriteString(line + "\n")
-			case strings.HasPrefix(line, "QUIT"):
-				_, _ = fmt.Fprintln(conn, "221 Bye")
 
+				inData = false
+			case smtpQuit:
 				return
 			}
 		}
