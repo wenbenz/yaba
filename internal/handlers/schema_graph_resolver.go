@@ -190,10 +190,6 @@ func (r *queryResolver) Me(ctx context.Context) (*model.UserProfile, error) {
 		return nil, fmt.Errorf("get profile: %w", err)
 	}
 
-	if u == nil {
-		return nil, errors.New("user not found")
-	}
-
 	return &model.UserProfile{
 		ID:                    u.ID.String(),
 		Username:              u.Username,
