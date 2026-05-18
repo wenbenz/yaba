@@ -65,7 +65,8 @@ func UpdateUserProfile(
 func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *model.User) error {
 	sql, args, err := squirrel.
 		Insert("user_profile").
-		Values(user.ID, user.Username, user.PasswordHash).
+		Columns("id", "username", "password_hash", "email", "email_reminders_enabled").
+		Values(user.ID, user.Username, user.PasswordHash, user.Email, user.EmailRemindersEnabled).
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
 	if err != nil {
