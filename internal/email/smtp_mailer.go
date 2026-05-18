@@ -1,6 +1,7 @@
 package email
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -45,7 +46,9 @@ func (m *SMTPMailer) Send(to, subject, htmlBody string) error {
 }
 
 func (m *SMTPMailer) sendImplicitTLS(addr, to string, msg []byte) error {
-	conn, err := tls.Dial("tcp", addr, &tls.Config{ServerName: m.cfg.Host})
+	dialer := &tls.Dialer{Config: &tls.Config{ServerName: m.cfg.Host}}
+
+	conn, err := dialer.DialContext(context.Background(), "tcp", addr)
 	if err != nil {
 		return fmt.Errorf("smtp tls dial: %w", err)
 	}
@@ -79,7 +82,11 @@ func (m *SMTPMailer) sendImplicitTLS(addr, to string, msg []byte) error {
 		return fmt.Errorf("smtp write body: %w", err)
 	}
 
-	return w.Close()
+	if err = w.Close(); err != nil {
+		return fmt.Errorf("smtp close data writer: %w", err)
+	}
+
+	return nil
 }
 
 func buildMIMEMessage(from, to, subject, htmlBody string) []byte {

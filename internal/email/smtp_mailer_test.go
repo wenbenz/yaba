@@ -2,6 +2,7 @@ package email_test
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"net"
 	"strings"
@@ -12,12 +13,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSMTPMailerSend(t *testing.T) {
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
-	defer ln.Close()
-
-	_, port, _ := net.SplitHostPort(ln.Addr().String())
+// runFakeSMTPServer starts a minimal fake SMTP server on ln and returns a
+// channel that receives the DATA body once a complete message is accepted.
+func runFakeSMTPServer(t *testing.T, ln net.Listener) <-chan string {
+	t.Helper()
 
 	captured := make(chan string, 1)
 
@@ -26,9 +25,11 @@ func TestSMTPMailerSend(t *testing.T) {
 		if err != nil {
 			return
 		}
+
 		defer conn.Close()
 
 		var body strings.Builder
+
 		scanner := bufio.NewScanner(conn)
 		inData := false
 
@@ -36,6 +37,7 @@ func TestSMTPMailerSend(t *testing.T) {
 
 		for scanner.Scan() {
 			line := scanner.Text()
+
 			switch {
 			case strings.HasPrefix(line, "EHLO"):
 				_, _ = fmt.Fprintln(conn, "250-test\r\n250 AUTH PLAIN LOGIN")
@@ -56,10 +58,28 @@ func TestSMTPMailerSend(t *testing.T) {
 				body.WriteString(line + "\n")
 			case strings.HasPrefix(line, "QUIT"):
 				_, _ = fmt.Fprintln(conn, "221 Bye")
+
 				return
 			}
 		}
 	}()
+
+	return captured
+}
+
+func TestSMTPMailerSend(t *testing.T) {
+	t.Parallel()
+
+	lc := &net.ListenConfig{}
+
+	ln, err := lc.Listen(context.Background(), "tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+
+	defer ln.Close()
+
+	_, port, _ := net.SplitHostPort(ln.Addr().String())
+
+	captured := runFakeSMTPServer(t, ln)
 
 	m := email.NewSMTPMailer(email.SMTPConfig{
 		Host:     "127.0.0.1",
@@ -80,6 +100,9 @@ func TestSMTPMailerSend(t *testing.T) {
 }
 
 func TestNoopMailer(t *testing.T) {
+	t.Parallel()
+
 	var m email.Mailer = email.NoopMailer{}
+
 	assert.NoError(t, m.Send("to@example.com", "subject", "<p>body</p>"))
 }
