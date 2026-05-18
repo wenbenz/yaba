@@ -82,13 +82,15 @@ func (m *SMTPMailer) sendImplicitTLS(addr, to string, msg []byte) error {
 	return w.Close()
 }
 
+var headerSanitizer = strings.NewReplacer("\r", "", "\n", "")
+
 func buildMIMEMessage(from, to, subject, htmlBody string) []byte {
 	header := strings.Join([]string{
 		"MIME-Version: 1.0",
 		`Content-Type: text/html; charset="UTF-8"`,
-		"From: " + from,
-		"To: " + to,
-		"Subject: " + subject,
+		"From: " + headerSanitizer.Replace(from),
+		"To: " + headerSanitizer.Replace(to),
+		"Subject: " + headerSanitizer.Replace(subject),
 	}, "\r\n")
 
 	return fmt.Appendf(nil, "%s\r\n\r\n%s", header, htmlBody)
