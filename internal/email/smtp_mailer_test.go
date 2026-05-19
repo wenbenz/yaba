@@ -86,6 +86,7 @@ func runFakeSMTPServer(t *testing.T, ln net.Listener) <-chan string {
 				inData = false
 			case smtpQuit:
 				return
+			case smtpContinue:
 			}
 		}
 	}()

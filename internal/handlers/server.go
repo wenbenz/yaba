@@ -66,6 +66,6 @@ func routeReactPages(mux *http.ServeMux) {
 
 func routeReactPage(mux *http.ServeMux, path string) {
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, os.Getenv("UI_ROOT_DIR")+"/index.html") //nolint:gosec // path is from trusted env var, not user input
+		http.ServeFile(w, r, os.Getenv("UI_ROOT_DIR")+"/index.html") //nolint:gosec // env var, not user input
 	})
 }
