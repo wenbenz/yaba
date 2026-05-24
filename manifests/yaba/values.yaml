@@ -27,25 +27,34 @@ postgresql:
       limits:
         cpu: 200m
         memory: 256Mi
+  backup:
+    enabled: true
+    s3:
+      bucket: yaba-788692353152-us-east-2-an
+      region: us-east-2
+      path: /yaba
+    # 6-field cron (seconds minutes hours day month weekday)
+    schedule: "0 0 2 * * *"
+    retentionPolicy: "30d"
   host:
     valueFrom:
       secretKeyRef:
-        name: yaba-pguser-yaba
+        name: yaba-app
         key: host
   port:
     valueFrom:
       secretKeyRef:
-        name: yaba-pguser-yaba
+        name: yaba-app
         key: port
   database:
     valueFrom:
       secretKeyRef:
-        name: yaba-pguser-yaba
+        name: yaba-app
         key: dbname
   user:
     valueFrom:
       secretKeyRef:
-        name: yaba-pguser-yaba
+        name: yaba-app
         key: user
   password:
     file: /secrets/db/password
