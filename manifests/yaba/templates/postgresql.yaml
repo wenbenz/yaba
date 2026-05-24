@@ -14,24 +14,6 @@ spec:
     initdb:
       database: yaba
       owner: yaba
-      # One-time import from existing PGO cluster.
-      # CNPG ignores this block after the cluster is bootstrapped.
-      import:
-        type: microservice
-        databases:
-          - yaba
-        source:
-          externalCluster: pgo-source
-  externalClusters:
-    - name: pgo-source
-      connectionParameters:
-        host: yaba-primary
-        user: yaba
-        dbname: yaba
-        sslmode: require
-      password:
-        name: yaba-pguser-yaba
-        key: password
   storage:
     size: {{ .Values.postgresql.provisioning.storage }}
   {{- with .Values.postgresql.provisioning.resources }}
