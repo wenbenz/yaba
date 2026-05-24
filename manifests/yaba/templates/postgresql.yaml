@@ -1,32 +1,82 @@
 {{- if .Values.postgresql.provisioning.enabled }}
-apiVersion: postgres-operator.crunchydata.com/v1beta1
-kind: PostgresCluster
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
 metadata:
   name: yaba
   namespace: {{ .Values.global.namespace }}
-  annotations:
-    sidecar.opentelemetry.io/inject: "true"
+  labels:
+    app.kubernetes.io/name: yaba
+    app.kubernetes.io/component: database
 spec:
-  postgresVersion: {{ .Values.postgresql.provisioning.version }}
-  users:
-    - name: yaba
-      databases:
-        - yaba
-      options: superuser
-  instances:
-    - name: "00"
-      replicas: {{ .Values.postgresql.provisioning.replicas }}
-      minAvailable: 0
-      dataVolumeClaimSpec:
-        accessModes: ["ReadWriteOnce"]
-        resources:
-          requests:
-            storage: {{ .Values.postgresql.provisioning.storage }}
-      {{- with .Values.postgresql.provisioning.resources }}
-      resources:
-        {{- . | toYaml | nindent 8 }}
-      {{- end }}
-{{/*  databaseInitSQL:*/}}
-{{/*    name: init-sql*/}}
-{{/*    key: init.sql*/}}
+  instances: {{ .Values.postgresql.provisioning.replicas }}
+  imageName: ghcr.io/cloudnative-pg/postgresql:{{ .Values.postgresql.provisioning.version }}
+  bootstrap:
+    initdb:
+      database: yaba
+      owner: yaba
+      # One-time import from existing PGO cluster.
+      # CNPG ignores this block after the cluster is bootstrapped.
+      import:
+        type: microservice
+        databases:
+          - yaba
+        source:
+          externalCluster: pgo-source
+  externalClusters:
+    - name: pgo-source
+      connectionParameters:
+        host: yaba-primary
+        user: yaba
+        dbname: yaba
+        sslmode: require
+      password:
+        name: yaba-pguser-yaba
+        key: password
+  storage:
+    size: {{ .Values.postgresql.provisioning.storage }}
+  {{- with .Values.postgresql.provisioning.resources }}
+  resources:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- if .Values.postgresql.backup.enabled }}
+  backup:
+    barmanObjectStore:
+      destinationPath: s3://{{ .Values.postgresql.backup.s3.bucket }}{{ .Values.postgresql.backup.s3.path }}
+      s3Credentials:
+        accessKeyId:
+          name: yaba-s3-creds
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: yaba-s3-creds
+          key: ACCESS_SECRET_KEY
+        region:
+          name: yaba-s3-region
+          key: AWS_DEFAULT_REGION
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+    retentionPolicy: {{ .Values.postgresql.backup.retentionPolicy | quote }}
+  {{- end }}
+{{- end }}
+{{- if and .Values.postgresql.provisioning.enabled .Values.postgresql.backup.enabled }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: yaba-s3-region
+  namespace: {{ .Values.global.namespace }}
+stringData:
+  AWS_DEFAULT_REGION: {{ .Values.postgresql.backup.s3.region | quote }}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: yaba-daily
+  namespace: {{ .Values.global.namespace }}
+spec:
+  schedule: {{ .Values.postgresql.backup.schedule | quote }}
+  backupOwnerReference: self
+  cluster:
+    name: yaba
 {{- end }}

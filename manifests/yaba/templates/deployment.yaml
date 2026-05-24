@@ -55,4 +55,4 @@ spec:
       volumes:
         - name: db
           secret:
-            secretName: yaba-pguser-yaba
+            secretName: yaba-app
