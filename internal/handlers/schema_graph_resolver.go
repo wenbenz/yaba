@@ -19,6 +19,23 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+// UpdateProfile is the resolver for the updateProfile field.
+func (r *mutationResolver) UpdateProfile(ctx context.Context, input model.UpdateProfileInput) (*model.UserProfile, error) {
+	userID := ctxutil.GetUser(ctx)
+
+	u, err := database.UpdateUserProfile(ctx, r.Pool, userID, input.Email, input.EmailRemindersEnabled)
+	if err != nil {
+		return nil, fmt.Errorf("update profile: %w", err)
+	}
+
+	return &model.UserProfile{
+		ID:                    u.ID.String(),
+		Username:              u.Username,
+		Email:                 u.Email,
+		EmailRemindersEnabled: u.EmailRemindersEnabled,
+	}, nil
+}
+
 // CreateBudget is the resolver for the createBudget field.
 func (r *mutationResolver) CreateBudget(ctx context.Context, input model.NewBudgetInput) (*model.BudgetResponse, error) {
 	user := ctxutil.GetUser(ctx)
@@ -162,6 +179,23 @@ func (r *mutationResolver) CreateRewardCard(ctx context.Context, input model.Rew
 	}
 
 	return model.RewardCardToRewardCardResponse(created), nil
+}
+
+// Me is the resolver for the me field.
+func (r *queryResolver) Me(ctx context.Context) (*model.UserProfile, error) {
+	userID := ctxutil.GetUser(ctx)
+
+	u, err := database.GetUserByID(ctx, r.Pool, userID)
+	if err != nil {
+		return nil, fmt.Errorf("get profile: %w", err)
+	}
+
+	return &model.UserProfile{
+		ID:                    u.ID.String(),
+		Username:              u.Username,
+		Email:                 u.Email,
+		EmailRemindersEnabled: u.EmailRemindersEnabled,
+	}, nil
 }
 
 // Budget is the resolver for the budget field.
