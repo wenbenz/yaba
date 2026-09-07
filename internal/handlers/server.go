@@ -9,13 +9,15 @@ import (
 	"os"
 	"yaba/graph/server"
 	"yaba/internal/auth"
+	"yaba/internal/email"
 )
 
-func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
+func BuildServerHandler(pool *pgxpool.Pool, mailer email.Mailer) (http.Handler, error) {
 	mux := http.NewServeMux()
 
 	gqlHandler := handler.New(server.NewExecutableSchema(server.Config{Resolvers: &Resolver{
-		Pool: pool,
+		Pool:   pool,
+		Mailer: mailer,
 	}}))
 	gqlHandler.AddTransport(transport.GET{})
 	gqlHandler.AddTransport(transport.POST{})
@@ -64,6 +66,6 @@ func routeReactPages(mux *http.ServeMux) {
 
 func routeReactPage(mux *http.ServeMux, path string) {
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, os.Getenv("UI_ROOT_DIR")+"/index.html")
+		http.ServeFile(w, r, os.Getenv("UI_ROOT_DIR")+"/index.html") //nolint:gosec // env var, not user input
 	})
 }
