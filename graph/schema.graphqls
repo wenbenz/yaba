@@ -86,7 +86,20 @@ type PaymentMethod {
     rewards: RewardCard
 }
 
+type UserProfile {
+    id: ID!
+    username: String!
+    email: String
+    emailRemindersEnabled: Boolean!
+}
+
+input UpdateProfileInput {
+    email: String
+    emailRemindersEnabled: Boolean!
+}
+
 type Query {
+    me: UserProfile!
     budget(id: ID!): BudgetResponse
     budgets(first: Int): [BudgetResponse]
 
@@ -157,6 +170,8 @@ input RewardCardInput {
 }
 
 type Mutation {
+    updateProfile(input: UpdateProfileInput!): UserProfile!
+
     createBudget(input: NewBudgetInput!): BudgetResponse
     updateBudget(input: UpdateBudgetInput!): BudgetResponse
 

@@ -138,6 +138,18 @@ type UpdateBudgetInput struct {
 	Expenses []*ExpenseInput `json:"expenses,omitempty"`
 }
 
+type UpdateProfileInput struct {
+	Email                 *string `json:"email,omitempty"`
+	EmailRemindersEnabled bool    `json:"emailRemindersEnabled"`
+}
+
+type UserProfile struct {
+	ID                    string  `json:"id"`
+	Username              string  `json:"username"`
+	Email                 *string `json:"email,omitempty"`
+	EmailRemindersEnabled bool    `json:"emailRemindersEnabled"`
+}
+
 type Aggregation string
 
 const (
