@@ -15,10 +15,6 @@ spec:
       labels:
         app.kubernetes.io/name: yaba
     spec:
-      # TEMP: Ubuntu 26.04 AppArmor signal bug; remove once containerd ships a fixed profile.
-      securityContext:
-        appArmorProfile:
-          type: Unconfined
       containers:
         - image: {{ .Values.yaba.image.repository }}:{{ .Values.yaba.image.tag }}
           imagePullPolicy: Always
