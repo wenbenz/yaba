@@ -7,6 +7,10 @@ metadata:
   labels:
     app.kubernetes.io/name: yaba
     app.kubernetes.io/component: database
+  annotations:
+    # TEMP: Ubuntu 26.04 AppArmor signal-mediation bug with containerd default profile;
+    # remove once k3s/containerd ships a fixed profile.
+    container.apparmor.security.beta.kubernetes.io/postgres: unconfined
 spec:
   instances: {{ .Values.postgresql.provisioning.replicas }}
   imageName: ghcr.io/cloudnative-pg/postgresql:{{ .Values.postgresql.provisioning.version }}
