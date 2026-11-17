@@ -15,8 +15,7 @@ spec:
       labels:
         app.kubernetes.io/name: yaba
     spec:
-      # TEMP: Ubuntu 26.04 AppArmor signal-mediation bug with containerd default profile;
-      # remove once k3s/containerd ships a fixed profile.
+      # TEMP: Ubuntu 26.04 AppArmor signal bug; remove once containerd ships a fixed profile.
       securityContext:
         appArmorProfile:
           type: Unconfined
