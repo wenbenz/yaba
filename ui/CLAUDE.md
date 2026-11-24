@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## About
 
-yaba-ui is a personal finance management dashboard (budgeting, expense tracking, payment methods, credit card rewards). It connects to a yaba backend server at `http://localhost:9222`.
+yaba-ui is a personal finance management dashboard (budgeting, expense tracking, payment methods, credit card rewards). It lives in `ui/` of the yaba repo; `yarn build` output (`ui/dist`) is embedded in the Go binary via `ui/ui.go`. In dev, Vite proxies to the Go server at `http://localhost:9222` (`make dev` from the repo root).
+
+## Direction
+
+The UI will be replaced by a fresh TypeScript app (see root CLAUDE.md "Direction"). Don't invest in the current template code; use theme tokens from `src/themes/`, not hard-coded colours; don't add new `fetch`/axios/Apollo patterns.
 
 ## Commands
 

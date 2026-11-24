@@ -1,14 +1,15 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
-	"os"
 	"yaba/graph/server"
 	"yaba/internal/auth"
+	"yaba/ui"
 )
 
 func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
@@ -34,9 +35,14 @@ func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 
 	mux.Handle("/api/export/expenditure", auth.NewAuthRequired(exportExpenditureHandler(pool)))
 
-	routeReactPages(mux)
+	mux.Handle("/api/", http.NotFoundHandler())
 
-	mux.Handle("/", http.FileServer(http.Dir(os.Getenv("UI_ROOT_DIR"))))
+	assets, err := ui.Assets()
+	if err != nil {
+		return nil, fmt.Errorf("could not load ui assets: %w", err)
+	}
+
+	mux.Handle("/", ui.Handler(assets))
 
 	var h http.Handler = mux
 
@@ -46,24 +52,4 @@ func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 	}
 
 	return h, nil
-}
-
-func routeReactPages(mux *http.ServeMux) {
-	for _, path := range []string{
-		"/dashboard",
-		"/login",
-		"/budget",
-		"/expenditure",
-		"/register",
-		"/payment-methods",
-		"/browse",
-	} {
-		routeReactPage(mux, path)
-	}
-}
-
-func routeReactPage(mux *http.ServeMux, path string) {
-	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, os.Getenv("UI_ROOT_DIR")+"/index.html")
-	})
 }

@@ -10,8 +10,7 @@
   },
   "scripts": {
     "start": "vite",
-    "build": "vite build",
-    "package": "vite build && tar -czvf dist.tar.gz ./dist",
+    "build": "vite build && touch dist/.gitkeep",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

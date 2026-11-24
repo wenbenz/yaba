@@ -1,18 +1,10 @@
 # yaba-ui
 
-UI for the [yaba](https://github.com/wenbenz/yaba) personal finance server.
-
-## Prerequisites
-
-- Node.js
-- yaba backend running on `http://localhost:9222`
+UI for YABA. Built into `ui/dist` and embedded in the Go binary.
 
 ## Setup
 
-```bash
-yarn install
-yarn start   # dev server on http://localhost:3000
-```
+From the repo root, `make dev` starts Postgres, the Go server (:9222), and this dev server (:3000).
 
 ## Pages
 
@@ -31,7 +23,6 @@ yarn start   # dev server on http://localhost:3000
 yarn start          # Dev server (port 3000, proxies /graphql and /api to localhost:9222)
 yarn build          # Production build
 yarn test           # Run Vitest test suite
-yarn package        # Build + create dist.tar.gz
 yarn lint           # ESLint
 yarn lint:fix       # ESLint auto-fix
 yarn prettier       # Format with Prettier

@@ -30,5 +30,5 @@ settings.local.json
 .idea
 
 db_password.txt
-dist
+/dist
 /generated.csv
