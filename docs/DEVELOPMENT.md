@@ -1,9 +1,13 @@
 # Building the code
 
-Use the `Makefile` to build locally.
 ```shell
-make
+make dev     # Postgres in Docker, Go server on :9222, Vite on :3000 (hot reload)
+make ui      # build the UI into ui/dist
+make build   # compile the binary; embeds whatever is in ui/dist
+make test    # Go + UI tests
 ```
+
+Local dev needs a `db_password.txt` (see README Quick Start). Open http://localhost:3000; Vite proxies `/graphql` and `/api` to the Go server.
 
 # Docker
 

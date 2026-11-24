@@ -4,24 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-YABA (Yet Another Budgeting App) is a self-hosted budgeting application. Backend is Go + PostgreSQL with a GraphQL API generated via `gqlgen`. Frontend is React, served as static files from the Go binary.
+YABA (Yet Another Budgeting App) is a self-hosted budgeting application. Backend is Go + PostgreSQL with a GraphQL API generated via `gqlgen`. Frontend is React in `ui/` (see `ui/CLAUDE.md`), built into `ui/dist` and embedded in the Go binary via `go:embed`.
 
 ## Commands
 
 ```bash
-# Backend
+make dev         # Postgres (docker) + Go server :9222 + Vite :3000 with hot reload
+make ui          # Build UI into ui/dist (run before make build to embed it)
 make build       # Generate GraphQL code + compile binary
-make test        # Run all Go tests
+make test        # Go tests + UI tests
 make cover       # Tests with coverage (race detector, atomic mode)
 make lint        # Run golangci-lint with auto-fix
 make graphql     # Regenerate GraphQL server/model code from schema
-
-# Frontend
-make start-ui    # Start React dev server
-make build-ui    # Build and package React UI (creates dist.tar.gz)
-
-# Docker
-make docker      # Build Docker image (requires make build-ui first)
+make docker      # Build Docker image (builds the UI itself)
 
 # Single test
 go test ./internal/handlers/... -run TestSpecificName
@@ -38,7 +33,7 @@ HTTP Request
   → /graphql          → GraphQL resolvers in handlers/schema_graph_resolver.go
   → /api/login|register|logout → Auth handlers in internal/auth/
   → /api/export/expenditure    → Export handler
-  → /* (React routes)          → Serves embedded React index.html
+  → /*                         → ui.Handler: embedded file, else index.html (SPA fallback)
 ```
 
 ### Layer Responsibilities

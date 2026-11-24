@@ -1,4 +1,4 @@
-.PHONY: clean build test docker
+.PHONY: clean build test docker ui dev dev-server dev-ui
 
 build: deps graphql
 	go build
@@ -16,19 +16,30 @@ clean:
 		./yaba ./coverage.out
 
 lint:
-	golangci-lint run --fix 
+	golangci-lint run --fix
 
 test:
 	go test ./...
+	cd ui && yarn test
 
 cover:
-	go test -v -race -covermode=atomic -coverprofile=coverage.out yaba/internal/...
+	go test -v -race -covermode=atomic -coverprofile=coverage.out yaba/internal/... yaba/ui/...
 
 docker:
 	docker build --tag wenbenz/yaba:latest --tag wenbenz/yaba:$$(git rev-parse --short HEAD) .
 
-start-ui:
-	cd ui && yarn start
+# Build the UI into ui/dist. Run before `make build` to embed it in the binary.
+ui:
+	cd ui && yarn install --frozen-lockfile && yarn build
 
-build-ui:
-	cd ui && yarn package && cd .. && mv ui/dist.tar.gz ../dist.tar.gz
+# Local dev: Postgres in Docker, Go server on :9222, Vite on :3000 with hot reload.
+dev:
+	docker compose up -d db
+	$(MAKE) -j2 dev-server dev-ui
+
+dev-server:
+	env $$(grep -v '^#' docker.env | xargs) POSTGRES_URL=localhost:5432 \
+		YABA_SERVER_PORT=9222 INSECURE_COOKIE=true go run .
+
+dev-ui:
+	cd ui && yarn install && yarn start

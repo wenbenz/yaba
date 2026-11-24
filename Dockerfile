@@ -1,5 +1,7 @@
 FROM node:lts AS ui-builder
 WORKDIR /ui
+# node:lts no longer bundles yarn
+RUN npm install -g --force yarn@1.22.22
 COPY ui/package.json ui/yarn.lock ./
 RUN yarn install --frozen-lockfile
 COPY ui/ ./
@@ -16,15 +18,13 @@ RUN go mod download
 # Copy migrations
 COPY migrations ./migrations/
 
-# Copy UI build output
-COPY --from=ui-builder /ui/dist ./dist
-ENV UI_ROOT_DIR /yaba/dist
-
 # Build the app binary
 COPY errors ./errors/
 COPY config/*.go ./config/
 COPY graph/ ./graph/
 COPY internal ./internal/
+COPY ui/*.go ./ui/
+COPY --from=ui-builder /ui/dist ./ui/dist/
 COPY main.go ./
 RUN CGO_ENABLED=0 GOOS=linux go build -o ./yaba
 
