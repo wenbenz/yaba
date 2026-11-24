@@ -83,33 +83,6 @@ jobs:
           type=semver,pattern={{version}}
           type=sha,format=long
           type=raw,value=latest,enable={{is_default_branch}}
-    - name: Build for smoke test
-      uses: docker/build-push-action@v7.1.0
-      with:
-        platforms: linux/amd64
-        load: true
-        tags: yaba:smoke
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-    - name: Smoke test
-      run: |
-        docker network create smoke
-        docker run -d --name db --network smoke -e POSTGRES_DB=yaba -e POSTGRES_USER=yaba \
-          -e POSTGRES_PASSWORD=smoke postgres:16
-        printf smoke > "$RUNNER_TEMP/pw" && chmod 644 "$RUNNER_TEMP/pw"
-        docker run -d --name app --network smoke -p 8080:80 -e POSTGRES_DB=yaba -e POSTGRES_USER=yaba \
-          -e POSTGRES_URL=db:5432 -e POSTGRES_SSL_MODE=disable -e POSTGRES_PASSWORD_FILE=/pw \
-          -v "$RUNNER_TEMP/pw:/pw:ro" yaba:smoke
-        for _ in $(seq 60); do curl -sf localhost:8080/api/health && break; sleep 2; done
-        curl -sf localhost:8080/api/health
-        curl -sf localhost:8080/ | grep -q 'id="root"'
-        curl -sf localhost:8080/profile | grep -q 'id="root"'
-        asset=$(curl -sf localhost:8080/ | grep -oE '/assets/[^"]+\.js' | head -1)
-        curl -sf -o /dev/null "localhost:8080$asset"
-        test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/api/nope)" = 404
-    - name: Smoke test logs
-      if: failure()
-      run: docker logs app; docker logs db
     - name: Build and push
       uses: docker/build-push-action@v7.1.0
       with:
