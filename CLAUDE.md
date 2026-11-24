@@ -12,6 +12,7 @@ Work in progress toward these goals (see README "Roadmap"). Prefer changes that 
 
 - **Single repo:** `ui/` is a submodule of `wenbenz/yaba-ui` today; it will be merged in and embedded via `go:embed` (currently served from disk via `UI_ROOT_DIR`). Don't add new cross-repo coupling.
 - **Simple tooling:** Keep build/run/test to a few `make` targets. No new required tools without a clear reason.
+- **Protobuf API:** GraphQL (gqlgen) will be replaced by Connect RPC services in `proto/`, generated with `buf`. Migrate page by page. Avoid growing the GraphQL schema; OIDC redirects and file upload/export stay plain HTTP.
 - **UI:** New UI goes through shared components and theme palette tokens, never hard-coded colours or one-off styling. A redesign/framework change is under consideration; don't invest heavily in the current template code.
 - **No deploy chart:** `manifests/` is slated for removal. Don't extend it; deployment config belongs to the operator (the homelab repo has its own chart).
 - **OAuth/OIDC:** Planned. Keep auth behind `internal/auth/` so a provider-based login can sit beside local accounts and still issue the same `sid` session.
