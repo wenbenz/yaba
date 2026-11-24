@@ -1,5 +1,7 @@
 FROM node:lts AS ui-builder
 WORKDIR /ui
+# node:lts no longer bundles yarn
+RUN npm install -g --force yarn@1.22.22
 COPY ui/package.json ui/yarn.lock ./
 RUN yarn install --frozen-lockfile
 COPY ui/ ./
