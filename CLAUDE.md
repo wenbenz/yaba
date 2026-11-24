@@ -10,11 +10,11 @@ YABA (Yet Another Budgeting App) is a self-hosted budgeting application. Backend
 
 Work in progress toward these goals (see README "Roadmap"). Prefer changes that move toward them and avoid ones that entrench the current state.
 
-- **Single repo:** `ui/` is a submodule of `wenbenz/yaba-ui` today; it will be merged in and embedded via `go:embed` (currently served from disk via `UI_ROOT_DIR`). Don't add new cross-repo coupling.
-- **Simple tooling:** Keep build/run/test to a few `make` targets. No new required tools without a clear reason.
+- **Single repo:** The UI lives in `ui/` and is embedded via `ui/ui.go` (`go:embed all:dist`). Keep `ui/dist/.gitkeep` so `go build` works without a UI build.
+- **Simple tooling:** Keep build/run/test to `make dev`/`build`/`test`. No new required tools without a clear reason.
 - **Protobuf API:** GraphQL (gqlgen) will be replaced by Connect RPC services in `proto/`, generated with `buf`. Migrate page by page. Avoid growing the GraphQL schema; OIDC redirects and file upload/export stay plain HTTP.
 - **UI:** A fresh UI will replace the current template, ported page by page. Stack: React 19 + Vite + TypeScript (strict, no new `.jsx`), connect-query for all data fetching, shadcn/ui + Tailwind with the palette as CSS variables, React Hook Form + Zod. Rules: server state lives in the query cache, not context; `useEffect` only for DOM work (e.g. charts); pages compose shared components with no hard-coded colours or one-off styling. Don't invest in the old template code.
-- **No deploy chart:** `manifests/` is slated for removal. Don't extend it; deployment config belongs to the operator (the homelab repo has its own chart).
+- **No deploy chart:** Don't add Kubernetes manifests or Helm charts here; deployment belongs to the operator (the homelab repo has its own chart).
 - **OAuth/OIDC:** Planned. Keep auth behind `internal/auth/` so a provider-based login can sit beside local accounts and still issue the same `sid` session.
 - **ReBAC:** Planned shared access to resources, possibly via an external authz service (OpenFGA/SpiceDB). Route new ownership/permission checks through one place rather than scattering `owner = user` filters in DAOs.
 
