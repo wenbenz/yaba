@@ -31,7 +31,7 @@ git tag v1.0.0
 git push origin v1.0.0
 ```
 
-[Renovate](https://docs.renovatebot.com/) is configured in `renovate.json` to detect new Docker image versions and open pull requests to update `manifests/yaba/values.yaml` automatically.
+YABA does not ship deployment manifests. Run the published image with `docker-compose.yml` or your own Kubernetes manifests/Helm chart.
 
 # DB Migrations
 
