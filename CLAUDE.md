@@ -6,6 +6,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 YABA (Yet Another Budgeting App) is a self-hosted budgeting application. Backend is Go + PostgreSQL with a GraphQL API generated via `gqlgen`. Frontend is React in `ui/` (see `ui/CLAUDE.md`), built into `ui/dist` and embedded in the Go binary via `go:embed`.
 
+## Direction
+
+Work in progress toward these goals (see README "Roadmap"). Prefer changes that move toward them and avoid ones that entrench the current state.
+
+- **Single repo:** `ui/` is a submodule of `wenbenz/yaba-ui` today; it will be merged in and embedded via `go:embed` (currently served from disk via `UI_ROOT_DIR`). Don't add new cross-repo coupling.
+- **Simple tooling:** Keep build/run/test to a few `make` targets. No new required tools without a clear reason.
+- **UI:** New UI goes through shared components and theme palette tokens, never hard-coded colours or one-off styling. A redesign/framework change is under consideration; don't invest heavily in the current template code.
+- **No deploy chart:** `manifests/` is slated for removal. Don't extend it; deployment config belongs to the operator (the homelab repo has its own chart).
+- **OAuth/OIDC:** Planned. Keep auth behind `internal/auth/` so a provider-based login can sit beside local accounts and still issue the same `sid` session.
+- **ReBAC:** Planned shared access to resources, possibly via an external authz service (OpenFGA/SpiceDB). Route new ownership/permission checks through one place rather than scattering `owner = user` filters in DAOs.
+
 ## Commands
 
 ```bash

@@ -16,6 +16,24 @@ credit card for the budget
 - reduce manual input by adding PDF imports and automatic assignments for
 similar transactions.
 
+## Roadmap
+Planned cleanup, roughly in order:
+1. **Single repo.** Merge [yaba-ui](https://github.com/wenbenz/yaba-ui) back
+   into this repo (replacing the `ui` submodule) and embed the built UI in the
+   Go binary with `go:embed`.
+2. **Simpler tooling.** One command to build, one to run with hot reload
+   (Vite dev server proxying to the Go server), one to test.
+3. **UI redesign.** A small set of shared components driven by a single
+   palette/theme, replacing per-page styling and leftover template code.
+4. **No bundled deploy chart.** Remove `manifests/`. The project ships a
+   container image and a `docker-compose.yml`; Kubernetes deployment is left to
+   the reader.
+5. **OAuth/OIDC login.** Sign in with an external identity provider alongside
+   (or instead of) local accounts.
+6. **Shared access (ReBAC).** Relationship-based permissions so budgets,
+   expenditures, and payment methods can be shared between users. May require
+   an extra service (e.g. OpenFGA or SpiceDB) deployed alongside YABA.
+
 ## Quick Start
 Create a password file.
 ```shell
