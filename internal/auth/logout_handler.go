@@ -42,7 +42,7 @@ func (l *LogoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Clear the session cookie
-	cookie := sessionCookie("")
+	cookie := sessionCookie("") //nolint:gosec // see sessionCookie.
 	cookie.MaxAge = -1
 	http.SetCookie(w, cookie)
 	http.RedirectHandler("/", http.StatusTemporaryRedirect)

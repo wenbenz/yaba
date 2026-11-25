@@ -20,7 +20,7 @@ func GetPaymentMethod(
 	pmQuery, pmArgs, err := squirrel.Select("*").
 		From("payment_method").
 		Where(squirrel.Eq{
-			"id":    id,
+			"id":     id,
 			colOwner: ctxutil.GetUser(ctx),
 		}).
 		ToSql()
@@ -49,7 +49,7 @@ func GetPaymentMethodByName(
 		From("payment_method").
 		Where(squirrel.Eq{
 			"display_name": name,
-			colOwner:        ctxutil.GetUser(ctx),
+			colOwner:       ctxutil.GetUser(ctx),
 		}).
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
@@ -125,7 +125,7 @@ func UpdatePaymentMethod(
 		Set("cancel_by_date", method.CancelByDate).
 		Set("card_type", method.CardType).
 		Where(squirrel.Eq{
-			"id":    method.ID,
+			"id":     method.ID,
 			colOwner: ctxutil.GetUser(ctx),
 		}).
 		PlaceholderFormat(squirrel.Dollar).
@@ -144,7 +144,7 @@ func UpdatePaymentMethod(
 func DeletePaymentMethod(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) (bool, error) {
 	query, args, err := squirrel.Delete("payment_method").
 		Where(squirrel.Eq{
-			"id":    id,
+			"id":     id,
 			colOwner: ctxutil.GetUser(ctx),
 		}).
 		PlaceholderFormat(squirrel.Dollar).

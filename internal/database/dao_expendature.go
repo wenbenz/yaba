@@ -195,7 +195,7 @@ func ClassifyExpendituresWithNewCategory(
 ) error {
 	query, args, err := squirrel.Update("expenditure").
 		Where(map[string]any{
-			colOwner:           ctxutil.GetUser(ctx),
+			colOwner:          ctxutil.GetUser(ctx),
 			"budget_category": category,
 			"expense_id":      uuid.Nil,
 		}).

@@ -93,7 +93,7 @@ func DeleteSessionToken(ctx context.Context, pool *pgxpool.Pool, id []byte) erro
 }
 
 func BakeCookie(token *Token, domain string) (*http.Cookie, error) {
-	cookie := sessionCookie(hex.EncodeToString(token.ID))
+	cookie := sessionCookie(hex.EncodeToString(token.ID)) //nolint:gosec // see sessionCookie.
 	cookie.Domain = domain
 	cookie.Expires = token.Expires
 
