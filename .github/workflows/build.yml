@@ -66,8 +66,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v6
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v4
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v4
     - name: Login to Docker Hub
@@ -91,4 +89,5 @@ jobs:
         platforms: linux/amd64,linux/arm64
         push: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
         tags: ${{ steps.meta.outputs.tags }}
-        no-cache: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
