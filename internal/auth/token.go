@@ -93,16 +93,21 @@ func DeleteSessionToken(ctx context.Context, pool *pgxpool.Pool, id []byte) erro
 }
 
 func BakeCookie(token *Token, domain string) (*http.Cookie, error) {
-	secure := os.Getenv("INSECURE_COOKIE") != "true"
+	cookie := sessionCookie(hex.EncodeToString(token.ID))
+	cookie.Domain = domain
+	cookie.Expires = token.Expires
 
-	return &http.Cookie{
+	return cookie, nil
+}
+
+// sessionCookie returns the sid cookie with the shared security attributes.
+func sessionCookie(value string) *http.Cookie {
+	return &http.Cookie{ //nolint:gosec // Secure is off only when INSECURE_COOKIE=true is set for plain-HTTP setups.
 		Name:     "sid",
-		Value:    hex.EncodeToString(token.ID),
+		Value:    value,
 		Path:     "/",
-		Domain:   domain,
-		Expires:  token.Expires,
-		Secure:   secure,
+		Secure:   os.Getenv("INSECURE_COOKIE") != "true",
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
-	}, nil
+	}
 }
