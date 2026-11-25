@@ -63,14 +63,19 @@ func (l *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err = SaveSessionToken(r.Context(), l.Pool, token); err != nil {
 		log.Println("Error saving session token:", err)
 		w.WriteHeader(http.StatusInternalServerError)
+
+		return
 	}
 
-	cookie, err := BakeCookie(token, r.Host)
+	cookie, err := BakeCookie(token)
 	if err != nil {
 		log.Println("Error encoding session cookie:", err)
 		w.WriteHeader(http.StatusInternalServerError)
+
+		return
 	}
 
+	expireLegacySessionCookie(w, r)
 	http.SetCookie(w, cookie)
 	http.Redirect(w, r, "/", http.StatusFound)
 }

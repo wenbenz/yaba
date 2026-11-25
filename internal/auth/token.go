@@ -92,12 +92,33 @@ func DeleteSessionToken(ctx context.Context, pool *pgxpool.Pool, id []byte) erro
 	return fmt.Errorf("failed to delete session token: %w", err)
 }
 
-func BakeCookie(token *Token, domain string) (*http.Cookie, error) {
+// BakeCookie returns a host-only session cookie (no Domain attribute) for token.
+func BakeCookie(token *Token) (*http.Cookie, error) {
 	cookie := sessionCookie(hex.EncodeToString(token.ID)) //nolint:gosec // see sessionCookie.
-	cookie.Domain = domain
 	cookie.Expires = token.Expires
 
 	return cookie, nil
+}
+
+// ExpireSessionCookies clears the session cookie, including the legacy variant.
+func ExpireSessionCookies(w http.ResponseWriter, r *http.Request) {
+	cookie := sessionCookie("") //nolint:gosec // see sessionCookie.
+	cookie.MaxAge = -1
+	http.SetCookie(w, cookie)
+	expireLegacySessionCookie(w, r)
+}
+
+// expireLegacySessionCookie clears the sid cookie that older versions scoped to Domain=<request host>.
+// A host-only cookie can't overwrite it, and a stale one would be sent alongside the current session.
+func expireLegacySessionCookie(w http.ResponseWriter, r *http.Request) {
+	if r.Host == "" {
+		return
+	}
+
+	cookie := sessionCookie("") //nolint:gosec // see sessionCookie.
+	cookie.Domain = r.Host
+	cookie.MaxAge = -1
+	http.SetCookie(w, cookie)
 }
 
 // sessionCookie returns the sid cookie with the shared security attributes.

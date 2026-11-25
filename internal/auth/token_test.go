@@ -67,10 +67,10 @@ func TestBakeCookie(t *testing.T) {
 
 	user := uuid.New()
 	token := auth.NewSessionToken(user, time.Hour)
-	cookie, err := auth.BakeCookie(token, "domain.com")
+	cookie, err := auth.BakeCookie(token)
 
 	require.NoError(t, err)
-	require.Equal(t, "domain.com", cookie.Domain)
+	require.Empty(t, cookie.Domain)
 	require.Equal(t, http.SameSiteStrictMode, cookie.SameSite)
 	require.True(t, cookie.Secure)
 	require.True(t, cookie.HttpOnly)
