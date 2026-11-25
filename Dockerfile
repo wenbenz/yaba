@@ -16,6 +16,7 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY errors ./errors/
+COPY gen ./gen/
 COPY config/*.go ./config/
 COPY graph/ ./graph/
 COPY internal ./internal/

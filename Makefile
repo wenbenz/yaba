@@ -1,4 +1,4 @@
-.PHONY: clean build test docker ui dev dev-server dev-ui
+.PHONY: clean build test docker ui dev dev-server dev-ui proto
 
 build: deps graphql
 	go build
@@ -10,6 +10,10 @@ graphql: graph/server/generated.go graph/model/models_gen.go
 
 graph/server/generated.go: deps
 	go run github.com/99designs/gqlgen generate
+
+# Regenerate Go (gen/) and TS (ui/gen/) code from proto/. Requires the buf CLI.
+proto:
+	buf generate
 
 clean:
 	rm ./graph/client/generated.go ./graph/model/models_gen.go ./graph/server/generated.go \

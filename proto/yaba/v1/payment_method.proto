@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package yaba.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+// Conventions for yaba.v1:
+//   - IDs are UUID strings.
+//   - Timestamps are google.protobuf.Timestamp; an unset message means "no value".
+//   - Money is int64 minor units (cents).
+
+// PaymentMethod is a card or account the user pays with.
+message PaymentMethod {
+  string id = 1;
+  string display_name = 2;
+  // ID of the reward card this payment method is an instance of; empty when unknown.
+  string card_type_id = 3;
+  google.protobuf.Timestamp acquired_date = 4;
+  google.protobuf.Timestamp cancel_by_date = 5;
+}
+
+// PaymentMethodService manages the signed-in user's payment methods.
+service PaymentMethodService {
+  rpc ListPaymentMethods(ListPaymentMethodsRequest) returns (ListPaymentMethodsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc CreatePaymentMethod(CreatePaymentMethodRequest) returns (CreatePaymentMethodResponse);
+  rpc UpdatePaymentMethod(UpdatePaymentMethodRequest) returns (UpdatePaymentMethodResponse);
+  rpc DeletePaymentMethod(DeletePaymentMethodRequest) returns (DeletePaymentMethodResponse);
+}
+
+message ListPaymentMethodsRequest {}
+
+message ListPaymentMethodsResponse {
+  repeated PaymentMethod payment_methods = 1;
+}
+
+message CreatePaymentMethodRequest {
+  string card_type_id = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.uuid = true
+  ];
+  // Defaults to the reward card's name when unset.
+  optional string display_name = 2 [(buf.validate.field).string.min_len = 1];
+  google.protobuf.Timestamp acquired_date = 3;
+  google.protobuf.Timestamp cancel_by_date = 4;
+}
+
+message CreatePaymentMethodResponse {
+  PaymentMethod payment_method = 1;
+}
+
+// UpdatePaymentMethodRequest replaces every field of an existing payment method.
+message UpdatePaymentMethodRequest {
+  string id = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.uuid = true
+  ];
+  string card_type_id = 2 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.uuid = true
+  ];
+  // Defaults to the reward card's name when unset.
+  optional string display_name = 3 [(buf.validate.field).string.min_len = 1];
+  google.protobuf.Timestamp acquired_date = 4;
+  google.protobuf.Timestamp cancel_by_date = 5;
+}
+
+message UpdatePaymentMethodResponse {
+  PaymentMethod payment_method = 1;
+}
+
+message DeletePaymentMethodRequest {
+  string id = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.uuid = true
+  ];
+}
+
+message DeletePaymentMethodResponse {}
