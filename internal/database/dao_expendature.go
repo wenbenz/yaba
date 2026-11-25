@@ -168,7 +168,7 @@ func PersistExpenditures(
 
 	for _, e := range expenditures {
 		query, args, err := squirrel.Insert("expenditure").
-			Columns("owner", "name", "amount", "date",
+			Columns(colOwner, "name", "amount", "date",
 				"method", "budget_category", "reward_category", "comment", "source", "expense_id").
 			Values(e.Owner, e.Name, e.Amount, e.Date,
 				e.Method, e.BudgetCategory, e.RewardCategory, e.Comment, e.Source, e.ExpenseID).
@@ -195,7 +195,7 @@ func ClassifyExpendituresWithNewCategory(
 ) error {
 	query, args, err := squirrel.Update("expenditure").
 		Where(map[string]any{
-			"owner":           ctxutil.GetUser(ctx),
+			colOwner:          ctxutil.GetUser(ctx),
 			"budget_category": category,
 			"expense_id":      uuid.Nil,
 		}).

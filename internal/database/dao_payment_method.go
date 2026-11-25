@@ -20,8 +20,8 @@ func GetPaymentMethod(
 	pmQuery, pmArgs, err := squirrel.Select("*").
 		From("payment_method").
 		Where(squirrel.Eq{
-			"id":    id,
-			"owner": ctxutil.GetUser(ctx),
+			"id":     id,
+			colOwner: ctxutil.GetUser(ctx),
 		}).
 		ToSql()
 	if err != nil {
@@ -49,7 +49,7 @@ func GetPaymentMethodByName(
 		From("payment_method").
 		Where(squirrel.Eq{
 			"display_name": name,
-			"owner":        ctxutil.GetUser(ctx),
+			colOwner:       ctxutil.GetUser(ctx),
 		}).
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
@@ -68,7 +68,7 @@ func GetPaymentMethodByName(
 func ListPaymentMethods(ctx context.Context, pool *pgxpool.Pool) ([]*model.PaymentMethod, error) {
 	query, args, err := squirrel.Select("*").
 		From("payment_method").
-		Where(squirrel.Eq{"owner": ctxutil.GetUser(ctx)}).
+		Where(squirrel.Eq{colOwner: ctxutil.GetUser(ctx)}).
 		OrderBy("display_name").
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
@@ -98,7 +98,7 @@ func CreatePaymentMethod(
 	method.Owner = ctxutil.GetUser(ctx)
 
 	query, args, err := squirrel.Insert("payment_method").
-		Columns("id", "owner", "display_name", "card_type", "acquired_date", "cancel_by_date").
+		Columns("id", colOwner, "display_name", "card_type", "acquired_date", "cancel_by_date").
 		Values(method.ID, method.Owner, method.DisplayName, method.CardType,
 			method.AcquiredDate, method.CancelByDate).
 		PlaceholderFormat(squirrel.Dollar).
@@ -125,8 +125,8 @@ func UpdatePaymentMethod(
 		Set("cancel_by_date", method.CancelByDate).
 		Set("card_type", method.CardType).
 		Where(squirrel.Eq{
-			"id":    method.ID,
-			"owner": ctxutil.GetUser(ctx),
+			"id":     method.ID,
+			colOwner: ctxutil.GetUser(ctx),
 		}).
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
@@ -144,8 +144,8 @@ func UpdatePaymentMethod(
 func DeletePaymentMethod(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) (bool, error) {
 	query, args, err := squirrel.Delete("payment_method").
 		Where(squirrel.Eq{
-			"id":    id,
-			"owner": ctxutil.GetUser(ctx),
+			"id":     id,
+			colOwner: ctxutil.GetUser(ctx),
 		}).
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()

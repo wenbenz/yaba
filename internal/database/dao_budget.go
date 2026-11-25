@@ -242,7 +242,7 @@ func upsertResetBudget(ctx context.Context, budget *model.Budget, batch *pgx.Bat
 
 	// Delete incomes
 	deleteIncomes, deleteIncomesArgs, err := squirrel.Delete("income").
-		Where(squirrel.Eq{"owner": budget.ID}).
+		Where(squirrel.Eq{colOwner: budget.ID}).
 		ToSql()
 	if err != nil {
 		return fmt.Errorf("delete incomes SQL error: %w", err)

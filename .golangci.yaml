@@ -43,7 +43,7 @@ linters:
     - godox
     - goheader
     - gomoddirectives
-    - gomodguard
+    - gomodguard_v2
     - goprintffuncname
     - gosec
     - gosmopolitan
@@ -127,6 +127,10 @@ linters:
           - goconst
           - mnd
         path: .*_test.go
+      - linters:
+          - gosec
+        path: .*_test.go
+        text: G124
     paths:
       - third_party$
       - builtin$

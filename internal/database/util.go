@@ -9,6 +9,9 @@ import (
 	"github.com/Masterminds/squirrel"
 )
 
+// colOwner is the owner column shared by most tables.
+const colOwner = "owner"
+
 func init() {
 	squirrel.StatementBuilder = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 }

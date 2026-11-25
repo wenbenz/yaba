@@ -81,6 +81,7 @@
     "@babel/eslint-parser": "^7.23.10",
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@eslint/js": "^10.0.1",
+    "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.2",
