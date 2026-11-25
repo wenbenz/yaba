@@ -341,20 +341,20 @@ func TestCreateExpenditures(t *testing.T) {
 		methods := generator.GeneratePaymentMethods(2, user)
 		inputs := []*model.ExpenditureInput{
 			{
-				Name:           ptr("Expense 1"),
+				Name:           new("Expense 1"),
 				Amount:         100.50,
 				Date:           "2024-03-20",
-				Method:         ptr(methods[0].ID.String()),
-				BudgetCategory: ptr("groceries"),
-				Comment:        ptr("Test expense 1"),
+				Method:         new(methods[0].ID.String()),
+				BudgetCategory: new("groceries"),
+				Comment:        new("Test expense 1"),
 			},
 			{
-				Name:           ptr("Expense 2"),
+				Name:           new("Expense 2"),
 				Amount:         50.25,
 				Date:           "2024-03-21",
-				Method:         ptr(methods[1].ID.String()),
-				BudgetCategory: ptr("entertainment"),
-				Comment:        ptr("Test expense 2"),
+				Method:         new(methods[1].ID.String()),
+				BudgetCategory: new("entertainment"),
+				Comment:        new("Test expense 2"),
 			},
 		}
 
@@ -400,11 +400,11 @@ func TestCreateExpenditures(t *testing.T) {
 		t.Parallel()
 
 		inputs := []*model.ExpenditureInput{{
-			Name:           ptr("Invalid Date"),
+			Name:           new("Invalid Date"),
 			Amount:         100.50,
 			Date:           "03-20-2024", // Wrong format
-			Method:         ptr("credit"),
-			BudgetCategory: ptr("groceries"),
+			Method:         new("credit"),
+			BudgetCategory: new("groceries"),
 		}}
 
 		success, err := resolver.Mutation().CreateExpenditures(ctx, inputs)
@@ -424,11 +424,11 @@ func TestCreateExpenditures(t *testing.T) {
 		t.Parallel()
 
 		inputs := []*model.ExpenditureInput{{
-			Name:   ptr("Missing Fields"),
+			Name:   new("Missing Fields"),
 			Amount: 100.50,
 			// Missing Date
-			Method:         ptr("credit"),
-			BudgetCategory: ptr("groceries"),
+			Method:         new("credit"),
+			BudgetCategory: new("groceries"),
 		}}
 
 		success, err := resolver.Mutation().CreateExpenditures(ctx, inputs)
@@ -499,10 +499,10 @@ func TestCreatePaymentMethodSuccess(t *testing.T) {
 
 	// Create the payment method
 	input := model.PaymentMethodInput{
-		DisplayName:  ptr("Test Credit Card"),
-		CardType:     ptr(rewardCard.ID),
-		AcquiredDate: ptr("2024-03-20"),
-		CancelByDate: ptr("2025-03-20"),
+		DisplayName:  new("Test Credit Card"),
+		CardType:     new(rewardCard.ID),
+		AcquiredDate: new("2024-03-20"),
+		CancelByDate: new("2025-03-20"),
 	}
 
 	result, err := resolver.Mutation().CreatePaymentMethod(ctx, input)
@@ -531,7 +531,7 @@ func TestCreatePaymentMethodMissingFields(t *testing.T) {
 	resolver := &handlers.Resolver{Pool: pool}
 
 	input := model.PaymentMethodInput{
-		DisplayName: ptr("Test Card"),
+		DisplayName: new("Test Card"),
 		// Missing other required fields
 	}
 
@@ -572,10 +572,10 @@ func TestUpdatePaymentMethod(t *testing.T) {
 
 	// Create initial payment method
 	createInput := model.PaymentMethodInput{
-		DisplayName:  ptr("Original Card"),
-		CardType:     ptr(rewardCard.ID),
-		AcquiredDate: ptr("2024-03-20"),
-		CancelByDate: ptr("2025-03-20"),
+		DisplayName:  new("Original Card"),
+		CardType:     new(rewardCard.ID),
+		AcquiredDate: new("2024-03-20"),
+		CancelByDate: new("2025-03-20"),
 	}
 
 	created, err := resolver.Mutation().CreatePaymentMethod(ctx, createInput)
@@ -584,10 +584,10 @@ func TestUpdatePaymentMethod(t *testing.T) {
 
 	// Update the payment method
 	updateInput := model.PaymentMethodInput{
-		DisplayName:  ptr("Updated Card"),
-		CardType:     ptr(newRewardCard.ID),
-		AcquiredDate: ptr("2024-03-21"),
-		CancelByDate: ptr("2025-03-21"),
+		DisplayName:  new("Updated Card"),
+		CardType:     new(newRewardCard.ID),
+		AcquiredDate: new("2024-03-21"),
+		CancelByDate: new("2025-03-21"),
 	}
 
 	updated, err := resolver.Mutation().UpdatePaymentMethod(ctx, created.ID, updateInput)
@@ -635,10 +635,10 @@ func TestDeletePaymentMethod(t *testing.T) {
 
 	// Create a payment method to delete
 	input := model.PaymentMethodInput{
-		DisplayName:  ptr("Test Credit Card"),
-		CardType:     ptr(rewardCard.ID),
-		AcquiredDate: ptr("2024-03-20"),
-		CancelByDate: ptr("2025-03-20"),
+		DisplayName:  new("Test Credit Card"),
+		CardType:     new(rewardCard.ID),
+		AcquiredDate: new("2024-03-20"),
+		CancelByDate: new("2025-03-20"),
 	}
 
 	created, err := resolver.Mutation().CreatePaymentMethod(ctx, input)
@@ -701,16 +701,16 @@ func TestPaymentMethods_WithCards(t *testing.T) {
 	// Create multiple payment methods
 	inputs := []model.PaymentMethodInput{
 		{
-			DisplayName:  ptr("Card 1"),
-			CardType:     ptr(rewardCard.ID),
-			AcquiredDate: ptr("2024-03-20"),
-			CancelByDate: ptr("2025-03-20"),
+			DisplayName:  new("Card 1"),
+			CardType:     new(rewardCard.ID),
+			AcquiredDate: new("2024-03-20"),
+			CancelByDate: new("2025-03-20"),
 		},
 		{
-			DisplayName:  ptr("Card 2"),
-			CardType:     ptr(rewardCard.ID),
-			AcquiredDate: ptr("2024-03-21"),
-			CancelByDate: ptr("2025-03-21"),
+			DisplayName:  new("Card 2"),
+			CardType:     new(rewardCard.ID),
+			AcquiredDate: new("2024-03-21"),
+			CancelByDate: new("2025-03-21"),
 		},
 	}
 
@@ -725,7 +725,7 @@ func TestPaymentMethods_WithCards(t *testing.T) {
 	otherUser := uuid.New()
 	otherCtx := ctxutil.WithUser(t.Context(), otherUser)
 	result, err := resolver.Mutation().CreatePaymentMethod(otherCtx,
-		model.PaymentMethodInput{CardType: ptr(rewardCard.ID)})
+		model.PaymentMethodInput{CardType: new(rewardCard.ID)})
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.NotEqual(t, result.ID, uuid.Nil)
@@ -836,8 +836,4 @@ func TestRewardCards(t *testing.T) {
 		require.Equal(t, "Chase", card.Issuer)
 		require.Equal(t, "US", card.Region)
 	}
-}
-
-func ptr(s string) *string {
-	return &s
 }

@@ -18,7 +18,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -106,17 +105,17 @@ func TestListPaymentMethods_ReturnsOnlyCallersMethodsOrderedByDisplayName(t *tes
 	// Created out of order so that the ordering assertion is meaningful.
 	cardB := createTestPaymentMethod(t, client, &yabav1.CreatePaymentMethodRequest{
 		CardTypeId:   cardID.String(),
-		DisplayName:  proto.String("Card B"),
+		DisplayName:  new("Card B"),
 		AcquiredDate: timestamppb.New(acquiredB),
 		CancelByDate: timestamppb.New(cancelB),
 	})
 	cardA := createTestPaymentMethod(t, client, &yabav1.CreatePaymentMethodRequest{
 		CardTypeId:  cardID.String(),
-		DisplayName: proto.String("Card A"),
+		DisplayName: new("Card A"),
 	})
 	otherCard := createTestPaymentMethod(t, otherClient, &yabav1.CreatePaymentMethodRequest{
 		CardTypeId:  cardID.String(),
-		DisplayName: proto.String("Another User's Card"),
+		DisplayName: new("Another User's Card"),
 	})
 
 	res, err := client.ListPaymentMethods(t.Context(), connect.NewRequest(&yabav1.ListPaymentMethodsRequest{}))
@@ -181,7 +180,7 @@ func TestCreatePaymentMethod_SuccessReturnsAndPersistsRecord(t *testing.T) {
 
 	pm := createTestPaymentMethod(t, client, &yabav1.CreatePaymentMethodRequest{
 		CardTypeId:   cardID.String(),
-		DisplayName:  proto.String("Test Credit Card"),
+		DisplayName:  new("Test Credit Card"),
 		AcquiredDate: timestamppb.New(acquired),
 		CancelByDate: timestamppb.New(cancelBy),
 	})
@@ -236,7 +235,7 @@ func TestCreatePaymentMethod_UnknownCardTypeIsInvalidArgument(t *testing.T) {
 
 	_, err := client.CreatePaymentMethod(t.Context(), connect.NewRequest(&yabav1.CreatePaymentMethodRequest{
 		CardTypeId:  uuid.NewString(),
-		DisplayName: proto.String("Ghost Card"),
+		DisplayName: new("Ghost Card"),
 	}))
 	require.Error(t, err)
 	require.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
@@ -263,11 +262,11 @@ func TestCreatePaymentMethod_InvalidRequestIsInvalidArgument(t *testing.T) {
 		},
 		{
 			name: "card_type_id is missing",
-			req:  &yabav1.CreatePaymentMethodRequest{DisplayName: proto.String("No Card Type")},
+			req:  &yabav1.CreatePaymentMethodRequest{DisplayName: new("No Card Type")},
 		},
 		{
 			name: "display_name is present but empty",
-			req:  &yabav1.CreatePaymentMethodRequest{CardTypeId: cardID.String(), DisplayName: proto.String("")},
+			req:  &yabav1.CreatePaymentMethodRequest{CardTypeId: cardID.String(), DisplayName: new("")},
 		},
 	}
 
@@ -293,7 +292,7 @@ func TestUpdatePaymentMethod_SuccessReplacesRecord(t *testing.T) {
 
 	created := createTestPaymentMethod(t, client, &yabav1.CreatePaymentMethodRequest{
 		CardTypeId:   originalCardID.String(),
-		DisplayName:  proto.String("Original Card"),
+		DisplayName:  new("Original Card"),
 		AcquiredDate: timestamppb.New(time.Date(2024, 3, 20, 0, 0, 0, 0, time.UTC)),
 		CancelByDate: timestamppb.New(time.Date(2025, 3, 20, 0, 0, 0, 0, time.UTC)),
 	})
@@ -304,7 +303,7 @@ func TestUpdatePaymentMethod_SuccessReplacesRecord(t *testing.T) {
 	res, err := client.UpdatePaymentMethod(t.Context(), connect.NewRequest(&yabav1.UpdatePaymentMethodRequest{
 		Id:           created.GetId(),
 		CardTypeId:   newCardID.String(),
-		DisplayName:  proto.String("Updated Card"),
+		DisplayName:  new("Updated Card"),
 		AcquiredDate: timestamppb.New(acquired),
 		CancelByDate: timestamppb.New(cancelBy),
 	}))
@@ -344,13 +343,13 @@ func TestUpdatePaymentMethod_OtherUsersIDIsNotFoundAndLeavesRecordUnchanged(t *t
 
 	created := createTestPaymentMethod(t, ownerClient, &yabav1.CreatePaymentMethodRequest{
 		CardTypeId:  cardID.String(),
-		DisplayName: proto.String("Owner's Card"),
+		DisplayName: new("Owner's Card"),
 	})
 
 	_, err := otherClient.UpdatePaymentMethod(t.Context(), connect.NewRequest(&yabav1.UpdatePaymentMethodRequest{
 		Id:          created.GetId(),
 		CardTypeId:  cardID.String(),
-		DisplayName: proto.String("Hijacked"),
+		DisplayName: new("Hijacked"),
 	}))
 	require.Error(t, err)
 	require.Equal(t, connect.CodeNotFound, connect.CodeOf(err))
@@ -371,7 +370,7 @@ func TestUpdatePaymentMethod_MissingIDIsNotFound(t *testing.T) {
 	_, err := client.UpdatePaymentMethod(t.Context(), connect.NewRequest(&yabav1.UpdatePaymentMethodRequest{
 		Id:          uuid.NewString(),
 		CardTypeId:  cardID.String(),
-		DisplayName: proto.String("Does Not Exist"),
+		DisplayName: new("Does Not Exist"),
 	}))
 	require.Error(t, err)
 	require.Equal(t, connect.CodeNotFound, connect.CodeOf(err))
@@ -387,13 +386,13 @@ func TestUpdatePaymentMethod_UnknownCardTypeIsInvalidArgument(t *testing.T) {
 
 	created := createTestPaymentMethod(t, client, &yabav1.CreatePaymentMethodRequest{
 		CardTypeId:  cardID.String(),
-		DisplayName: proto.String("Original Card"),
+		DisplayName: new("Original Card"),
 	})
 
 	_, err := client.UpdatePaymentMethod(t.Context(), connect.NewRequest(&yabav1.UpdatePaymentMethodRequest{
 		Id:          created.GetId(),
 		CardTypeId:  uuid.NewString(),
-		DisplayName: proto.String("Updated Card"),
+		DisplayName: new("Updated Card"),
 	}))
 	require.Error(t, err)
 	require.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
@@ -433,7 +432,7 @@ func TestUpdatePaymentMethod_InvalidRequestIsInvalidArgument(t *testing.T) {
 			req: &yabav1.UpdatePaymentMethodRequest{
 				Id:          uuid.NewString(),
 				CardTypeId:  cardID.String(),
-				DisplayName: proto.String(""),
+				DisplayName: new(""),
 			},
 		},
 	}
@@ -458,7 +457,7 @@ func TestDeletePaymentMethod_SuccessThenSecondDeleteIsNotFound(t *testing.T) {
 
 	created := createTestPaymentMethod(t, client, &yabav1.CreatePaymentMethodRequest{
 		CardTypeId:  cardID.String(),
-		DisplayName: proto.String("Test Credit Card"),
+		DisplayName: new("Test Credit Card"),
 	})
 	deleteReq := &yabav1.DeletePaymentMethodRequest{Id: created.GetId()}
 
@@ -484,7 +483,7 @@ func TestDeletePaymentMethod_OtherUsersIDIsNotFoundAndLeavesRecord(t *testing.T)
 
 	created := createTestPaymentMethod(t, ownerClient, &yabav1.CreatePaymentMethodRequest{
 		CardTypeId:  cardID.String(),
-		DisplayName: proto.String("Owner's Card"),
+		DisplayName: new("Owner's Card"),
 	})
 
 	_, err := otherClient.DeletePaymentMethod(t.Context(),

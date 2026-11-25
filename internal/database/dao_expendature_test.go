@@ -138,7 +138,7 @@ func TestListExpenditures(t *testing.T) {
 			category:   nil,
 			source:     nil,
 			cursor:     nil,
-			limit:      pointer(10),
+			limit:      new(10),
 			expected: func() []*model.Expenditure {
 				return expenditures[:10]
 			},
@@ -149,8 +149,8 @@ func TestListExpenditures(t *testing.T) {
 			queryEnd:   endDate,
 			category:   nil,
 			source:     nil,
-			cursor:     pointer(10),
-			limit:      pointer(10),
+			cursor:     new(10),
+			limit:      new(10),
 			expected: func() []*model.Expenditure {
 				return expenditures[10:20]
 			},
@@ -182,7 +182,7 @@ func TestListExpenditures(t *testing.T) {
 			name:       "fetch_with_comment_filter",
 			queryStart: startDate,
 			queryEnd:   endDate,
-			filter:     pointer("DenIM"), // comments are mocked using hipster sentences
+			filter:     new("DenIM"), // comments are mocked using hipster sentences
 			expected: func() []*model.Expenditure {
 				var expected []*model.Expenditure
 
@@ -199,7 +199,7 @@ func TestListExpenditures(t *testing.T) {
 			name:       "fetch_with_name_or_comment_filter",
 			queryStart: startDate,
 			queryEnd:   endDate,
-			filter:     pointer("aLE"), // descriptions are mocked using beer names,
+			filter:     new("aLE"), // descriptions are mocked using beer names,
 			// but this will also appear in hipster phrases
 			expected: func() []*model.Expenditure {
 				var expected []*model.Expenditure
@@ -218,7 +218,7 @@ func TestListExpenditures(t *testing.T) {
 			name:       "fetch_by_category",
 			queryStart: startDate,
 			queryEnd:   endDate,
-			category:   pointer("Groceries"),
+			category:   new("Groceries"),
 			source:     nil,
 			cursor:     nil,
 			limit:      nil,
@@ -240,7 +240,7 @@ func TestListExpenditures(t *testing.T) {
 			name:       "fetch_by_empty_category",
 			queryStart: startDate,
 			queryEnd:   endDate,
-			category:   pointer(""),
+			category:   new(""),
 			source:     nil,
 			cursor:     nil,
 			limit:      nil,
@@ -262,9 +262,9 @@ func TestListExpenditures(t *testing.T) {
 			queryStart: startDate,
 			queryEnd:   endDate,
 			category:   nil,
-			source:     pointer("Nissan.csv"),
+			source:     new("Nissan.csv"),
 			cursor:     nil,
-			limit:      pointer(100),
+			limit:      new(100),
 			expected: func() []*model.Expenditure {
 				var result []*model.Expenditure
 
@@ -317,10 +317,6 @@ func TestListExpenditures(t *testing.T) {
 			}
 		})
 	}
-}
-
-func pointer[T any](v T) *T {
-	return &v
 }
 
 func TestAggregateExpenditures(t *testing.T) {
@@ -518,7 +514,7 @@ func TestAggregateExpenditures(t *testing.T) {
 				nil,
 				startDate,
 				endDate,
-				pointer(300),
+				new(300),
 				nil,
 			)
 			require.NoError(t, err)
