@@ -27,7 +27,8 @@ func TestLogoutHandler(t *testing.T) {
 	// Create a request with the user context
 	req, _ := http.NewRequestWithContext(t.Context(), http.MethodPost, "/logout", nil)
 	req = req.WithContext(ctxutil.WithUser(req.Context(), user))
-	cookie, _ := auth.BakeCookie(token, "host")
+	req.Host = "yaba.example.com"
+	cookie, _ := auth.BakeCookie(token)
 	req.AddCookie(cookie)
 
 	// Create a response recorder
@@ -40,17 +41,36 @@ func TestLogoutHandler(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	// Check the status code
-	require.Equal(t, http.StatusOK, rr.Code)
+	require.Equal(t, http.StatusSeeOther, rr.Code)
+	require.Equal(t, "/", rr.Header().Get("Location"))
 
 	// Check that the session token is deleted
 	token, err = auth.GetSessionToken(t.Context(), pool, token.ID)
 	require.Nil(t, token)
 	require.ErrorContains(t, err, "failed to retrieve session token")
 
-	// Check that the session cookie is cleared
-	cookie = rr.Result().Cookies()[0] // nolint:bodyclose
+	// Check that both the host-only and the legacy Domain session cookies are cleared
+	cookies := rr.Result().Cookies() // nolint:bodyclose
+	require.Len(t, cookies, 2)
 
-	require.Equal(t, "sid", cookie.Name)
-	require.Empty(t, cookie.Value)
-	require.Equal(t, -1, cookie.MaxAge)
+	for _, c := range cookies {
+		require.Equal(t, "sid", c.Name)
+		require.Empty(t, c.Value)
+		require.Equal(t, -1, c.MaxAge)
+	}
+
+	require.Empty(t, cookies[0].Domain)
+	require.Equal(t, "yaba.example.com", cookies[1].Domain)
+}
+
+func TestLogoutHandlerNoCookie(t *testing.T) {
+	t.Parallel()
+
+	req, _ := http.NewRequestWithContext(t.Context(), http.MethodPost, "/logout", nil)
+	rr := httptest.NewRecorder()
+
+	auth.NewLogoutHandler(helper.GetTestPool()).ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusSeeOther, rr.Code)
+	require.Equal(t, "/", rr.Header().Get("Location"))
 }

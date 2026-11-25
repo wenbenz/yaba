@@ -113,3 +113,28 @@ func TestInterceptorValidSID(t *testing.T) {
 	handler.ServeHTTP(w, request)
 	require.Equal(t, user.String()+hex.EncodeToString(token.ID), w.Body.String())
 }
+
+func TestInterceptorStaleAndValidSID(t *testing.T) {
+	t.Parallel()
+
+	pool := helper.GetTestPool()
+	user := uuid.New()
+	token := auth.NewSessionToken(user, time.Hour)
+	require.NoError(t, auth.SaveSessionToken(t.Context(), pool, token))
+
+	w := httptest.NewRecorder()
+	handler := auth.SessionInterceptor{
+		Pool: pool,
+		Intercepted: helper.FuncHandler{HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
+			u, _ := r.Context().Value(ctxutil.CTXUser).(uuid.UUID)
+			_, _ = w.Write([]byte(u.String())) //nolint:gosec
+		}},
+	}
+
+	// A stale sid (e.g. a legacy Domain cookie) sent before the valid one.
+	request, _ := http.NewRequestWithContext(t.Context(), http.MethodPost, "localhost", nil)
+	request.AddCookie(&http.Cookie{Name: "sid", Value: hex.EncodeToString(auth.NewSessionToken(user, time.Hour).ID)})
+	request.AddCookie(&http.Cookie{Name: "sid", Value: hex.EncodeToString(token.ID)})
+	handler.ServeHTTP(w, request)
+	require.Equal(t, user.String(), w.Body.String())
+}

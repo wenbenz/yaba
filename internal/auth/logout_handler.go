@@ -19,33 +19,23 @@ func NewLogoutHandler(pool *pgxpool.Pool) *LogoutHandler {
 }
 
 func (l *LogoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	SID, err := r.Cookie("sid")
+	ExpireSessionCookies(w, r)
 
-	if err != nil || SID == nil {
-		http.RedirectHandler("/", http.StatusTemporaryRedirect)
+	for _, sid := range r.CookiesNamed("sid") {
+		decodedSID, err := hex.DecodeString(sid.Value)
+		if err != nil || len(decodedSID) != sessionTokenSize {
+			continue
+		}
 
-		return
+		if err = DeleteSessionToken(r.Context(), l.Pool, decodedSID); err != nil {
+			log.Println("Error deleting session token:", err)
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
 	}
 
-	decodedSID, err := hex.DecodeString(SID.Value)
-	if err != nil || len(decodedSID) != sessionTokenSize {
-		http.RedirectHandler("/", http.StatusTemporaryRedirect)
-
-		return
-	}
-
-	if err = DeleteSessionToken(r.Context(), l.Pool, decodedSID); err != nil {
-		log.Println("Error deleting session token:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
-	}
-
-	// Clear the session cookie
-	cookie := sessionCookie("") //nolint:gosec // see sessionCookie.
-	cookie.MaxAge = -1
-	http.SetCookie(w, cookie)
-	http.RedirectHandler("/", http.StatusTemporaryRedirect)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 var _ http.Handler = (*LogoutHandler)(nil)
