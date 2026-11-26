@@ -21,7 +21,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// newClient returns a client whose requests carry user, standing in for auth.SessionInterceptor.
+// newClient returns a client whose requests carry user.
 func newClient(t *testing.T, user uuid.UUID) yabav1connect.PaymentMethodServiceClient {
 	t.Helper()
 
@@ -31,13 +31,22 @@ func newClient(t *testing.T, user uuid.UUID) yabav1connect.PaymentMethodServiceC
 func newClientWithPool(t *testing.T, pool *pgxpool.Pool, user uuid.UUID) yabav1connect.PaymentMethodServiceClient {
 	t.Helper()
 
+	srv := serve(t, pool, user)
+
+	return yabav1connect.NewPaymentMethodServiceClient(srv.Client(), srv.URL+"/rpc")
+}
+
+// serve runs rpc.NewHandler with user in every request's context, standing in for auth.SessionInterceptor.
+func serve(t *testing.T, pool *pgxpool.Pool, user uuid.UUID) *httptest.Server {
+	t.Helper()
+
 	h := rpc.NewHandler(pool)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h.ServeHTTP(w, r.WithContext(ctxutil.WithUser(r.Context(), user)))
 	}))
 	t.Cleanup(srv.Close)
 
-	return yabav1connect.NewPaymentMethodServiceClient(srv.Client(), srv.URL+"/rpc")
+	return srv
 }
 
 func newRewardCard(t *testing.T) *model.RewardCard {
