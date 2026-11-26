@@ -38,11 +38,7 @@ func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 
 	mux.Handle("/api/", http.NotFoundHandler())
 
-	// Connect RPCs. Auth is enforced per call by the Connect interceptor so that
-	// clients receive a Connect error body rather than a bare 401.
-	rpcPath, rpcHandler := rpc.NewHandler(pool)
-	mux.Handle("/rpc"+rpcPath, http.StripPrefix("/rpc", rpcHandler))
-	mux.Handle("/rpc/", http.NotFoundHandler())
+	mux.Handle("/rpc/", rpc.NewHandler(pool))
 
 	assets, err := ui.Assets()
 	if err != nil {

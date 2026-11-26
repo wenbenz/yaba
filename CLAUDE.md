@@ -34,7 +34,7 @@ HTTP Request
   → /graphql          → GraphQL resolvers in handlers/schema_graph_resolver.go
   → /api/login|register|logout → Auth handlers in internal/auth/
   → /api/export/expenditure    → Export handler
-  → /rpc/*                     → Connect handlers in internal/rpc/ (auth via ConnectAuthInterceptor on the `sid` session)
+  → /rpc/*                     → Connect handlers in internal/rpc/ (require the session user)
   → /*                         → ui.Handler: embedded file, else index.html (SPA fallback)
 ```
 

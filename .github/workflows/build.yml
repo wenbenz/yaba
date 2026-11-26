@@ -31,15 +31,7 @@ jobs:
       run: buf lint
 
     - name: Check generated code is up to date
-      run: |
-        buf generate
-        changes="$(git status --porcelain -- gen ui/gen buf.lock)"
-        if [ -n "${changes}" ]; then
-          echo "Generated code is out of date. Run 'make proto' and commit the result:"
-          echo "${changes}"
-          git diff -- gen ui/gen buf.lock
-          exit 1
-        fi
+      run: buf generate && git diff --exit-code
 
     - name: Build
       run: make build
