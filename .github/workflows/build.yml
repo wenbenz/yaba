@@ -30,18 +30,6 @@ jobs:
     - name: Buf lint
       run: buf lint
 
-    - name: Buf breaking
-      if: ${{ github.event_name == 'pull_request' }}
-      env:
-        BASE_REF: ${{ github.base_ref }}
-      run: |
-        git fetch --no-tags --depth=1 origin "+refs/heads/${BASE_REF}:refs/heads/${BASE_REF}"
-        if ! git cat-file -e "refs/heads/${BASE_REF}:buf.yaml" 2>/dev/null; then
-          echo "buf.yaml not found on base branch ${BASE_REF}; skipping breaking check."
-          exit 0
-        fi
-        buf breaking --against ".git#branch=${BASE_REF}"
-
     - name: Check generated code is up to date
       run: |
         buf generate

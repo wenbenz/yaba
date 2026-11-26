@@ -83,7 +83,7 @@ Requires the [buf CLI](https://buf.build/docs/installation).
 
 After changing deps in `buf.yaml`, run `buf dep update`.
 
-CI runs `buf lint`, `buf breaking` against the base branch, and a check that the committed generated code is up to date.
+CI runs `buf lint` and a check that the committed generated code is up to date. There is no `buf breaking` check: the UI and API ship together and have no external callers, so wire compatibility between versions does not matter.
 
 ## GraphQL
 
