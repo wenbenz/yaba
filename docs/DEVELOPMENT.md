@@ -7,7 +7,7 @@ make build   # compile the binary; embeds whatever is in ui/dist
 make test    # Go + UI tests
 ```
 
-Local dev needs a `db_password.txt` (see README Quick Start). Open http://localhost:3000; Vite proxies `/graphql` and `/api` to the Go server.
+Local dev needs a `db_password.txt` (see README Quick Start). Open http://localhost:3000; Vite proxies `/graphql`, `/api` and `/rpc` to the Go server.
 
 # Docker
 
@@ -72,6 +72,18 @@ migrate create -ext sql -dir migrations -seq MIGRATION_NAME
 ```
 
 Then fill in the generated SQL files in `migrations`.
+
+## Protobuf / Connect
+
+Requires the [buf CLI](https://buf.build/docs/installation).
+
+1. Edit protos under `proto/yaba/v1/`.
+2. Run `make proto` (`buf generate` using BSR remote plugins).
+3. Commit the generated `gen/` and `ui/gen/` code.
+
+After changing deps in `buf.yaml`, run `buf dep update`.
+
+CI runs `buf lint` and a check that the committed generated code is up to date. There is no `buf breaking` check: the UI and API ship together and have no external callers, so wire compatibility between versions does not matter.
 
 ## GraphQL
 

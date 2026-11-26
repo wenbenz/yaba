@@ -114,6 +114,10 @@ linters:
     - noinlineerr
     - unqueryvet
     - varnamelen
+  settings:
+    wrapcheck:
+      extra-ignore-sigs:
+        - connect.NewError(
   exclusions:
     generated: lax
     presets:

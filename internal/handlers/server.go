@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"yaba/graph/server"
 	"yaba/internal/auth"
+	"yaba/internal/rpc"
 	"yaba/ui"
 )
 
@@ -36,6 +37,8 @@ func BuildServerHandler(pool *pgxpool.Pool) (http.Handler, error) {
 	mux.Handle("/api/export/expenditure", auth.NewAuthRequired(exportExpenditureHandler(pool)))
 
 	mux.Handle("/api/", http.NotFoundHandler())
+
+	mux.Handle("/rpc/", rpc.NewHandler(pool))
 
 	assets, err := ui.Assets()
 	if err != nil {

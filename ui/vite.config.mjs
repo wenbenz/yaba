@@ -42,6 +42,10 @@ export default defineConfig({
         target: serverUrl,
         changeOrigin: true,
       },
+      '/rpc': {
+        target: serverUrl,
+        changeOrigin: true,
+      },
     }
   },
   preview: {

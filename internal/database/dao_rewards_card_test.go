@@ -373,7 +373,7 @@ func TestListRewardCards(t *testing.T) {
 		},
 		{
 			name:         "no matches - wrong issuer",
-			issuer:       ptr("NonExistent"),
+			issuer:       new("NonExistent"),
 			expectedLen:  0,
 			checkResults: func(cards []*model.RewardCard) bool { return len(cards) == 0 },
 		},
@@ -443,7 +443,7 @@ func TestListRewardCardsPagination(t *testing.T) {
 		},
 		{
 			name:        "custom limit",
-			limit:       ptr(5),
+			limit:       new(5),
 			expectedLen: 5,
 			checkResults: func(results []*model.RewardCard) bool {
 				return len(results) == 5 && results[0].Name == "Card 01"
@@ -451,8 +451,8 @@ func TestListRewardCardsPagination(t *testing.T) {
 		},
 		{
 			name:        "with offset",
-			limit:       ptr(5),
-			offset:      ptr(5),
+			limit:       new(5),
+			offset:      new(5),
 			expectedLen: 5,
 			checkResults: func(results []*model.RewardCard) bool {
 				return len(results) == 5 && results[0].Name == "Card 06"
@@ -460,8 +460,8 @@ func TestListRewardCardsPagination(t *testing.T) {
 		},
 		{
 			name:        "offset beyond data",
-			limit:       ptr(5),
-			offset:      ptr(20),
+			limit:       new(5),
+			offset:      new(20),
 			expectedLen: 0,
 			checkResults: func(results []*model.RewardCard) bool {
 				return len(results) == 0
@@ -469,7 +469,7 @@ func TestListRewardCardsPagination(t *testing.T) {
 		},
 		{
 			name:        "large limit",
-			limit:       ptr(20),
+			limit:       new(20),
 			expectedLen: 15,
 			checkResults: func(results []*model.RewardCard) bool {
 				return len(results) == 15
@@ -483,8 +483,4 @@ func TestListRewardCardsPagination(t *testing.T) {
 		require.Len(t, results, tt.expectedLen)
 		require.True(t, tt.checkResults(results))
 	}
-}
-
-func ptr[T any](s T) *T {
-	return &s
 }
