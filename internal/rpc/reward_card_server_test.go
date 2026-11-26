@@ -28,16 +28,19 @@ func TestCreateAndListRewardCards(t *testing.T) {
 	client := newRewardCardClient(t, helper.GetTestPool(), uuid.New())
 	issuer := uuid.NewString() // the catalog is shared by parallel tests
 
-	var created []*yabav1.RewardCard
-	for _, req := range []*yabav1.CreateRewardCardRequest{
+	reqs := []*yabav1.CreateRewardCardRequest{
 		{
 			Name: "Freedom", Issuer: issuer, Region: "US", RewardType: "cash",
 			Categories: []*yabav1.RewardCategory{{Category: "Dining", Rate: 3}},
 		},
 		{Name: "Sapphire", Issuer: issuer, Region: "CA", RewardType: "points"},
-	} {
+	}
+	created := make([]*yabav1.RewardCard, 0, len(reqs))
+
+	for _, req := range reqs {
 		res, err := client.CreateRewardCard(t.Context(), connect.NewRequest(req))
 		require.NoError(t, err)
+
 		created = append(created, res.Msg.GetRewardCard())
 	}
 
@@ -87,29 +90,17 @@ func TestRewardCardService_InvalidArgument(t *testing.T) {
 	t.Parallel()
 
 	client := newRewardCardClient(t, helper.GetTestPool(), uuid.New())
-	issuer := uuid.NewString()
 
-	for name, call := range map[string]func() error{
-		"empty name": func() error {
-			_, err := client.CreateRewardCard(t.Context(), connect.NewRequest(
-				&yabav1.CreateRewardCardRequest{Issuer: issuer, Region: "US", RewardType: "points"}))
+	_, err := client.CreateRewardCard(t.Context(), connect.NewRequest(
+		&yabav1.CreateRewardCardRequest{Issuer: uuid.NewString(), Region: "US", RewardType: "points"}))
+	require.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err), "empty name")
 
-			return err
-		},
-		"negative limit": func() error {
-			_, err := client.ListRewardCards(t.Context(), connect.NewRequest(
-				&yabav1.ListRewardCardsRequest{Issuer: issuer, Limit: new(int32(-1))}))
-
-			return err
-		},
-		"negative offset": func() error {
-			_, err := client.ListRewardCards(t.Context(), connect.NewRequest(
-				&yabav1.ListRewardCardsRequest{Issuer: issuer, Offset: new(int32(-1))}))
-
-			return err
-		},
+	for name, req := range map[string]*yabav1.ListRewardCardsRequest{
+		"negative limit":  {Limit: new(int32(-1))},
+		"negative offset": {Offset: new(int32(-1))},
 	} {
-		require.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(call()), name)
+		_, err = client.ListRewardCards(t.Context(), connect.NewRequest(req))
+		require.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err), name)
 	}
 }
 
