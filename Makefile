@@ -11,7 +11,7 @@ graphql: graph/server/generated.go graph/model/models_gen.go
 graph/server/generated.go: deps
 	go run github.com/99designs/gqlgen generate
 
-# Regenerate Go (gen/) and TS (ui/gen/) code from proto/. Requires the buf CLI.
+# Regenerate Go (gen/) and TS (ui/gen/, web/src/gen/) code from proto/. Requires the buf CLI.
 proto:
 	buf generate
 
