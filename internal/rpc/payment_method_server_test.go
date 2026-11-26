@@ -196,7 +196,8 @@ func TestPaymentMethodService_DatabaseErrorIsInternal(t *testing.T) {
 	_, err = client.ListPaymentMethods(t.Context(), connect.NewRequest(&yabav1.ListPaymentMethodsRequest{}))
 	require.Equal(t, connect.CodeInternal, connect.CodeOf(err))
 
-	_, err = client.CreatePaymentMethod(t.Context(), connect.NewRequest(&yabav1.CreatePaymentMethodRequest{CardTypeId: id}))
+	_, err = client.CreatePaymentMethod(t.Context(),
+		connect.NewRequest(&yabav1.CreatePaymentMethodRequest{CardTypeId: id}))
 	require.Equal(t, connect.CodeInternal, connect.CodeOf(err))
 
 	_, err = client.UpdatePaymentMethod(t.Context(),
