@@ -90,13 +90,10 @@ func (s *PaymentMethodServer) UpdatePaymentMethod(
 	ctx context.Context,
 	req *connect.Request[yabav1.UpdatePaymentMethodRequest],
 ) (*connect.Response[yabav1.UpdatePaymentMethodResponse], error) {
-	id, err := uuid.Parse(req.Msg.GetId())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
-	}
+	id := uuid.MustParse(req.Msg.GetId()) // validated by protovalidate
 
 	// The DAO's update doesn't report missing rows, so check ownership first.
-	if _, err = database.GetPaymentMethod(ctx, s.Pool, id); pgxscan.NotFound(err) {
+	if _, err := database.GetPaymentMethod(ctx, s.Pool, id); pgxscan.NotFound(err) {
 		return nil, connect.NewError(connect.CodeNotFound, errNotFound)
 	} else if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -118,10 +115,7 @@ func (s *PaymentMethodServer) DeletePaymentMethod(
 	ctx context.Context,
 	req *connect.Request[yabav1.DeletePaymentMethodRequest],
 ) (*connect.Response[yabav1.DeletePaymentMethodResponse], error) {
-	id, err := uuid.Parse(req.Msg.GetId())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
-	}
+	id := uuid.MustParse(req.Msg.GetId()) // validated by protovalidate
 
 	deleted, err := database.DeletePaymentMethod(ctx, s.Pool, id)
 	if err != nil {
@@ -149,10 +143,7 @@ func (s *PaymentMethodServer) fromProto(
 	id uuid.UUID,
 	msg paymentMethodFields,
 ) (*model.PaymentMethod, error) {
-	cardType, err := uuid.Parse(msg.GetCardTypeId())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
-	}
+	cardType := uuid.MustParse(msg.GetCardTypeId()) // validated by protovalidate
 
 	card, err := database.GetRewardCard(ctx, s.Pool, cardType)
 	if pgxscan.NotFound(err) {

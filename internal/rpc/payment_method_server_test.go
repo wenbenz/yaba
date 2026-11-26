@@ -16,6 +16,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -24,7 +25,13 @@ import (
 func newClient(t *testing.T, user uuid.UUID) yabav1connect.PaymentMethodServiceClient {
 	t.Helper()
 
-	h := rpc.NewHandler(helper.GetTestPool())
+	return newClientWithPool(t, helper.GetTestPool(), user)
+}
+
+func newClientWithPool(t *testing.T, pool *pgxpool.Pool, user uuid.UUID) yabav1connect.PaymentMethodServiceClient {
+	t.Helper()
+
+	h := rpc.NewHandler(pool)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h.ServeHTTP(w, r.WithContext(ctxutil.WithUser(r.Context(), user)))
 	}))
@@ -77,6 +84,7 @@ func TestCreateAndListPaymentMethods(t *testing.T) {
 		CardTypeId:   card.ID.String(),
 		DisplayName:  new("My Card"),
 		AcquiredDate: timestamppb.New(acquired),
+		CancelByDate: timestamppb.New(acquired.AddDate(1, 0, 0)),
 	})
 	unnamed := create(t, client, &yabav1.CreatePaymentMethodRequest{CardTypeId: card.ID.String()})
 
@@ -88,7 +96,8 @@ func TestCreateAndListPaymentMethods(t *testing.T) {
 	require.Equal(t, "My Card", methods[0].GetDisplayName())
 	require.Equal(t, card.ID.String(), methods[0].GetCardTypeId())
 	require.Equal(t, acquired, methods[0].GetAcquiredDate().AsTime())
-	require.Nil(t, methods[0].GetCancelByDate())
+	require.Equal(t, acquired.AddDate(1, 0, 0), methods[0].GetCancelByDate().AsTime())
+	require.Nil(t, methods[1].GetAcquiredDate())
 	require.Equal(t, unnamed.GetId(), methods[1].GetId())
 
 	require.Empty(t, list(t, newClient(t, uuid.New())), "other users must not see these")
@@ -160,4 +169,40 @@ func TestPaymentMethodService_RequiresUser(t *testing.T) {
 	// Auth runs before validation.
 	_, err = client.DeletePaymentMethod(t.Context(), connect.NewRequest(&yabav1.DeletePaymentMethodRequest{}))
 	require.Equal(t, connect.CodeUnauthenticated, connect.CodeOf(err))
+}
+
+func TestListPaymentMethods_NoCardType(t *testing.T) {
+	t.Parallel()
+
+	user := uuid.New()
+	method := &model.PaymentMethod{ID: uuid.New(), DisplayName: "Old card"}
+	require.NoError(t, database.CreatePaymentMethod(ctxutil.WithUser(t.Context(), user), helper.GetTestPool(), method))
+
+	methods := list(t, newClient(t, user))
+	require.Len(t, methods, 1)
+	require.Empty(t, methods[0].GetCardTypeId())
+}
+
+func TestPaymentMethodService_DatabaseErrorIsInternal(t *testing.T) {
+	t.Parallel()
+
+	pool, err := pgxpool.NewWithConfig(t.Context(), helper.GetTestPool().Config())
+	require.NoError(t, err)
+	pool.Close()
+
+	client := newClientWithPool(t, pool, uuid.New())
+	id := uuid.NewString()
+
+	_, err = client.ListPaymentMethods(t.Context(), connect.NewRequest(&yabav1.ListPaymentMethodsRequest{}))
+	require.Equal(t, connect.CodeInternal, connect.CodeOf(err))
+
+	_, err = client.CreatePaymentMethod(t.Context(), connect.NewRequest(&yabav1.CreatePaymentMethodRequest{CardTypeId: id}))
+	require.Equal(t, connect.CodeInternal, connect.CodeOf(err))
+
+	_, err = client.UpdatePaymentMethod(t.Context(),
+		connect.NewRequest(&yabav1.UpdatePaymentMethodRequest{Id: id, CardTypeId: id}))
+	require.Equal(t, connect.CodeInternal, connect.CodeOf(err))
+
+	_, err = client.DeletePaymentMethod(t.Context(), connect.NewRequest(&yabav1.DeletePaymentMethodRequest{Id: id}))
+	require.Equal(t, connect.CodeInternal, connect.CodeOf(err))
 }
