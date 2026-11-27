@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package yaba.v1;
+
+import "buf/validate/validate.proto";
+
+// Profile is the signed-in user's account.
+message Profile {
+  string id = 1;
+  string username = 2;
+  // Empty when unset.
+  string email = 3;
+}
+
+// UserService manages the signed-in user's account.
+service UserService {
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+}
+
+message GetProfileRequest {}
+
+message GetProfileResponse {
+  Profile profile = 1;
+}
+
+message UpdateProfileRequest {
+  string email = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.email = true
+  ];
+}
+
+message UpdateProfileResponse {
+  Profile profile = 1;
+}
+
+message ChangePasswordRequest {
+  string current_password = 1 [(buf.validate.field).string.min_len = 1];
+  string new_password = 2 [(buf.validate.field).string.min_len = 1];
+}
+
+message ChangePasswordResponse {}

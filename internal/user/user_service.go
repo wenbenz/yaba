@@ -67,6 +67,37 @@ func VerifyUser(
 	return nil, err
 }
 
+func ChangePassword(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	id uuid.UUID,
+	current, next string,
+) error {
+	u, err := database.GetUserByID(ctx, pool, id)
+	if err != nil {
+		return fmt.Errorf("failed to change password: %w", err)
+	}
+
+	hash, err := hashPassword(id, current)
+	if err != nil {
+		return err
+	}
+
+	if !bytes.Equal(hash, u.PasswordHash) {
+		return errors.InvalidInputError{Input: "current password"}
+	}
+
+	if u.PasswordHash, err = hashPassword(id, next); err != nil {
+		return err
+	}
+
+	if err = database.UpdateUser(ctx, pool, u); err != nil {
+		return fmt.Errorf("failed to change password: %w", err)
+	}
+
+	return nil
+}
+
 const passwordHashMemory = 64 * 1024
 const passwordHashThreads = 4
 const passwordHashKeylength = 32

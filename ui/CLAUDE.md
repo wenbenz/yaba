@@ -27,10 +27,10 @@ npm run prettier   # Format with Prettier
 
 **API layer:** Three mechanisms in use:
 - Apollo Client with `useQuery`/`useMutation` for GraphQL — queries/mutations defined in `src/api/graph.jsx`
-- `fetch('/graphql')` with `credentials: 'include'` — used directly in `src/pages/profile/index.jsx`
+- Connect client (`@connectrpc/connect-web`, `/rpc`) with generated `ui/gen/` stubs — used in `src/pages/profile/index.jsx`
 - Axios + SWR for REST calls to `/api` endpoints
 
-Dev proxy routes `/graphql` and `/api` to `http://localhost:9222`.
+Dev proxy routes `/graphql`, `/api` and `/rpc` to `http://localhost:9222`.
 
 **State management:**
 - Apollo Client for server state

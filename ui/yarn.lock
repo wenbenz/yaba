@@ -1191,6 +1191,21 @@
   dependencies:
     css-tree "^3.0.0"
 
+"@bufbuild/protobuf@^2.17.0":
+  version "2.17.0"
+  resolved "https://registry.yarnpkg.com/@bufbuild/protobuf/-/protobuf-2.17.0.tgz#231e87fc12d859bf95166890e9cebd64ac362810"
+  integrity sha512-hcPkSz6D7MiTU/5VBBhK+kxaYDoOdQ6yJRFJ3kS8Nydp+VZXfg1vrpABKPNod8bXMufsVCmiUJVIKFzCzta4uw==
+
+"@connectrpc/connect-web@^2.1.0":
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/@connectrpc/connect-web/-/connect-web-2.3.0.tgz#d1f6fd46a45468756fdc26f66bf011c7d858e15a"
+  integrity sha512-JPXOiWaVsj+ZwaXOQjwvhc0ORnkl0a1w36Qyl3j1WTuak6/VYyuWGl1Aq8I60gQfQRjsjLLFGr64tO0sjwstcg==
+
+"@connectrpc/connect@^2.1.0":
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/@connectrpc/connect/-/connect-2.3.0.tgz#fe142f8754d0ad8c74a5be14f59a98a17b67b4fe"
+  integrity sha512-rjAn8L9KbAZrkwiB8m1qzDsLs74hkYmwwM2iSWuxTPVOTRm/EZw31smKbQqPU50AXqJC5eKKpEnA6Uf/swQOgQ==
+
 "@csstools/color-helpers@^6.0.2":
   version "6.0.2"
   resolved "https://registry.yarnpkg.com/@csstools/color-helpers/-/color-helpers-6.0.2.tgz#82c59fd30649cf0b4d3c82160489748666e6550b"

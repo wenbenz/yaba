@@ -30,10 +30,10 @@ graph TD
     Expenditure --> ApolloClient
     Browse --> ApolloClient
     PaymentMethods --> ApolloClient
-    Profile --> FetchGraphQL
+    Profile --> ConnectClient
 
     ApolloClient -->|/graphql proxy| YabaServer[(yaba server :9222)]
-    FetchGraphQL -->|/graphql proxy| YabaServer
+    ConnectClient -->|/rpc proxy| YabaServer
 ```
 
 ## Directory Structure
@@ -79,7 +79,7 @@ sequenceDiagram
     Page-->>User: renders chart or table
 ```
 
-The `profile` page is an exception — it uses `fetch('/graphql')` directly with `credentials: 'include'` instead of Apollo Client.
+The `profile` page is an exception — it calls `UserService` via a Connect client (`/rpc`) instead of Apollo Client.
 
 ## Dependencies
 
