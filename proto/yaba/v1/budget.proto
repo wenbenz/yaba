@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package yaba.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/field_mask.proto";
+
+// Income is a source of money in a budget.
+message Income {
+  string source = 1;
+  int64 amount = 2;
+}
+
+// Expense is a planned spend in a budget category.
+message Expense {
+  // Empty on create; the server assigns one.
+  string id = 1 [
+    (buf.validate.field).string.uuid = true,
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE
+  ];
+  string category = 2;
+  int64 amount = 3;
+  bool is_fixed = 4;
+  bool is_slack = 5;
+}
+
+// Budget is the signed-in user's plan of incomes and expenses.
+message Budget {
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  string name = 2;
+  repeated Income incomes = 3;
+  repeated Expense expenses = 4;
+}
+
+// BudgetService manages the signed-in user's budgets.
+service BudgetService {
+  rpc GetBudget(GetBudgetRequest) returns (GetBudgetResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc ListBudgets(ListBudgetsRequest) returns (ListBudgetsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc CreateBudget(CreateBudgetRequest) returns (CreateBudgetResponse);
+  rpc UpdateBudget(UpdateBudgetRequest) returns (UpdateBudgetResponse);
+}
+
+message GetBudgetRequest {
+  string id = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.uuid = true
+  ];
+}
+
+message GetBudgetResponse {
+  Budget budget = 1;
+}
+
+message ListBudgetsRequest {
+  // Defaults to 10 when unset.
+  optional int32 limit = 1 [(buf.validate.field).int32.gte = 0];
+}
+
+message ListBudgetsResponse {
+  repeated Budget budgets = 1;
+}
+
+// CreateBudgetRequest returns the existing budget when the name is already used.
+message CreateBudgetRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1];
+  repeated Income incomes = 2;
+  repeated Expense expenses = 3;
+}
+
+message CreateBudgetResponse {
+  Budget budget = 1;
+}
+
+// UpdateBudgetRequest updates the fields of budget named in update_mask.
+message UpdateBudgetRequest {
+  Budget budget = 1 [(buf.validate.field).required = true];
+  google.protobuf.FieldMask update_mask = 2 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).field_mask = {
+      in: ["name", "incomes", "expenses"]
+    }
+  ];
+}
+
+message UpdateBudgetResponse {
+  Budget budget = 1;
+}
