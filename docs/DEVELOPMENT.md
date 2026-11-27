@@ -79,7 +79,7 @@ Requires the [buf CLI](https://buf.build/docs/installation).
 
 1. Edit protos under `proto/yaba/v1/`.
 2. Run `make proto` (`buf generate` using BSR remote plugins).
-3. Commit the generated `gen/` and `ui/gen/` code.
+3. Commit the generated `gen/`, `ui/gen/` and `web/src/gen/` code.
 
 After changing deps in `buf.yaml`, run `buf dep update`.
 
