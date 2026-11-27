@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package yaba.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+// Expenditure is a single spending record. Its id is a database serial, not a UUID.
+message Expenditure {
+  int64 id = 1;
+  string name = 2;
+  int64 amount = 3;
+  google.protobuf.Timestamp date = 4;
+  // ID of the payment method used; empty when unknown.
+  string payment_method_id = 5;
+  string budget_category = 6;
+  string reward_category = 7;
+  string comment = 8;
+  string source = 9;
+  google.protobuf.Timestamp created = 10;
+}
+
+enum Timespan {
+  TIMESPAN_UNSPECIFIED = 0; // DAY
+  TIMESPAN_DAY = 1;
+  TIMESPAN_WEEK = 2;
+  TIMESPAN_MONTH = 3;
+  TIMESPAN_YEAR = 4;
+}
+
+enum GroupBy {
+  GROUP_BY_UNSPECIFIED = 0; // NONE
+  GROUP_BY_NONE = 1;
+  GROUP_BY_BUDGET_CATEGORY = 2;
+  GROUP_BY_REWARD_CATEGORY = 3;
+}
+
+enum Aggregation {
+  AGGREGATION_UNSPECIFIED = 0; // SUM
+  AGGREGATION_SUM = 1;
+  AGGREGATION_AVG = 2;
+}
+
+// ExpenditureService reads and records the signed-in user's expenditures.
+service ExpenditureService {
+  rpc ListExpenditures(ListExpendituresRequest) returns (ListExpendituresResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc AggregateExpenditures(AggregateExpendituresRequest) returns (AggregateExpendituresResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc CreateExpenditures(CreateExpendituresRequest) returns (CreateExpendituresResponse);
+}
+
+message ListExpendituresRequest {
+  // Case-insensitive substring of the name or comment.
+  optional string filter = 1;
+  optional string budget_category = 2;
+  optional string payment_method_id = 3 [(buf.validate.field).string.uuid = true];
+  optional string source = 4;
+  // Inclusive date range; defaults to the epoch and now.
+  google.protobuf.Timestamp since = 5;
+  google.protobuf.Timestamp until = 6;
+  // Defaults to 10 when unset.
+  optional int32 limit = 7 [(buf.validate.field).int32.gte = 0];
+  optional int32 offset = 8 [(buf.validate.field).int32.gte = 0];
+}
+
+message ListExpendituresResponse {
+  repeated Expenditure expenditures = 1;
+}
+
+message AggregateExpendituresRequest {
+  // Inclusive date range; defaults to the epoch and now.
+  google.protobuf.Timestamp since = 1;
+  google.protobuf.Timestamp until = 2;
+  Timespan span = 3 [(buf.validate.field).enum.defined_only = true];
+  GroupBy group_by = 4 [(buf.validate.field).enum.defined_only = true];
+  Aggregation aggregation = 5 [(buf.validate.field).enum.defined_only = true];
+}
+
+// ExpenditureGroup is the aggregated amount of one category within one span.
+message ExpenditureGroup {
+  // "Total" when not grouped.
+  string category = 1;
+  int64 amount = 2;
+  google.protobuf.Timestamp span_start = 3;
+}
+
+message AggregateExpendituresResponse {
+  repeated ExpenditureGroup groups = 1;
+}
+
+message NewExpenditure {
+  google.protobuf.Timestamp date = 1 [(buf.validate.field).required = true];
+  int64 amount = 2;
+  string name = 3;
+  string payment_method_id = 4 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
+    (buf.validate.field).string.uuid = true
+  ];
+  string budget_category = 5;
+  string reward_category = 6;
+  string comment = 7;
+  string source = 8;
+}
+
+message CreateExpendituresRequest {
+  repeated NewExpenditure expenditures = 1 [(buf.validate.field).repeated.min_items = 1];
+}
+
+message CreateExpendituresResponse {}
