@@ -32,6 +32,7 @@ func NewHandler(pool *pgxpool.Pool) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle(yabav1connect.NewPaymentMethodServiceHandler(&PaymentMethodServer{Pool: pool}, interceptors))
 	mux.Handle(yabav1connect.NewRewardCardServiceHandler(&RewardCardServer{Pool: pool}, interceptors))
+	mux.Handle(yabav1connect.NewBudgetServiceHandler(&BudgetServer{Pool: pool}, interceptors))
 
 	return http.StripPrefix("/rpc", mux)
 }
