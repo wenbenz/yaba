@@ -55,3 +55,41 @@ func GetUserByUsername(
 
 	return u, nil
 }
+
+func GetUserByID(ctx context.Context, pool *pgxpool.Pool, id uuid.UUID) (*model.User, error) {
+	u := &model.User{}
+
+	query, args, err := squirrel.
+		Select("*").
+		From("user_profile").
+		Where(squirrel.Eq{"id": id}).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("failed to form query: %w", err)
+	}
+
+	if err = pgxscan.Get(ctx, pool, u, query, args...); err != nil {
+		return nil, fmt.Errorf("failed to fetch user: %w", err)
+	}
+
+	return u, nil
+}
+
+func UpdateUser(ctx context.Context, pool *pgxpool.Pool, user *model.User) error {
+	query, args, err := squirrel.Update("user_profile").
+		Set("email", user.Email).
+		Set("password_hash", user.PasswordHash).
+		Where(squirrel.Eq{"id": user.ID}).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
+	if err != nil {
+		return fmt.Errorf("failed to construct sql: %w", err)
+	}
+
+	if _, err = pool.Exec(ctx, query, args...); err != nil {
+		return fmt.Errorf("failed to update user: %w", err)
+	}
+
+	return nil
+}
