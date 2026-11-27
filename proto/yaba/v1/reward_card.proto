@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package yaba.v1;
+
+import "buf/validate/validate.proto";
+
+// RewardCategory is the reward rate a card earns in a spending category.
+message RewardCategory {
+  string category = 1;
+  double rate = 2;
+}
+
+// RewardCard is a card product in the global reward card catalog.
+message RewardCard {
+  string id = 1;
+  string name = 2;
+  string issuer = 3;
+  string region = 4;
+  int32 version = 5;
+  string reward_type = 6;
+  repeated RewardCategory categories = 7;
+}
+
+// RewardCardService searches and extends the reward card catalog.
+service RewardCardService {
+  rpc ListRewardCards(ListRewardCardsRequest) returns (ListRewardCardsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc CreateRewardCard(CreateRewardCardRequest) returns (CreateRewardCardResponse);
+}
+
+message ListRewardCardsRequest {
+  // Case-insensitive prefix filters; empty matches all.
+  string issuer = 1;
+  string name = 2;
+  string region = 3;
+  // Defaults to 10 when unset.
+  optional int32 limit = 4 [(buf.validate.field).int32.gte = 0];
+  optional int32 offset = 5 [(buf.validate.field).int32.gte = 0];
+}
+
+message ListRewardCardsResponse {
+  repeated RewardCard reward_cards = 1;
+}
+
+message CreateRewardCardRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1];
+  string issuer = 2 [(buf.validate.field).string.min_len = 1];
+  string region = 3 [(buf.validate.field).string.min_len = 1];
+  string reward_type = 4 [(buf.validate.field).string.min_len = 1];
+  repeated RewardCategory categories = 5;
+}
+
+message CreateRewardCardResponse {
+  RewardCard reward_card = 1;
+}

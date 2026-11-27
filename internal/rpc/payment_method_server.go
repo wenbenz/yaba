@@ -28,11 +28,10 @@ var (
 
 // NewHandler serves the Connect services under /rpc/.
 func NewHandler(pool *pgxpool.Pool) http.Handler {
+	interceptors := connect.WithInterceptors(connect.UnaryInterceptorFunc(requireUser), validate.NewInterceptor())
 	mux := http.NewServeMux()
-	mux.Handle(yabav1connect.NewPaymentMethodServiceHandler(
-		&PaymentMethodServer{Pool: pool},
-		connect.WithInterceptors(connect.UnaryInterceptorFunc(requireUser), validate.NewInterceptor()),
-	))
+	mux.Handle(yabav1connect.NewPaymentMethodServiceHandler(&PaymentMethodServer{Pool: pool}, interceptors))
+	mux.Handle(yabav1connect.NewRewardCardServiceHandler(&RewardCardServer{Pool: pool}, interceptors))
 
 	return http.StripPrefix("/rpc", mux)
 }
