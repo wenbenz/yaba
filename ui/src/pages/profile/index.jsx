@@ -1,21 +1,25 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createClient, ConnectError } from '@connectrpc/connect';
+import { createConnectTransport } from '@connectrpc/connect-web';
+import { UserService } from '../../../gen/yaba/v1/user_pb';
+
+const client = createClient(UserService, createConnectTransport({ baseUrl: '/rpc' }));
 
 export default function Index() {
     const [email, setEmail] = useState('');
+    const [savedEmail, setSavedEmail] = useState('');
+    const [currentPassword, setCurrentPassword] = useState('');
     const [password, setPassword] = useState('');
     const [confirm, setConfirm] = useState('');
     const [status, setStatus] = useState(null);
     const [loading, setLoading] = useState(false);
 
-    const mutation = `
-    mutation UpdateProfile($input: UpdateProfileInput!) {
-      updateProfile(input: $input) {
-        id
-        username
-        email
-      }
-    }
-  `;
+    useEffect(() => {
+        client.getProfile({}).then(({ profile }) => {
+            setEmail(profile.email);
+            setSavedEmail(profile.email);
+        });
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -26,33 +30,30 @@ export default function Index() {
             return;
         }
 
-        const input = {};
-        if (email) input.email = email;
-        if (password) input.password = password;
+        if (password && !currentPassword) {
+            setStatus({ type: 'error', message: 'Current password is required' });
+            return;
+        }
 
-        if (!input.email && !input.password) {
+        const emailChanged = email !== savedEmail;
+        if (!emailChanged && !password) {
             setStatus({ type: 'error', message: 'Provide email and/or password to update' });
             return;
         }
 
         setLoading(true);
         try {
-            const res = await fetch('/graphql', {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: mutation, variables: { input } }),
-            });
-            const json = await res.json();
-            if (json.errors && json.errors.length) {
-                setStatus({ type: 'error', message: json.errors[0].message || 'Update failed' });
-            } else {
-                setStatus({ type: 'success', message: 'Profile updated successfully' });
-                setPassword('');
-                setConfirm('');
+            if (emailChanged) {
+                await client.updateProfile({ email });
+                setSavedEmail(email);
             }
+            if (password) await client.changePassword({ currentPassword, newPassword: password });
+            setStatus({ type: 'success', message: 'Profile updated successfully' });
+            setCurrentPassword('');
+            setPassword('');
+            setConfirm('');
         } catch (err) {
-            setStatus({ type: 'error', message: 'Network error' });
+            setStatus({ type: 'error', message: ConnectError.from(err).rawMessage });
         } finally {
             setLoading(false);
         }
@@ -67,8 +68,19 @@ export default function Index() {
                     <input
                         type="email"
                         value={email}
-                        placeholder="new email (leave blank to keep current)"
+                        placeholder="email"
                         onChange={(e) => setEmail(e.target.value)}
+                        style={{ width: '100%', padding: 8 }}
+                    />
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                    <label style={{ display: 'block', marginBottom: 4 }}>Current Password</label>
+                    <input
+                        type="password"
+                        value={currentPassword}
+                        placeholder="required to change password"
+                        onChange={(e) => setCurrentPassword(e.target.value)}
                         style={{ width: '100%', padding: 8 }}
                     />
                 </div>
